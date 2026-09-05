@@ -442,17 +442,10 @@ const UserChat = ({
           const selectedPack = rechargePacks.find((p) => p.id === packId);
 
           if (selectedPack) {
-            debugger;
-            console.log("-------------room_Id----------", room_Id);
             const requestData = JSON.parse(
               localStorage.getItem(`activeRequests`) || "null",
             );
 
-            console.log("----------- request -------------", requestData);
-       console.log(
-  "----------- pricePerMin -------------",
-  requestData?.[0]?.astrologer?.pricePerMin
-);
             const newTime = timeLeft + selectedPack.talktime * 60/requestData?.[0]?.astrologer?.pricePerMin;
 
             customer_recharge_completed(newTime);
