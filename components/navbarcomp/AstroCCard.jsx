@@ -186,7 +186,7 @@ function AstroCCard({ mode = "chat", data = [], loading }) {
     <section className="relative flex flex-col items-center w-full p-2 sm:p-5">
       <section className="chatastro-cards-main items-center flex-wrap gap-2 sm:gap-5 grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 justify-around w-full lg:w-[95%]">
         {data?.slice(0, visibleCount).map((astro, index) => (
-          <div key={index} className="overflow-hidden ">
+          <div key={astro?.id}  className="overflow-hidden ">
             <div className="relative w-full   bg-center bg-cover  shadow-lg h-66 md:h-51 sm:p-1 back-astro-image">
               <div className="relative h-full p-2 overflow-hidden flex rounded-xl justify-center items-center text-white 	bg-linear-to-r from-purple-100 via-indigo-100 to-purple-100">
                 {!astro?.tags ? (

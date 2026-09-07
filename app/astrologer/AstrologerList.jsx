@@ -13,6 +13,8 @@ export default function AstrologerList({
 }) {
   const { messages: t } = useLanguage();
   const isFirstRender = useRef(true);
+  const isFetchingMore = useRef(false);
+const loadedPages = useRef(new Set([1]));
 
   const [sortType, setSortType] = useState("ratingHigh");
   const [page, setPage] = useState(1);
@@ -85,7 +87,7 @@ export default function AstrologerList({
     }
 
     setPage(1);
-
+loadedPages.current = new Set([1]);
     refetch({
       searchInput: {
         ...searchInput,
@@ -94,63 +96,84 @@ export default function AstrologerList({
     });
   }, [searchInput, refetch]);
 
-  // Infinite Scroll
-  useEffect(() => {
-    if (!fetchMore) return;
+ // Infinite Scroll
+useEffect(() => {
+  if (!fetchMore) return;
 
-    let loading = false;
+  const handleScroll = async () => {
+    const nearBottom =
+      window.innerHeight + window.scrollY >=
+      document.documentElement.scrollHeight - 100;
 
-    const handleScroll = async () => {
-      if (loading) return;
+    if (!nearBottom) return;
 
-      const nearBottom =
-        window.innerHeight + window.scrollY >=
-        document.documentElement.scrollHeight - 100;
+    if (isFetchingMore.current) return;
 
-      if (!nearBottom || page >= totalPages) return;
+    if (page >= totalPages) return;
 
-      loading = true;
+    const nextPage = page + 1;
 
-      const nextPage = page + 1;
+    // Same page dobara fetch mat karo
+    if (loadedPages.current.has(nextPage)) return;
 
-      try {
-        await fetchMore({
-          variables: {
-            searchInput: {
-              ...searchInput,
-              page: nextPage,
+    isFetchingMore.current = true;
+
+    try {
+      const result = await fetchMore({
+        variables: {
+          searchInput: {
+            ...searchInput,
+            page: nextPage,
+          },
+        },
+
+        updateQuery: (prev, { fetchMoreResult }) => {
+          if (!fetchMoreResult) return prev;
+
+          const key = prev.getAstrologerListForUser
+            ? "getAstrologerListForUser"
+            : "getAstrologerListBySearch";
+
+          const oldData = prev[key]?.data ?? [];
+          const newData = fetchMoreResult[key]?.data ?? [];
+
+          // ID ke basis par duplicate remove
+          const uniqueData = [
+            ...oldData,
+            ...newData.filter(
+              (newAstro) =>
+                !oldData.some(
+                  (oldAstro) => oldAstro?.id === newAstro?.id
+                )
+            ),
+          ];
+
+          return {
+            [key]: {
+              ...fetchMoreResult[key],
+              data: uniqueData,
             },
-          },
+          };
+        },
+      });
 
-          updateQuery: (prev, { fetchMoreResult }) => {
-            if (!fetchMoreResult) return prev;
+      // Page successfully fetch hone ke baad mark karo
+      loadedPages.current.add(nextPage);
 
-            const key = prev.getAstrologerListForUser
-              ? "getAstrologerListForUser"
-              : "getAstrologerListBySearch";
+      setPage(nextPage);
+    } catch (error) {
+      console.error("Error loading astrologers:", error);
+    } finally {
+      isFetchingMore.current = false;
+    }
+  };
 
-            return {
-              [key]: {
-                ...fetchMoreResult[key],
-                data: [
-                  ...(prev[key]?.data ?? []),
-                  ...(fetchMoreResult[key]?.data ?? []),
-                ],
-              },
-            };
-          },
-        });
+  window.addEventListener("scroll", handleScroll);
 
-        setPage(nextPage);
-      } finally {
-        loading = false;
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll);
-
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [page, totalPages, fetchMore, searchInput]);
+  return () => {
+    window.removeEventListener("scroll", handleScroll);
+  };
+}, [fetchMore, searchInput, page, totalPages]);
 
   return (
     <section className="flex flex-col items-center w-full sm:p-5">
