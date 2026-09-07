@@ -4,21 +4,19 @@ import Image from "next/image";
 import React from "react";
 
 const PaymentInvoice = React.forwardRef(({ data }, ref) => {
-  const formatDate = (date) => {
-    if (!date) return "-";
 
-    return new Date(date).toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-  };
 
   const money = (value) => {
     const num = Number(value || 0);
     return num.toFixed(2);
   };
-
+const formatDate = (timestamp) => {
+  return new Date(Number(timestamp)).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+};
   return (
     <>
     <style jsx global>{`
@@ -80,9 +78,9 @@ const PaymentInvoice = React.forwardRef(({ data }, ref) => {
 
           <p>E-mail: {data.email || "-"}</p>
 
-          <p className="mt-1 leading-5">
+          <address className="mt-1 leading-5">
             Address - {data.supplierAddress || "-"}
-          </p>
+          </address>
         </div>
       </div>
 
@@ -128,10 +126,10 @@ const PaymentInvoice = React.forwardRef(({ data }, ref) => {
             {data.invoiceNo || "-"}
           </p>
 
-          <p className="mt-3">
-            <span className="font-bold">Invoice Voucher Date:</span>{" "}
-            {formatDate(data.createdAt)}
-          </p>
+       <p className="mt-3">
+  <span className="font-bold">Invoice Voucher Date:</span>{" "}
+  {formatDate(data.createdAt)}
+</p>
         </div>
       </div>
 
