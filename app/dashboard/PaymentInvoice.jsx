@@ -334,20 +334,9 @@ const formatDate = (timestamp) => {
         </table>
       </div>
 
-      {/* =========================================================
-          TRANSACTION HISTORY NOTE
-      ========================================================= */}
 
-      <div className="mt-[35px] text-[11px]">
-        To view your transaction history, please visit:{" "}
-        <span className="underline">{data.transactionHistoryUrl || "-"}</span>
-      </div>
 
-      {/* =========================================================
-          OTHER DETAILS
-      ========================================================= */}
-
-      <div className="mt-[35px]">
+      <div className="mt-8.75">
         <p className="font-bold mb-1">Other details:</p>
 
         <div className="grid grid-cols-[220px_20px_1fr] leading-6">
