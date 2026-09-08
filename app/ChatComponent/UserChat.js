@@ -976,7 +976,7 @@ const UserChat = ({
           </div>
         )}
         {/* CHAT */}
-        <div className="flex-1 overflow-y-auto px-3 py-4 text-black space-y-2 ">
+        <div className="flex-1 block overflow-y-auto px-3 py-4 text-black space-y-2 ">
           {messages.map((msg, i) => (
             <div
               key={i}
