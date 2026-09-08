@@ -1,12 +1,18 @@
 "use client";
 
-import { gql } from "@apollo/client";
 import ProfileHeader from "./ProfileHeader";
 import PersonalInfo from "./PersonalInfo";
 import { GET_USER_DASHBOARD } from "@/app/graphql/gqlQuery";
 import { useMutation, useQuery } from "@apollo/client/react";
 import StatsCards from "./StatsCard";
+import { gql } from "@apollo/client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useDispatch } from "react-redux";
+import { persistor } from "@/app/redux/store";
+import { resetPaymentStatus } from "@/app/redux/reducer/auth/userSlice";
+import toast from "react-hot-toast";
+import client from "@/utils/apolloClient";
 
 const SOFT_DELETE_USER = gql`
   mutation SoftDeleteUser {
@@ -17,38 +23,81 @@ const SOFT_DELETE_USER = gql`
   }
 `;
 
+const LOGOUT_MUTATION = gql`
+  mutation Logout {
+    logout
+  }
+`;
+
 export default function UserProfilePage() {
-  const { data, loading, error, refetch } = useQuery(GET_USER_DASHBOARD);
+  const router = useRouter();
+  const dispatch = useDispatch();
+
+  const { data, loading, error, refetch } =
+    useQuery(GET_USER_DASHBOARD);
 
   const [softDeleteUser, { loading: deleting }] =
     useMutation(SOFT_DELETE_USER);
+
+  const [logoutMutation, { loading: logoutLoading }] =
+    useMutation(LOGOUT_MUTATION);
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteError, setDeleteError] = useState("");
 
   const user = data?.getUserDashboard;
 
+  // ---------------- LOGOUT ----------------
+  const handleLogout = async () => {
+    try {
+      const result = await logoutMutation();
+
+      if (result?.data?.logout) {
+        toast.success("Logged out successfully");
+      }
+    } catch (err) {
+      console.error("Logout error:", err);
+    } finally {
+      localStorage.removeItem("user");
+
+      dispatch(resetPaymentStatus());
+
+      await client.clearStore();
+      await persistor.purge();
+
+      router.replace("/");
+    }
+  };
+
+  // ---------------- DELETE ACCOUNT ----------------
   const handleDeleteAccount = async () => {
     try {
       setDeleteError("");
 
-      const { data } = await softDeleteUser();
+      const result = await softDeleteUser();
 
-      if (data?.softDeleteUser?.success) {
+      if (result?.data?.softDeleteUser?.success) {
+        toast.success(
+          result?.data?.softDeleteUser?.message ||
+            "Account deleted successfully"
+        );
+
         setShowDeleteModal(false);
 
-        // Refresh user data after deletion
-        await refetch();
+        // Logout after successful account deletion
+        await handleLogout();
       } else {
         setDeleteError(
-          data?.softDeleteUser?.message || "Failed to delete account"
+          result?.data?.softDeleteUser?.message ||
+            "Failed to delete account"
         );
       }
-    } catch (error) {
-      console.error("Delete account error:", error);
+    } catch (err) {
+      console.error("Delete account error:", err);
 
       setDeleteError(
-        error?.message || "Something went wrong while deleting account"
+        err?.message ||
+          "Something went wrong while deleting account"
       );
     }
   };
@@ -69,8 +118,6 @@ export default function UserProfilePage() {
 
       <div className="grid lg:grid-cols-3 gap-6">
         <PersonalInfo user={user} refetch={refetch} />
-
-        {/* <WalletSummary user={user}/> */}
       </div>
 
       {/* DELETE ACCOUNT */}
@@ -82,7 +129,7 @@ export default function UserProfilePage() {
             </h2>
 
             <p className="text-sm text-gray-500 mt-1">
-              Permanently delete this user's account.
+              Delete this account permanently.
             </p>
           </div>
 
@@ -99,7 +146,7 @@ export default function UserProfilePage() {
         </div>
       </div>
 
-      {/* DELETE CONFIRMATION MODAL */}
+      {/* DELETE MODAL */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
           <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-6">
@@ -112,7 +159,6 @@ export default function UserProfilePage() {
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2"
-                className="text-red-600"
               >
                 <path
                   strokeLinecap="round"
@@ -127,11 +173,9 @@ export default function UserProfilePage() {
             </h3>
 
             <p className="text-sm text-gray-500 text-center mt-2">
-              Are you sure you want to delete this account? This action
-              cannot be undone.
+              Are you sure you want to delete this account?
             </p>
 
-            {/* API ERROR */}
             {deleteError && (
               <div className="mt-4 bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg px-4 py-3">
                 {deleteError}
@@ -153,11 +197,13 @@ export default function UserProfilePage() {
 
               <button
                 type="button"
-                disabled={deleting}
+                disabled={deleting || logoutLoading}
                 onClick={handleDeleteAccount}
                 className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {deleting ? "Deleting..." : "Yes, Delete"}
+                {deleting || logoutLoading
+                  ? "Deleting..."
+                  : "Yes, Delete"}
               </button>
             </div>
           </div>
