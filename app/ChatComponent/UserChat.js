@@ -145,7 +145,7 @@ const UserChat = ({
         const parsedRoom = JSON.parse(savedRoom);
          const parsedName = JSON.parse(savedName);
 
-        setStoredAstroName(parsedName?.astroName || "");
+        setStoredAstroName(parsedName?.astro_Name || "");
       } catch (error) {
         console.error("Failed to parse active chat room:", error);
       }
