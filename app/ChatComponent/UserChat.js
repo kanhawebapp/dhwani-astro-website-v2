@@ -138,12 +138,14 @@ const UserChat = ({
     if (!room_Id) return;
 
     const savedRoom = localStorage.getItem(`activeChatRoom_${room_Id}`);
+    const savedName = localStorage.getItem(`activeChatSession`);
 
     if (savedRoom) {
       try {
         const parsedRoom = JSON.parse(savedRoom);
+         const parsedName = JSON.parse(savedName);
 
-        setStoredAstroName(parsedRoom?.astroName || "");
+        setStoredAstroName(parsedName?.astroName || "");
       } catch (error) {
         console.error("Failed to parse active chat room:", error);
       }
