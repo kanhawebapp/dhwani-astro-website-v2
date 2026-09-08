@@ -985,7 +985,7 @@ const UserChat = ({
               className={`relative w-[60%] max-w-fit flex flex-col ${
                 msg.sender === "Astrologer"
                   ? "justify-self-start bg-yellow-100 mx-4"
-                  : "justify-self-end bg-purple-100 ms-7"
+                  : "self-end bg-purple-100 ms-7"
               } rounded-lg px-3 py-2 text-gray-700 md:text-xs tracking-wide  text-[10px] gap-0.5`}
             >
               <div className="flex flex-col gap-0 msgs-det">
