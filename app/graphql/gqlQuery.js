@@ -575,6 +575,7 @@ export const GET_BANNERS = gql`
         imageUrl
         heading
         language
+        bannerType
       }
     }
   }
