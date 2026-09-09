@@ -52,43 +52,57 @@ export default function ProfileHeader({ user, refetch }) {
       return;
     }
 
+try {
+  setUploading(true);
+
+  const { data } = await uploadProfileImage({
+    variables: {
+      file,
+    },
+  });
+
+  const result = data?.uploadProfileImage;
+
+  if (!result?.success || !result?.url) {
+    throw new Error(result?.message || "Profile image upload failed");
+  }
+
+  // ================= UPDATE LOCAL STORAGE =================
+
+  const storedUser = localStorage.getItem("user");
+
+  if (storedUser) {
     try {
-      setUploading(true);
+      const parsedUser = JSON.parse(storedUser);
 
-      // ================= UPLOAD =================
+      const updatedUser = {
+        ...parsedUser,
+        profileImage: result.url,
+      };
 
-      const { data } = await uploadProfileImage({
-        variables: {
-          file,
-        },
-      });
-
-      const result = data?.uploadProfileImage;
-
-      if (!result?.success || !result?.url) {
-        throw new Error(result?.message || "Profile image upload failed");
-      }
-
-      toast.success("Profile image updated successfully.");
-
-      // Refresh user data
-      if (refetch) {
-        await refetch();
-      } else {
-        window.location.reload();
-      }
+      localStorage.setItem("user", JSON.stringify(updatedUser));
     } catch (error) {
-      console.error("Profile image upload error:", error);
-
-      toast.error(
-        error?.graphQLErrors?.[0]?.message ||
-          error?.message ||
-          "Failed to update profile image.",
-      );
-    } finally {
-      setUploading(false);
-      e.target.value = "";
+      console.error("Failed to update user in localStorage:", error);
     }
+  }
+
+  toast.success("Profile image updated successfully.");
+
+  // Refresh user data
+  if (refetch) {
+    await refetch();
+  } else {
+    window.location.reload();
+  }
+} catch (error) {
+  console.error("Profile image upload error:", error);
+
+  toast.error(
+    error?.graphQLErrors?.[0]?.message ||
+      error?.message ||
+      "Failed to update profile image.",
+  );
+}
   };
 
   return (
