@@ -24,8 +24,7 @@ const LOGOUT_MUTATION = gql`
 export default function Header({ openSignInModal }) {
   const { user, setUser, isLoggedIn, setIsLoggedIn } = useContext(AuthContext);
   const { messages: t } = useLanguage();
-  // const [isUserOpen, setIsUserOpen] = useState(false);
-  // const [isLoggedIn, setIsLoggedIn] = useState(false);
+
   const router = useRouter();
   const dispatch = useDispatch();
   const [isUserOpen, setIsUserOpen] = useState(false);
@@ -70,7 +69,7 @@ export default function Header({ openSignInModal }) {
       router.replace("/");
     }
   };
-
+// console.log("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", user)
   useEffect(() => {
     const handleClickOutside = (event) => {
       const dropdown = document.querySelector(".user-container");
@@ -121,12 +120,8 @@ export default function Header({ openSignInModal }) {
           >
             <button className="flex pe-1 items-center gap-2">
               <Image
-                className="w-7 h-auto sm:w-10"
-                src={
-                  user?.profileImage
-                    ? `https://dhwaniastro.com${user.profileImage}`
-                    : "/images/default-profile.png"
-                }
+                className="w-7 h-auto rounded-full sm:w-10"
+                src={user?.profileImage || "/ds-img/user2.webp"}
                 alt="Profile"
                 width={40}
                 height={40}
@@ -139,12 +134,8 @@ export default function Header({ openSignInModal }) {
               <div className="absolute -right-2 sm:-right-15 top-full p-2 bg-purple-800 w-40  sm:w-55 rounded-2xl  shadow-2xl border border-gray-600 z-50 overflow-hidden">
                 <div className="flex items-center gap-3 sm:px-3 sm:py-2 shadow-2xl bg-purple-500 rounded-full ">
                <Image
-                className="w-7 h-auto sm:w-10"
-                src={
-                  user?.profileImage
-                    ? `https://dhwaniastro.com${user.profileImage}`
-                    : "/images/default-profile.png"
-                }
+                className="w-7 h-auto rounded-full sm:w-10"
+                src={user?.profileImage || "/ds-img/user2.webp"}
                 alt="Profile"
                 width={40}
                 height={40}
