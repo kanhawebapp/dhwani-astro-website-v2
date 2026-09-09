@@ -336,8 +336,11 @@ const ChatRequestCard = ({
 
       setTimeout(() => {
         if (!queueRef.current) {
-          setShowWaitingPopup(true);
-          startTimer(60);
+          if(!localStorage.getItem(`activeChatRoom_${room_Id}`)){
+            setShowWaitingPopup(true);
+            startTimer(60);
+          }
+          
         }
       }, 1000);
     };
