@@ -619,7 +619,7 @@ export default function CallPage(
     });
 
     activeSocket.on("call_ended_by_admin", () => {
-      debugger;
+     
       console.log("call_ended_by_admin");
       // Stop recording before cleanup (hidden)
       if (isRecordingRef.current) {

@@ -191,7 +191,7 @@ export default function Forminp({
 
   const handlePaymentMethodContinue = async () => {
     try {
-      debugger;
+      
       setCreatingOrder(true);
 
       const orderRes = await createHealingOrder({
