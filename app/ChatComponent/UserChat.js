@@ -417,7 +417,7 @@ const UserChat = ({
 
       const options = {
         key:
-          process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_SNXjhTOgP1CIx0",
+          process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_live_3zT42YgMgCfOim",
 
         // Backend ke Razorpay order se aaya amount
         amount: order.amount,

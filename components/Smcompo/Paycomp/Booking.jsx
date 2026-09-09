@@ -67,7 +67,7 @@ export default function Booking({ amount, generateid }) {
                 return;
             }
             const options = {
-                key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_SNXjhTOgP1CIx0",
+                key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_live_3zT42YgMgCfOim",
                 amount: order.amount,
                 currency: order.currency,
                 name: "Dhwani Astro LLp",
