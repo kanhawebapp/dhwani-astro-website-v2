@@ -62,8 +62,8 @@ export default function KpClient({ formData }) {
 
       
         <Section title="KP Planets ">
-          <div className="overflow-x-scroll sm:w-100 w-90 text-black">
-            <div className="w-200">
+          <div className="overflow-x-scroll sm:w-full w-90 text-black">
+            <div className="sm:w-full w-200">
               <div className="grid grid-cols-11 bg-purple-500 rounded-xl text-xs sm:text-sm text-white px-4 py-1 sm:py-2">
                 {[
                   "Planet ID",
