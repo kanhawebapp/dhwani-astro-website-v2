@@ -9,6 +9,7 @@ import Script from "next/script";
 import { GET_GIFTS } from "@/app/graphql/gqlQuery";
 import { useQuery, useMutation } from "@apollo/client/react";
 import { gql } from "@apollo/client";
+import CustomButton from "../Custom/CustomButton";
 const GET_RECHARGE_PACKS = gql`
   query GetRechargePacks {
     getRechargePacks {
@@ -32,18 +33,18 @@ const GET_USER_WALLET = gql`
   }
 `;
 export const SEND_GIFT = gql`
-mutation SendGift($input: SendGiftInput!) {
-  sendGift(input: $input) {
-    success
-    message
-    userBalance
-    astrologerBalance
-    giftPrice
-    commissionPercent
-    astrologerEarning
-    platformEarning
+  mutation SendGift($input: SendGiftInput!) {
+    sendGift(input: $input) {
+      success
+      message
+      userBalance
+      astrologerBalance
+      giftPrice
+      commissionPercent
+      astrologerEarning
+      platformEarning
+    }
   }
-}
 `;
 const CREATE_ORDER = gql`
   mutation CreateOrder($input: CreateOrderInput!) {
@@ -96,22 +97,22 @@ export default function GiftPop({ open, onClose, astrologername, astro_id }) {
   });
 
   const gifts = giftsResponse?.getGifts?.data || [];
-useEffect(() => {
-  if (!open) return;
+  useEffect(() => {
+    if (!open) return;
 
-  const originalOverflow = document.body.style.overflow;
+    const originalOverflow = document.body.style.overflow;
 
-  document.body.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
 
-  return () => {
-    document.body.style.overflow = originalOverflow;
-  };
-}, [open]);
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [open]);
   const { statusCode } = useSelector((state) => state.recharge_payment);
   useEffect(() => {}, [userData, responsedata]);
 
   const [sendGiftMutation] = useMutation(SEND_GIFT);
-   const [createOrder] = useMutation(CREATE_ORDER);
+  const [createOrder] = useMutation(CREATE_ORDER);
 
   const sendGift = async () => {
     if (!selected) {
@@ -154,94 +155,96 @@ useEffect(() => {
   };
 
   const handleCheckout = async (amount, packId) => {
-  try {
-    setAlert(true);
+    try {
+      setAlert(true);
 
-    const { data } = await createOrder({
-      variables: {
-        input: {
+      const { data } = await createOrder({
+        variables: {
+          input: {
+            rechargePackId: packId,
+          },
+        },
+      });
+
+      const order = data?.createOrder;
+
+      console.log("GraphQL Order:", order);
+
+      if (!order?.success) {
+        toast.error("Error creating order");
+        setAlert(false);
+        return;
+      }
+
+      const options = {
+        key:
+          process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_SNXjhTOgP1CIx0",
+
+        amount: order.amount,
+
+        currency: order.currency,
+
+        name: "Dhwani Astro LLP",
+
+        description: "Recharge Payment",
+
+        order_id: order.orderId,
+
+        notes: {
+          userId: userData?.id || "guest",
           rechargePackId: packId,
         },
-      },
-    });
 
-    const order = data?.createOrder;
+        handler: async function (response) {
+          console.log("Payment Success:", response);
 
-    console.log("GraphQL Order:", order);
+          toast.success("Payment Successful");
 
-    if (!order?.success) {
-      toast.error("Error creating order");
-      setAlert(false);
-      return;
-    }
-
-    const options = {
-      key:
-        process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ||
-        "rzp_test_SNXjhTOgP1CIx0",
-
-      amount: order.amount,
-
-      currency: order.currency,
-
-      name: "Dhwani Astro LLP",
-
-      description: "Recharge Payment",
-
-      order_id: order.orderId,
-
-      notes: {
-        userId: userData?.id || "guest",
-        rechargePackId: packId,
-      },
-
-      handler: async function (response) {
-        console.log("Payment Success:", response);
-
-        toast.success("Payment Successful");
-
-        await refetch();
-      },
-
-      modal: {
-        ondismiss: function () {
-          toast.error("Payment Cancelled");
+          await refetch();
         },
-      },
 
-      theme: {
-        color: "#fff49e",
-      },
-    };
+        modal: {
+          ondismiss: function () {
+            toast.error("Payment Cancelled");
+          },
+        },
 
-    setAlert(false);
+        theme: {
+          color: "#fff49e",
+        },
+      };
 
-    const razor = new window.Razorpay(options);
+      setAlert(false);
 
-    razor.open();
-  } catch (error) {
-    console.error("Checkout Error:", error);
+      const razor = new window.Razorpay(options);
 
-    setAlert(false);
+      razor.open();
+    } catch (error) {
+      console.error("Checkout Error:", error);
 
-    toast.error(error.message || "Payment failed");
-  }
-};
-const handleClose = () => {
-  console.log("Closing Gift Popup");
-  onClose?.();
-};
+      setAlert(false);
+
+      toast.error(error.message || "Payment failed");
+    }
+  };
+  const handleClose = () => {
+    console.log("Closing Gift Popup");
+    onClose?.();
+  };
   if (!open) return null;
+const storedUser = localStorage.getItem("user");
 
   return (
-<div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/10 overflow-y-auto">
+    <div className="fixed inset-0 z-9999 flex items-center justify-center bg-black/10 overflow-y-auto">
       <Script
         src="https://checkout.razorpay.com/v1/checkout.js"
         strategy="afterInteractive"
       />
-<div className="relative w-[92%] sm:w-[70%] max-w-md sm:max-w-xl max-h-[90vh] overflow-y-auto rounded-3xl p-3 sm:p-6 bg-white backdrop-blur-lg border border-white/30 shadow-[8px_8px_20px_#bebebe,-8px_-8px_20px_#ffffff1a]">        <button
+      <div className="relative w-[92%] sm:w-[70%] max-w-md sm:max-w-xl max-h-[90vh] overflow-y-auto rounded-3xl p-3 sm:p-6 bg-white backdrop-blur-lg border border-white/30 shadow-[8px_8px_20px_#bebebe,-8px_-8px_20px_#ffffff1a]">
+        {" "}
+        <button
           aria-label="Close Gift Popup"
-        onClick={handleClose}
+          onClick={handleClose}
           className="absolute cursor-pointer font-bold top-4 right-4 text-gray-800 hover:text-red-600 transition-all"
         >
           <svg
@@ -256,11 +259,9 @@ const handleClose = () => {
             <path d="M7.314 5.9l3.535-3.536A1 1 0 1 0 9.435.95L5.899 4.485 2.364.95A1 1 0 1 0 .95 2.364l3.535 3.535L.95 9.435a1 1 0 1 0 1.414 1.414l3.535-3.535 3.536 3.535a1 1 0 1 0 1.414-1.414L7.314 5.899z" />
           </svg>
         </button>
-
         <h2 className="sm:text-xl text-sm font-bold text-center text-[#2f1254] sm:mb-4 mb-2 drop-shadow">
           Send Gifts
         </h2>
-
         <div className="grid grid-cols-4 sm:grid-cols-4 gap-3 px-3 py-2 bg-purple-50 rounded-xl sm:gap-4 justify-items-center mb-5">
           {gifts.map((gift, i) => (
             <div
@@ -271,7 +272,7 @@ const handleClose = () => {
                   ? "border-yellow-500 shadow-inner"
                   : "border-transparent "
               }`}
-             >
+            >
               <Image
                 src={
                   gift?.image
@@ -290,7 +291,6 @@ const handleClose = () => {
             </div>
           ))}
         </div>
-
         {/* <div className="w-full bg-white/40 p-3 rounded-xl shadow-inner border border-white/40 mb-4">
           <p className="text-center text-sm font-semibold text-[#2f1254] mb-2">
             Recharge to seek blessing
@@ -313,37 +313,45 @@ const handleClose = () => {
             ))}
           </div>
         </div> */}
+      <div className="flex justify-between items-center">
+  <div>
+    {storedUser ? (
+      responsedata?.update_price ? (
+        <p className="text-gray-700 text-xs font-semibold">
+          ₹
+          {(
+            Number(responsedata?.update_price || 0) +
+            Number(priceupdate || 0)
+          ).toFixed(2)}
+        </p>
+      ) : (
+        <p className="text-gray-700 text-xs font-semibold">
+          ₹
+          {(
+            Number(walletData?.getUserWallet?.balanceCoins || 0) +
+            Number(priceupdate || 0)
+          ).toFixed(2)}
+        </p>
+      )
+    ) : null}
 
-        <div className="flex justify-between items-center">
-          <div>
-            {responsedata?.update_price ? (
-              <p className="text-gray-700 text-xs font-semibold">
-                {" "}
-                ₹{(responsedata?.update_price + priceupdate).toFixed(2)}
-              </p>
-            ) : (
-              <p className="text-gray-700 text-xs  font-semibold">
-                ₹
-                {(
-                  Number(walletData?.getUserWallet?.balanceCoins || 0) +
-                  Number(priceupdate || 0)
-                ).toFixed(2)}
-              </p>
-            )}
+    {storedUser && (
+      <p className="text-[10px] sm:text-xs text-gray-500">
+        Wallet Balance
+      </p>
+    )}
+  </div>
 
-            <p className="text-[10px] sm:text-xs text-gray-500">Wallet Balance</p>
-          </div>
-          <button
-            aria-label="Send Gift"
-            className="px-6 py-1 text-xs sm:py-2 bg-yellow-400 hover:bg-yellow-500 text-black font-semibold 
-          rounded-full shadow-[4px_4px_10px_#b9b9b9,-4px_-4px_10px_#ffffffa0] transition-all"
-            onClick={sendGift}
-          >
-            Send
-          </button>
-        </div>
+  <CustomButton
+    aria-label="Send Gift"
+    className="px-6 py-1 text-xs sm:py-2 bg-yellow-400 hover:bg-yellow-500 text-black font-semibold rounded-full shadow-[4px_4px_10px_#b9b9b9,-4px_-4px_10px_#ffffffa0] transition-all"
+    onClick={sendGift}
+  >
+    Send
+  </CustomButton>
+</div>
       </div>
-     <AlertLoading show={showAlert} title="Please Wait.." />
+      <AlertLoading show={showAlert} title="Please Wait.." />
     </div>
   );
 }

@@ -330,7 +330,7 @@ const KundliMilanPage = () => {
                           key={index}
                           className="px-2 py-2 rounded-lg shadow-lg point-bx flex gap-2 flex-col items-center justify-center bg-linear-to-r from-[#c54e5a6b] to-[#7042ac98]"
                         >
-                          <img
+                           <Image width={100} height={100} 
                             src={imageMap[key] || "/assets/icons/default.png"}
                             alt={key}
                             className="w-11 h-11 sm:w-12 sm:h-12 object-contain mb-2"

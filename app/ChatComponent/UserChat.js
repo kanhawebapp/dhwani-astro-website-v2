@@ -999,7 +999,7 @@ const UserChat = ({
                     {msg.replyTo.image && (
                     <span>
                               <Zoom>
-                                <img
+                                <Image width={100} height={100} 
                                   src={msg.replyTo.image}
                                   alt="reply-img"
                                   className="inline-block object-cover w-8 h-8 align-middle border border-gray-300 rounded-md"
@@ -1016,7 +1016,7 @@ const UserChat = ({
                 {msg.image && (
                   <div className="relative">
                        <Zoom>
-                            <img
+                             <Image width={100} height={100} 
                               src={msg.image}
                               alt="uploaded"
                               className="object-cover w-32 h-32 rounded-lg cursor-zoom-in"
@@ -1070,7 +1070,7 @@ const UserChat = ({
 
               {replyTo.image && (
                 <Zoom>
-                        <img
+                          <Image width={100} height={100} 
                           src={replyTo.image}
                           alt="reply-img"
                           className="inline-block object-cover w-8 h-8 align-middle border border-gray-300 rounded-md"
@@ -1091,7 +1091,7 @@ const UserChat = ({
         {/*  IMAGE PREVIEW */}
         {imagePreview && (
           <div className="px-3 py-2 flex items-start gap-0">
-            <img
+             <Image width={100} height={100} alt="hello"
               src={imagePreview}
               className="w-16 h-16 object-cover rounded"
             />

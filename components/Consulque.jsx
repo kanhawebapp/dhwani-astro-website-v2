@@ -1,6 +1,7 @@
 "use client";
 
 import useScrollZoom from "@/Hooks/scrollZoom";
+import Image from "next/image";
 import Link from "next/link";
 // import styles from "./NavBar.module.css"
 
@@ -77,13 +78,12 @@ export default function Consulque() {
               <div className="consul-box absolute z-40 sm:left-4 left-[-5px] lg:left-32">
                 <span className="font-semibold md:text-sm text-[.7rem] text-black"> Session Starts :  {conque.pri}</span>
               </div>
-              <img
+               <Image width={100} height={100} 
                 className=" w-15 sm:w-25 opacity-40"
                 src={conque.src}
                 alt="consultation image"
                 loading="lazy"
-                width={20}
-                height={20}
+               
               />
             </Link>
           ))}

@@ -239,7 +239,7 @@ export default function Footerlinks() {
             <div className="flex flex-col items-start content-start w-1/2 ab-pr-po sm:w-1/4 text-end">
               <div className="flex flex-col items-start">
                 <h2 className="text-sm sm:text-base underline ab-po-h underline-offset-4">
-                  {t?.footer?.business || "About & Policies"}
+                  {t?.footer?.business || "Business Information"}
                 </h2>
 
                 <ul className="flex flex-col items-start footer_head">
@@ -379,6 +379,64 @@ export default function Footerlinks() {
                 </div>
               </div>
             </div>
+          </div>
+
+          <div className="flex items-center  justify-center gap-10">
+                 <div className="flex items-center gap-5 justify-evenly">
+                <a
+                  href="https://www.youtube.com/@dhwaniastro"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Image
+                    src="/ds-img/ytt.png"
+                    width={35}
+                    height={35}
+                    alt="YouTube"
+                    unoptimized
+                  />
+                </a>
+                <a
+                  href="https://www.facebook.com/dhwaniastro"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Image
+                    src="/ds-img/fbb.png"
+                 width={35}
+                    height={35}
+                    alt="YouTube"
+                    unoptimized
+                  />
+                </a>{" "}
+                <a
+                  href="https://www.linkedin.com/company/dhwani-astro11/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Image
+                    src="/ds-img/link.png"
+                  width={35}
+                    height={35}
+                    alt="YouTube"
+                    unoptimized
+                  />
+                </a>{" "}
+                <a
+                  href="https://www.instagram.com/healer.dhwaaani/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Image
+                    src="/ds-img/insta.png"
+                  width={35}
+                    height={35}
+                    alt="YouTube"
+                    unoptimized
+                  />
+                </a>
+              </div>
+              <div> © 2026 Dhwani Astro. All Rights Reserved</div>
           </div>
         </div>
       </section>

@@ -138,7 +138,7 @@ export default function CallPage(
     return () => {
       audioContext.close();
     };
-  }, [remoteAudio.current?.srcObject]);
+  }, [remoteAudio.current?.srcObject]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const startRecording = () => {
     try {
@@ -652,7 +652,7 @@ export default function CallPage(
 
       cleanup();
     };
-  }, []);
+  }, []);// eslint-disable-line react-hooks/exhaustive-deps
 
   // call status time
   useEffect(() => {
@@ -682,7 +682,7 @@ export default function CallPage(
     return () => {
       clearInterval(timerRef.current);
     };
-  }, [callStatus]);
+  }, [callStatus]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleEndCall = () => {
     const stored = localStorage.getItem(`call_request_${roomId}`);
@@ -797,15 +797,14 @@ export default function CallPage(
       <div className="md:w-3/5 overflow-hidden w-full shadow-lg rounded-3xl  flex flex-col md:h-[95vh] h-[100vh]">
         <div className="flex flex-col w-full  rounded-3xl shadow-xl items-center justify-between py-10    h-full bg-gray-900 text-white">
           <div className="flex flex-col  items-center gap-3">
-            <img
+             <Image width={100} height={100} 
               src={
                 astroImage
                   ? `https://www.dhwaniastro.com${astroImage}`
                   : "/man.png"
               }
               alt={astroData?.astrologer?.name}
-              width={50}
-              height={50}
+            
               className="rounded-full object-cover"
             />
 
