@@ -391,7 +391,7 @@ export default function ProfileAstro({ astrologerId }) {
               <span className="text-xs sm:text-sm font-semibold text-black">
                 {astrologerdetail?.totalSessions || 0} + Satisfied Consultations
               </span>
-                  <div className="text-xs sm:text-sm my-1 font-medium text-gray-700">
+                  <div className="text-xs sm:text-sm my-1 text-black font-semibold">
                 👥 {followersCount} Followers
               </div>
 
@@ -463,7 +463,7 @@ export default function ProfileAstro({ astrologerId }) {
                       Start Chat
                     </span>
                     <div className="flex items-center gap-2">
-                      <span className="text-lg text-red-700 font-extrabold">
+                      <span className="text-lg text-red-500 font-extrabold">
                           {chatPricing?.price === 0 ? "Free" : `₹${chatPricing?.price}`}
                       </span>
 
@@ -504,7 +504,7 @@ export default function ProfileAstro({ astrologerId }) {
                       Start Call
                     </span>
                     <div className="flex items-center gap-2">
-                      <span className="text-lg text-red-700 font-extrabold">
+                      <span className="text-lg text-red-500 font-extrabold">
                          {callPricing?.price === 0 ? "Free" : `₹${callPricing?.price}`}
                       </span>
 
@@ -529,9 +529,7 @@ export default function ProfileAstro({ astrologerId }) {
                     astrologerdetail?.about || "No description available.",
                 }}
               />
-              <div className="text-xs sm:text-sm my-1 font-medium text-gray-700">
-                👥 {followersCount} Followers
-              </div>
+          
             </div>
           </div>
 

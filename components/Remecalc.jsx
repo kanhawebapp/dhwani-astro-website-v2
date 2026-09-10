@@ -12,7 +12,7 @@ export default function Remecalc() {
     {
       id: 1,
       ulname: `${t.remedies.rem1 || "Gemstones"}`,
-      src: "/ds-img/gem2.png",
+      src: "/ds-img/navratan.png",
       link: "/formpage",
       slug: "gemfol",
     },
@@ -77,34 +77,35 @@ export default function Remecalc() {
   ];
   const calbox = [
     {
-      id: 3,
+      id: 1,
       ulname: `${t.calculator.calc1 || "Numerology Calculator"}`,
       src: "/ds-img/numerologycal.png",
       link: "/formpage",
       slug: "numerokundali",
     },
     {
-      id: 5,
+      id: 2,
       ulname: `${t.calculator.calc2 || "Nakshatra Calculator"}`,
       src: "/ds-img/nakshatracal.png",
       link: "/formpage",
       slug: "nakform",
     },
     {
-      id: 9,
+      id: 3,
       ulname: `${t.calculator.calc3 || "Kundli Milan"}`,
       src: "/ds-img/matchmakingcal.png",
       link: "/doubleform",
       slug: "kundlislug",
     },
     {
-      id: 9,
+      id: 4,
       ulname: `${t.calculator.calc4 || "Moon Bio"}`,
       src: "/ds-img/moonbio.png",
       link: "/formpage",
       slug: "moonbio",
     },
   ];
+  
   return (
     <div className="astrology-remedies-section flex flex-col items-center justify-center relative w-full mx-auto py-0 sm:py-5 px-4 md:px-6">
       <div className="absolute inset-0 flex items-center justify-center">
@@ -126,30 +127,30 @@ export default function Remecalc() {
 
             <div className="flex  items-center gap-2 justify-start w-full">
               <div className="relative py-3 grid w-full  items-center justify-center grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-8 z-10">
-                {remedbox.map((rembx) => (
-                  <div className="flex flex-col gap-1">
-                    <Link
-                      href={{
-                        pathname: rembx.link,
-                        query: { slug: rembx.slug },
-                      }}
-                      key={rembx.id}
-                      className="remedies-card-top hover:scale-105 head-wrap  rounded-xl sm:h-26 h-23 text-center flex flex-col items-center justify-center gap-2"
-                    >
-                      <Image
-                        className="w-full h-auto"
-                        src={rembx.src}
-                        width={50}
-                        height={50}
-                        alt="service image"
-                        unoptimized
-                      />
-                    </Link>
-                    <h2 className="sm:text-sm text-center text-xs text-black ">
-                      {rembx.ulname}
-                    </h2>{" "}
-                  </div>
-                ))}
+             {remedbox.map((rembx) => (
+  <div key={rembx.id} className="flex flex-col gap-1">
+    <Link
+      href={{
+        pathname: rembx.link,
+        query: { slug: rembx.slug },
+      }}
+      className="remedies-card-top hover:scale-105 head-wrap rounded-xl sm:h-26 h-23 text-center flex flex-col items-center justify-center gap-2"
+    >
+      <Image
+        className="w-full h-auto"
+        src={rembx.src}
+        width={50}
+        height={50}
+        alt="service image"
+        unoptimized
+      />
+    </Link>
+
+    <h2 className="sm:text-sm text-center text-xs text-black">
+      {rembx.ulname}
+    </h2>
+  </div>
+))}
               </div>
             </div>
           </div>
@@ -164,29 +165,30 @@ export default function Remecalc() {
 
             <div className="flex  items-center gap-2 justify-start w-full">
               <div className="relative py-3 grid w-full  items-center justify-center grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 z-10">
-                {remdosha.map((remd) => (
-                  <div className="flex flex-col gap-5">
-                    <Link
-                      href={{
-                        pathname: remd.link,
-                        query: { slug: remd.slug },
-                      }}
-                      key={remd.id}
-                      className="remedies-card-top hover:scale-105 head-wrap  rounded-xl sm:h-26 h-23 text-center flex flex-col items-center justify-center "
-                    >
-                      <Image
-                        className="w-full h-auto"
-                        src={remd.src}
-                        width={50}
-                        height={50}
-                        alt="service image" unoptimized
-                      />
-                    </Link>
-                    <h2 className="sm:text-sm  text-center text-xs text-black ">
-                      {remd.ulname}
-                    </h2>
-                  </div>
-                ))}
+              {remdosha.map((remd) => (
+  <div key={remd.id} className="flex flex-col gap-5">
+    <Link
+      href={{
+        pathname: remd.link,
+        query: { slug: remd.slug },
+      }}
+      className="remedies-card-top hover:scale-105 head-wrap rounded-xl sm:h-26 h-23 text-center flex flex-col items-center justify-center"
+    >
+      <Image
+        className="w-full h-auto"
+        src={remd.src}
+        width={50}
+        height={50}
+        alt="service image"
+        unoptimized
+      />
+    </Link>
+
+    <h2 className="sm:text-sm text-center text-xs text-black">
+      {remd.ulname}
+    </h2>
+  </div>
+))}
               </div>
             </div>
           </div>
@@ -200,32 +202,35 @@ export default function Remecalc() {
             className="relative head-wrap text-[#2f1254] text-[15px] sm:text-xl lg:text-2xl  py-3 text-center font-semibold"
           ></h1>
           <div className="relative py-3 grid  max-w-7xl w-full items-center justify-center grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 z-10">
-            {calbox.map((calcu, index) => (
-              <div className="flex flex-col gap-5">
-                <Link
-                  href={
-                    calcu.link
-                      ? { pathname: calcu.link, query: { slug: calcu.slug } }
-                      : `/${calcu.slug}`
-                  }
-                  key={index}
-                      className="remedies-card-top hover:scale-105 head-wrap  rounded-xl sm:h-26 h-23 text-center flex flex-col items-center justify-center "
-                >
-                  <Image
-                    className="w-full h-auto"
-                    src={calcu.src}
-                    alt="free calculator image"
-                    height={15}
-                    width={15}
-                    loading="lazy"
-                    unoptimized
-                  />
-                </Link>
-                <h2 className="md:text-sm text-center text-xs   text-black ">
-                  {calcu.ulname}
-                </h2>
-              </div>
-            ))}
+          {calbox.map((calcu) => (
+  <div key={calcu.id} className="flex flex-col gap-5">
+    <Link
+      href={
+        calcu.link
+          ? {
+              pathname: calcu.link,
+              query: { slug: calcu.slug },
+            }
+          : `/${calcu.slug}`
+      }
+      className="remedies-card-top hover:scale-105 head-wrap rounded-xl sm:h-26 h-23 text-center flex flex-col items-center justify-center"
+    >
+      <Image
+        className="w-full h-auto"
+        src={calcu.src}
+        alt="free calculator image"
+        height={15}
+        width={15}
+        loading="lazy"
+        unoptimized
+      />
+    </Link>
+
+    <h2 className="md:text-sm text-center text-xs text-black">
+      {calcu.ulname}
+    </h2>
+  </div>
+))}
           </div>
         </div>
       </div>

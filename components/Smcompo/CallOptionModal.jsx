@@ -1,4 +1,5 @@
 'use client'
+import Image from "next/image";
 import React from "react";
 
 export default function CallOptionModal({ isOpen, onClose, onSelect }) {
@@ -23,7 +24,7 @@ export default function CallOptionModal({ isOpen, onClose, onSelect }) {
             onClick={() => onSelect("web")}
             className="flex flex-col hover:scale-102  cursor-pointer items-center p-5 bg-linear-to-r from-purple-500 via-purple-300 to-purple-500 hover:bg-purple-200 rounded-xl shadow-xl transition"
           >
-            <img
+            <Image width={100} height={100} 
               src="/prblm/video-conference.gif"
               alt="Web Call"
               className="w-16 h-16 mb-2 rounded-lg"
@@ -35,7 +36,7 @@ export default function CallOptionModal({ isOpen, onClose, onSelect }) {
             onClick={() => onSelect("mobile")}
             className="flex flex-col items-center hover:scale-102 cursor-pointer p-5 bg-linear-to-r from-purple-500 via-purple-300 to-purple-500 hover:bg-purple-200 rounded-xl shadow-md transition"
           >
-            <img
+             <Image width={100} height={100} 
               src="/prblm/phone-contact.gif"
               alt="Mobile Call"
               className="w-16 h-16 mb-2 rounded-lg"

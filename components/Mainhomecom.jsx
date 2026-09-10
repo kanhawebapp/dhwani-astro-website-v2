@@ -25,7 +25,7 @@ export default function  Mainhomecom() {
 
       {/* CLIENT lazy islands */}
       {/* <ProblembaseLazy /> */}
-      <Problembase />
+      {/* <Problembase /> */}
       <RemecalcLazy />
       <AstrostoreLazy />
       <DownappSection />

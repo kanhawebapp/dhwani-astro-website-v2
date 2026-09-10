@@ -57,10 +57,9 @@ const formatDate = (timestamp) => {
       <div className="flex items-start justify-between">
         <div className="w-[32%] pt-2">
           <div className="flex flex-col items-start">
-            <img
+             <Image width={100} height={100} 
               src="/ds-img/logo.webp"
-              width={100}
-              height={100}
+             
               alt="logo"
             />
           </div>

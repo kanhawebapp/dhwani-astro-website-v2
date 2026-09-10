@@ -126,6 +126,7 @@ export default function Testimon() {
                       src={getImageUrl(test.image)}
                       alt={test.name || "Customer image"}
                       width={40}
+                      unoptimized
                       height={40}
                       priority={i === 0}
                       loading={i === 0 ? "eager" : "lazy"}

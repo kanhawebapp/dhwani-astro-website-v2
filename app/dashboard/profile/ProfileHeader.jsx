@@ -115,12 +115,11 @@ try {
             <div className="flex items-center gap-6">
               <div className="relative">
                 <div className="flex h-18 w-18 sm:h-28 sm:w-28 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-violet-100 shadow-xl">
-                  <img
+                   <Image width={100} height={100} 
                   
                     src={user?.profileImage || "/ds-img/user2.webp"}
                     alt="Profile"
-                    width={110}
-                    height={110}
+                  
                     className="object-cover"
                   />
                 </div>

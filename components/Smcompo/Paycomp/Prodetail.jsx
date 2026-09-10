@@ -1,4 +1,5 @@
 'use client';
+import Image from "next/image";
 import { useState } from "react";
 
 export default function Prodetail({ initialQty = 1, totalQuantity = 10,amount }) {
@@ -24,7 +25,7 @@ export default function Prodetail({ initialQty = 1, totalQuantity = 10,amount })
         <div className="flex items-center justify-between p-4 border-t ">
           {/* Product Info */}
           <div className="flex flex-col items-center w-1/3 gap-4 sm:flex-row">
-            <img src="/ds-img/ser1.webp" alt="Pregnancy Healing" className="object-cover w-12 h-12 rounded sm:w-16 sm:h-16" />
+            <Image width={100} height={100} src="/ds-img/ser1.webp" alt="Pregnancy Healing" className="object-cover w-12 h-12 rounded sm:w-16 sm:h-16" />
             <div>
               <div className="text-xs font-medium sm:text-base">Pregnancy Healing</div>
               {/* <span className="text-xs text-white px-3 py-1 rounded-lg hidden sm:block place-self-center bg-[linear-gradient(to_right,_#a65ed677_54%,_#ba38cb67_100%)]">

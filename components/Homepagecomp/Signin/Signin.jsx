@@ -80,7 +80,7 @@ const SignInModal = ({ onClose }) => {
 
       setResetPhoneInput((prev) => prev + 1);
 
-      toast.success("OTP sent successfully 1");
+      toast.success("OTP sent successfully ");
     } catch (err) {
       toast.error(err.message);
     }
