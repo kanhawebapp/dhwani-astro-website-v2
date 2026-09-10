@@ -81,15 +81,18 @@ export default function KundliLayout({ children }) {
     if (!dob || !time) {
     }
 
-    let day, month, year, hour, min;
-    if (dob) {
-      const parts = dob.split("-");
-      if (parts.length === 3) {
-        year = Number(parts[0]);
-        month = Number(parts[1]);
-        day = Number(parts[2]);
-      }
-    }
+ let day, month, year, hour, min;
+
+if (dob) {
+  const dateOnly = dob.split("T")[0];
+  const parts = dateOnly.split("-");
+
+  if (parts.length === 3) {
+    year = Number(parts[0]);
+    month = Number(parts[1]);
+    day = Number(parts[2]);
+  }
+}
     if (time) {
       const tparts = time.split(":");
       if (tparts.length >= 2) {

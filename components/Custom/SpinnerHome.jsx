@@ -44,11 +44,21 @@ const spinWheel = () => {
 
 
   return (
-    <>
+    <> 
+<div
+  onClick={() => window.open("https://wa.me/919319490827", "_blank")}
+  className="cursor-pointer"
+>
+  <img
+    src="/ds-img/watsapp.gif"
+    alt="Gift"
+    className="w-17 h-17 object-contain fixed bottom-0 right-5 z-10"
+  />
+</div>
       <div
-        className="fixed bottom-0 right-5 z-10 shake-cycle cursor-pointer"
+        className="fixed hidden bottom-0 right-5 z-10 shake-cycle cursor-pointer"
         onClick={() => setOpen(true)}
-      >
+       >
         <Image
           src="/ds-img/spinnn.png"
           alt="spinner"

@@ -21,7 +21,7 @@ export default function  Mainhomecom() {
       {/* SERVER (fast!) */}
       <Banner />
       <Astronewcard />
-      {/* <SpinnerHome /> */}
+      <SpinnerHome />
 
       {/* CLIENT lazy islands */}
       {/* <ProblembaseLazy /> */}
