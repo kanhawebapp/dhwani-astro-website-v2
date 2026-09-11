@@ -1,4 +1,4 @@
-import { decodeKundliHash } from "@/utils/kundliHash";
+import { decodeKundliHash, decodeNumeroHash } from "@/utils/kundliHash";
 import NumerokundliClient from "./NumerokundliClient";
 
 export const revalidate = 3600;
@@ -14,7 +14,7 @@ export default async function Page({ searchParams }) {
     );
   }
 
-  const formData = decodeKundliHash(hash);
+  const formData = decodeNumeroHash(hash);
 
   if (!formData) {
     return (

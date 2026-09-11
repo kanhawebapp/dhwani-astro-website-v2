@@ -567,7 +567,7 @@ export default function Footerlinks() {
             </div>
 
             <div className="mt-4 sm:mt-8 border-t border-white/10 pt-5 text-center">
-              <p className="text-xs text-white/50 sm:text-sm">
+              <p className="text-xs text-white/70 sm:text-sm">
                 © 2026 Dhwani Astro. All Rights Reserved.
               </p>
             </div>
