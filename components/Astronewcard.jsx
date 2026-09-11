@@ -21,6 +21,7 @@ import { useQuery } from "@apollo/client/react";
 import { GET_ASTROLOGERS_USER } from "@/app/graphql/gqlQuery";
 import RecentRequestPopup from "./Custom/RecentRequestPopUp";
 import { useSelector } from "react-redux";
+import Recastro from "./Smcompo/Recastro";
 
 export default function Astronewcard() {
   const busySet = new Set();
@@ -70,8 +71,8 @@ export default function Astronewcard() {
 
   const { socket } = useContext(SocketContext);
 
-const astrologerlist =
-  astrologerResponse?.getAstrologerListForUser?.data || [];
+  const astrologerlist =
+    astrologerResponse?.getAstrologerListForUser?.data || [];
 
   useEffect(() => {
     if (!socket) {
@@ -163,38 +164,38 @@ const astrologerlist =
 
     goToRequest();
   };
-const getAstroStatus = (astro, mode) => {
-  const isServiceActive =
-    mode === "chat" ? astro?.isChatActive : astro?.isCallActive;
+  const getAstroStatus = (astro, mode) => {
+    const isServiceActive =
+      mode === "chat" ? astro?.isChatActive : astro?.isCallActive;
 
-  const isSocketBusy = busyAstros.includes(astro?.id);
+    const isSocketBusy = busyAstros.includes(astro?.id);
 
-  if (!astro?.isOnline) {
+    if (!astro?.isOnline) {
+      return {
+        color: "bg-red-600",
+        disabled: true,
+      };
+    }
+
+    if (!isServiceActive) {
+      return {
+        color: "bg-red-600",
+        disabled: true,
+      };
+    }
+
+    if (astro?.isBusy || isSocketBusy) {
+      return {
+        color: "bg-yellow-500",
+        disabled: false,
+      };
+    }
+
     return {
-      color: "bg-red-600",
-      disabled: true,
-    };
-  }
-
-  if (!isServiceActive) {
-    return {
-      color: "bg-red-600",
-      disabled: true,
-    };
-  }
-
-  if (astro?.isBusy || isSocketBusy) {
-    return {
-      color: "bg-yellow-500",
+      color: "bg-green-600",
       disabled: false,
     };
-  }
-
-  return {
-    color: "bg-green-600",
-    disabled: false,
   };
-};
   return (
     <section className="flex-col items-center self-center w-full sm:max-w-7xl">
       <div className="flex flex-col items-center justify-center rounded-full px-4 sm:py-4 py-0 sm:max-w-7xl">
@@ -390,8 +391,8 @@ const getAstroStatus = (astro, mode) => {
                         />
                       </div>
 
-                      <div className="flex flex-col items-center justify-center p-1 rounded-lg astrologer-price-skill md:p-2 bg-linear-to-r from-violet-200 to-purple-200">
-                        <div className="flex flex-col items-center gap-1 astro-name-exp">
+                      <div className="flex flex-col items-center justify-center gap-1 p-1 rounded-lg astrologer-price-skill md:p-2 bg-linear-to-r from-violet-200 to-purple-200">
+                        <div className="flex  flex-col items-center gap-1 astro-name-exp">
                           <h2
                             className="text-sm font-bold text-black  sm:text-base"
                             onClick={() =>
@@ -401,23 +402,23 @@ const getAstroStatus = (astro, mode) => {
                             {astro?.displayName || astro?.name}
                           </h2>
 
-                          <p className="w-[230px] text-[10px] md:text-xs text-black text-center truncate">
+                          <p className="sm:w-57.5 w-35 text-[10px] md:text-xs text-black text-center truncate">
                             {astro?.skills?.join(", ")}
                           </p>
-                          <div className="flex items-center gap-2 lang-bar">
+                          <div className="flex sm:w-57.5 w-35 items-center justify-center gap-2 lang-bar">
                             <svg width={10} height={10} viewBox="0 -64 640 640">
                               <path d="M152.1 236.2c-3.5-12.1-7.8-33.2-7.8-33.2h-.5s-4.3 21.1-7.8 33.2l-11.1 37.5H163zM616 96H336v320h280c13.3 0 24-10.7 24-24V120c0-13.3-10.7-24-24-24zm-24 120c0 6.6-5.4 12-12 12h-11.4c-6.9 23.6-21.7 47.4-42.7 69.9 8.4 6.4 17.1 12.5 26.1 18 5.5 3.4 7.3 10.5 4.1 16.2l-7.9 13.9c-3.4 5.9-10.9 7.8-16.7 4.3-12.6-7.8-24.5-16.1-35.4-24.9-10.9 8.7-22.7 17.1-35.4 24.9-5.8 3.5-13.3 1.6-16.7-4.3l-7.9-13.9c-3.2-5.6-1.4-12.8 4.2-16.2 9.3-5.7 18-11.7 26.1-18-7.9-8.4-14.9-17-21-25.7-4-5.7-2.2-13.6 3.7-17.1l6.5-3.9 7.3-4.3c5.4-3.2 12.4-1.7 16 3.4 5 7 10.8 14 17.4 20.9 13.5-14.2 23.8-28.9 30-43.2H412c-6.6 0-12-5.4-12-12v-16c0-6.6 5.4-12 12-12h64v-16c0-6.6 5.4-12 12-12h16c6.6 0 12 5.4 12 12v16h64c6.6 0 12 5.4 12 12zM0 120v272c0 13.3 10.7 24 24 24h280V96H24c-13.3 0-24 10.7-24 24zm58.9 216.1L116.4 167c1.7-4.9 6.2-8.1 11.4-8.1h32.5c5.1 0 9.7 3.3 11.4 8.1l57.5 169.1c2.6 7.8-3.1 15.9-11.4 15.9h-22.9a12 12 0 0 1-11.5-8.6l-9.4-31.9h-60.2l-9.1 31.8c-1.5 5.1-6.2 8.7-11.5 8.7H70.3c-8.2 0-14-8.1-11.4-15.9z" />
                             </svg>
-                            <p className="text-[10px] md:text-xs text-black  whitespace-nowrap overflow-hidden text-ellipsis">
+                            <p className=" text-[10px] md:text-xs text-black  whitespace-nowrap overflow-hidden text-ellipsis">
                               {astro?.languages?.join(", ")}
                             </p>
                           </div>
 
                           <span className="flex flex-wrap items-center justify-center gap-1">
-                            <p className="text-[10px] md:text-xs text-yellow-300 bg-[#00000880] rounded-lg py-1 px-2 w-fit">
+                            <p className="text-[10px] md:text-xs text-yellow-300 bg-[#00000880] rounded-lg sm:py-1 px-2 w-fit">
                               Exp: {astro?.experience} Yrs
                             </p>
-                            <p className="text-[10px] md:text-xs bg-[#00000880] text-yellow-300 rounded-lg py-1 px-2 w-fit flex items-center gap-2">
+                            <p className="text-[10px] md:text-xs bg-[#00000880] text-yellow-300 rounded-lg sm:py-1 px-2 w-fit flex items-center gap-2">
                               {astro?.rating.toFixed(1)}
                               <svg
                                 width={10}
@@ -441,7 +442,7 @@ const getAstroStatus = (astro, mode) => {
                         </div>
 
                         <div className="flex items-center justify-center w-full  astrologer-price-box">
-                          <div className="mt-2 text-[10px] sm:text-xs  font-semibold flex gap-1 items-center justify-center">
+                          <div className="sm:mt-2 text-[10px] sm:text-xs  font-semibold flex gap-1 items-center justify-center">
                             {/* <span className="text-black">
                               Price : ₹ {astro?.disc_chat_charge}/min
                             </span>
@@ -478,102 +479,108 @@ const getAstroStatus = (astro, mode) => {
                         </div>
                       </div>
                     </div>
-                  <div className="flex justify-around w-full mt-1 space-x-4 md:mt-1">
-  {/* CALL BUTTON */}
-{(() => {
-  const callStatus = getAstroStatus(astro, "call");
+                    <div className="flex justify-around w-full mt-1 space-x-4 md:mt-1">
+                      {/* CALL BUTTON */}
+                      {(() => {
+                        const callStatus = getAstroStatus(astro, "call");
 
-  const callPrice = astro?.pricing?.find(
-    (item) => item.type === "CALL" && item.isActive,
-  );
+                        const callPrice = astro?.pricing?.find(
+                          (item) => item.type === "CALL" && item.isActive,
+                        );
 
-  return (
-    <CustomButton
-      disabled={callStatus.disabled}
-      aria-label="Call Astrologer"
-      className={`${callStatus.color} rounded-full p-3 ${
-        callStatus.disabled
-          ? "cursor-not-allowed opacity-70"
-          : "cursor-pointer"
-      }`}
-      onClick={() => {
-        if (callStatus.disabled) return;
+                        return (
+                          <CustomButton
+                            disabled={callStatus.disabled}
+                            aria-label="Call Astrologer"
+                            className={`${callStatus.color} rounded-full p-3 ${
+                              callStatus.disabled
+                                ? "cursor-not-allowed opacity-70"
+                                : "cursor-pointer"
+                            }`}
+                            onClick={() => {
+                              if (callStatus.disabled) return;
 
-        handleClick({
-          id: astro?.id,
-          mode: "call",
-          price: callPrice?.offerPrice || callPrice?.price || 0,
-          astro,
-        });
-      }}
-    >
-      <svg
-        width={20}
-        height={20}
-        viewBox="0 0 16 16"
-        version="1.1"
-        className="si-glyph si-glyph-call"
-      >
-        <g
-          stroke="none"
-          strokeWidth="1"
-          fill="none"
-          fillRule="evenodd"
-        >
-          <path
-            d="M14.031,11.852 C13.603,11.313 12.908,10.532 12.313,10.458 C11.951,10.413 11.535,10.713 11.125,10.996 C11.045,11.036 10.427,11.404 10.352,11.426 C9.956,11.539 9.111,11.572 8.6,11.106 C8.108,10.656 7.33,9.823 6.702,9.06 C6.102,8.274 5.473,7.329 5.151,6.749 C4.815,6.148 5.057,5.353 5.265,5.003 C5.303,4.94 5.763,4.467 5.866,4.357 L5.881,4.375 C6.262,4.055 6.661,3.73 6.706,3.378 C6.78,2.792 6.181,1.939 5.753,1.399 C5.325,0.858 4.662,-0.089 3.759,0.045 C3.419,0.095 3.126,0.214 2.837,0.385 L2.829,0.376 C2.823,0.38 2.795,0.402 2.781,0.413 C2.772,0.418 2.764,0.421 2.756,0.426 L2.759,0.43 C2.593,0.558 2.119,0.912 2.065,0.96 C1.479,1.481 0.597,2.708 1.279,4.915 C1.785,6.555 2.864,8.481 4.334,10.429 L4.326,10.436 C4.398,10.53 4.472,10.615 4.547,10.706 C4.617,10.799 4.686,10.891 4.758,10.983 L4.768,10.976 C6.328,12.855 7.964,14.357 9.457,15.243 C11.467,16.435 12.896,15.898 13.556,15.471 C13.618,15.43 14.09,15.063 14.25,14.942 L14.254,14.946 C14.26,14.94 14.264,14.932 14.272,14.926 C14.284,14.917 14.31,14.897 14.315,14.893 L14.309,14.885 C14.551,14.651 14.745,14.401 14.879,14.086 C15.23,13.257 14.459,12.393 14.031,11.852 L14.031,11.852 Z"
-            fill="#fff"
-            className="si-glyph-fill"
-          />
-        </g>
-      </svg>
-    </CustomButton>
-  );
-})()}
+                              handleClick({
+                                id: astro?.id,
+                                mode: "call",
+                                price:
+                                  callPrice?.offerPrice ||
+                                  callPrice?.price ||
+                                  0,
+                                astro,
+                              });
+                            }}
+                          >
+                            <svg
+                              width={20}
+                              height={20}
+                              viewBox="0 0 16 16"
+                              version="1.1"
+                              className="si-glyph si-glyph-call"
+                            >
+                              <g
+                                stroke="none"
+                                strokeWidth="1"
+                                fill="none"
+                                fillRule="evenodd"
+                              >
+                                <path
+                                  d="M14.031,11.852 C13.603,11.313 12.908,10.532 12.313,10.458 C11.951,10.413 11.535,10.713 11.125,10.996 C11.045,11.036 10.427,11.404 10.352,11.426 C9.956,11.539 9.111,11.572 8.6,11.106 C8.108,10.656 7.33,9.823 6.702,9.06 C6.102,8.274 5.473,7.329 5.151,6.749 C4.815,6.148 5.057,5.353 5.265,5.003 C5.303,4.94 5.763,4.467 5.866,4.357 L5.881,4.375 C6.262,4.055 6.661,3.73 6.706,3.378 C6.78,2.792 6.181,1.939 5.753,1.399 C5.325,0.858 4.662,-0.089 3.759,0.045 C3.419,0.095 3.126,0.214 2.837,0.385 L2.829,0.376 C2.823,0.38 2.795,0.402 2.781,0.413 C2.772,0.418 2.764,0.421 2.756,0.426 L2.759,0.43 C2.593,0.558 2.119,0.912 2.065,0.96 C1.479,1.481 0.597,2.708 1.279,4.915 C1.785,6.555 2.864,8.481 4.334,10.429 L4.326,10.436 C4.398,10.53 4.472,10.615 4.547,10.706 C4.617,10.799 4.686,10.891 4.758,10.983 L4.768,10.976 C6.328,12.855 7.964,14.357 9.457,15.243 C11.467,16.435 12.896,15.898 13.556,15.471 C13.618,15.43 14.09,15.063 14.25,14.942 L14.254,14.946 C14.26,14.94 14.264,14.932 14.272,14.926 C14.284,14.917 14.31,14.897 14.315,14.893 L14.309,14.885 C14.551,14.651 14.745,14.401 14.879,14.086 C15.23,13.257 14.459,12.393 14.031,11.852 L14.031,11.852 Z"
+                                  fill="#fff"
+                                  className="si-glyph-fill"
+                                />
+                              </g>
+                            </svg>
+                          </CustomButton>
+                        );
+                      })()}
 
-  {/* CHAT BUTTON */}
-{(() => {
-  const chatStatus = getAstroStatus(astro, "chat");
+                      {/* CHAT BUTTON */}
+                      {(() => {
+                        const chatStatus = getAstroStatus(astro, "chat");
 
-  const chatPrice = astro?.pricing?.find(
-    (item) => item.type === "CHAT" && item.isActive,
-  );
+                        const chatPrice = astro?.pricing?.find(
+                          (item) => item.type === "CHAT" && item.isActive,
+                        );
 
-  return (
-    <CustomButton
-      disabled={chatStatus.disabled}
-      aria-label="Chat with Astrologer"
-      className={`${chatStatus.color} rounded-full p-3 ${
-        chatStatus.disabled
-          ? "cursor-not-allowed opacity-70"
-          : "cursor-pointer"
-      }`}
-      onClick={() => {
-        if (chatStatus.disabled) return;
+                        return (
+                          <CustomButton
+                            disabled={chatStatus.disabled}
+                            aria-label="Chat with Astrologer"
+                            className={`${chatStatus.color} rounded-full p-3 ${
+                              chatStatus.disabled
+                                ? "cursor-not-allowed opacity-70"
+                                : "cursor-pointer"
+                            }`}
+                            onClick={() => {
+                              if (chatStatus.disabled) return;
 
-        handleClick({
-          id: astro?.id,
-          mode: "chat",
-          price: chatPrice?.offerPrice || chatPrice?.price || 0,
-          astro,
-        });
-      }}
-    >
-      <svg
-        width="20px"
-        height="20px"
-        viewBox="0 0 16 16"
-        version="1.1"
-      >
-        <path
-          fill="#fff"
-          d="M14 14.2c0 0 0 0 0 0 0-0.6 2-1.8 2-3.1 0-1.5-1.4-2.7-3.1-3.2 0.7-0.8 1.1-1.7 1.1-2.8 0-2.8-2.9-5.1-6.6-5.1-3.5 0-7.4 2.1-7.4 5.1 0 2.1 1.6 3.6 2.3 4.2-0.1 1.2-0.6 1.7-0.6 1.7l-1.2 1h1.5c1.6 0 2.9-0.5 3.7-1.1 0 0.1 0 0.1 0 0.2 0 2 2.2 3.6 5 3.6 0.2 0 0.6 0 0.6 0 0.4 0.5 1.7 1.4 3.4 1.4 0.1-0.1-0.7-0.5-0.7-1.9zM7.4 1c3.1 0 5.6 1.9 5.6 4.1s-2.6 4.1-5.8 4.1c-0.2 0-0.6 0-0.8 0h-0.3l-.1.2c-.3.4-1.5 1.2-3.1 1.5.1-.4.1-1 .1-1.8v-.3c-1-.8-2.1-2.2-2.1-3.6 0-2.2 3.2-4.2 6.5-4.2z"
-        />
-      </svg>
-    </CustomButton>
-  );
-})()}
-</div>
+                              handleClick({
+                                id: astro?.id,
+                                mode: "chat",
+                                price:
+                                  chatPrice?.offerPrice ||
+                                  chatPrice?.price ||
+                                  0,
+                                astro,
+                              });
+                            }}
+                          >
+                            <svg
+                              width="20px"
+                              height="20px"
+                              viewBox="0 0 16 16"
+                              version="1.1"
+                            >
+                              <path
+                                fill="#fff"
+                                d="M14 14.2c0 0 0 0 0 0 0-0.6 2-1.8 2-3.1 0-1.5-1.4-2.7-3.1-3.2 0.7-0.8 1.1-1.7 1.1-2.8 0-2.8-2.9-5.1-6.6-5.1-3.5 0-7.4 2.1-7.4 5.1 0 2.1 1.6 3.6 2.3 4.2-0.1 1.2-0.6 1.7-0.6 1.7l-1.2 1h1.5c1.6 0 2.9-0.5 3.7-1.1 0 0.1 0 0.1 0 0.2 0 2 2.2 3.6 5 3.6 0.2 0 0.6 0 0.6 0 0.4 0.5 1.7 1.4 3.4 1.4 0.1-0.1-0.7-0.5-0.7-1.9zM7.4 1c3.1 0 5.6 1.9 5.6 4.1s-2.6 4.1-5.8 4.1c-0.2 0-0.6 0-0.8 0h-0.3l-.1.2c-.3.4-1.5 1.2-3.1 1.5.1-.4.1-1 .1-1.8v-.3c-1-.8-2.1-2.2-2.1-3.6 0-2.2 3.2-4.2 6.5-4.2z"
+                              />
+                            </svg>
+                          </CustomButton>
+                        );
+                      })()}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -581,6 +588,7 @@ const getAstroStatus = (astro, mode) => {
           ))}
         </Swiper>
       </div>
+        {/* <Recastro astrologers={astrologerlist} /> */}
       <AlertLoading show={alert} title="Please Wait.." />
       <RecentRequestPopup
         show={showRecentPopup}

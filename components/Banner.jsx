@@ -90,6 +90,7 @@ export default function Banner() {
                 src={`https://dhwaniastro.com${banner.imageUrl}`}
                 alt={banner.heading || "Banner"}
                 fill
+                unoptimized
                 priority={index === 0}
                 loading={index === 0 ? "eager" : "lazy"}
                 className="object-cover"

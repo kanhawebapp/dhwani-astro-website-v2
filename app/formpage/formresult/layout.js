@@ -2,8 +2,8 @@ import Callchatsec from "@/components/Smcompo/Callchatsec";
 import FAQue from "@/components/FAQue";
 import Kuninterimg from "@/components/Kundli/Kundliinter/Kunfreeimg";
 import Bestsell from "@/components/Smcompo/Bestsell/Bestsell";
-import Freereport from "@/components/Smcompo/Freereport";
-import Recastro from "@/components/Smcompo/Recastro";
+// import Freereport from "@/components/Smcompo/Freereport";
+// import Recastro from "@/components/Smcompo/Recastro";
 import Sidebanner from "@/components/Smcompo/Sidebanner";
 import Link from "next/link";
 export default function layout({ children }) {
@@ -34,8 +34,8 @@ export default function layout({ children }) {
           </div>
         </div>
 
-        <Freereport />
-        <Recastro />
+        {/* <Freereport /> */}
+        {/* <Recastro /> */}
         <FAQue />
         <Callchatsec />
       </section>

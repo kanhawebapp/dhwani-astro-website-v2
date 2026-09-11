@@ -7,8 +7,8 @@ import { setdaUserForm } from "@/app/redux/services/daUserFormSlice";
 import Kundlioth from "../Smcompo/Kundlioth";
 import Bestsell from "../Smcompo/Bestsell/Bestsell";
 import Sidebanner from "../Smcompo/Sidebanner";
-import Freereport from "../Smcompo/Freereport";
-import Recastro from "../Smcompo/Recastro";
+// import Freereport from "../Smcompo/Freereport";
+// import Recastro from "../Smcompo/Recastro";
 import FAQue from "../FAQue";
 import Callchatsec from "../Smcompo/Callchatsec";
 
@@ -408,8 +408,8 @@ const Kundlimain = () => {
 
       <AlertLoading show={alert} title="Generating Kundli..." />
 
-      <Freereport />
-      <Recastro />
+      {/* <Freereport /> */}
+      {/* <Recastro /> */}
       <FAQue />
       <Callchatsec />
     </section>

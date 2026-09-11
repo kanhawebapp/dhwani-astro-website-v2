@@ -3,7 +3,7 @@
 import HoroscopeClient from "@/components/navbarcomp/Horoscope/Horoscope";
 import Zodhoro from "@/components/navbarcomp/Horoscope/Zodhoro/Zodhoro";
 import ZodiacServer from "@/app/zodiac/ZodiacServer";
-import Freereport from "@/components/Smcompo/Freereport";
+// import Freereport from "@/components/Smcompo/Freereport";
 import { useEffect } from "react";
 
 export default function HoroscopePage({
@@ -47,7 +47,7 @@ export default function HoroscopePage({
 
       <ZodiacServer />
 
-      <Freereport />
+      {/* <Freereport /> */}
     </div>
   );
 }

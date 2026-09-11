@@ -10,7 +10,7 @@ import {
   GET_ASTROLOGERS_GUEST,
   GET_ASTROLOGERS_USER,
 } from "@/app/graphql/gqlQuery";
-
+import { NetworkStatus } from "@apollo/client";
 export default function Page() {
   const params = useParams();
   const mode = params?.mode;
@@ -27,6 +27,7 @@ const {
   error,
   fetchMore,
   refetch,
+  networkStatus,
 } = useQuery(selectedQuery, {
   skip: authLoading,
   variables: {
@@ -39,15 +40,12 @@ const {
     },
   },
   fetchPolicy: "network-only",
+  notifyOnNetworkStatusChange: true,
 });
-// console.log("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",{
-//   loading,
-//   error,
-//   data,
-// });
-  if (loading || authLoading) {
-    return <Astroskelton />;
-  }
+
+if ((loading && networkStatus === NetworkStatus.loading) || authLoading) {
+  return <Astroskelton />;
+}
 
   if (error) {
     return <p className="text-red-500">Error: {error.message}</p>;

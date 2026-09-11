@@ -7,7 +7,7 @@ import Forminp from "@/components/Homepagecomp/Consultations/Concompo/Forminp";
 import { useDispatch } from "react-redux";
 import { setBookingInput } from "@/app/redux/reducer/Booking/BookingReducer";
 import { validateEmail, validatePhone } from "@/app/helper/validation";
-import Freereport from "@/components/Smcompo/Freereport";
+// import Freereport from "@/components/Smcompo/Freereport";
 import Searchtop from "@/components/Smcompo/Searchtop";
 import { GET_SERVICE } from "@/app/graphql/gqlQuery";
 import { useQuery } from "@apollo/client/react";
@@ -156,7 +156,7 @@ const Heal = ({ categorySlug, serviceSlug }) => {
           )}
         </div>
       </div>
-      <Freereport />
+      {/* <Freereport /> */}
     </div>
   );
 };

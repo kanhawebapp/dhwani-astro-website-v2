@@ -5,7 +5,7 @@ import Link from "next/link";
 
 import Searchtop from "../Smcompo/Searchtop";
 import { useState } from "react";
-import Freereport from "../Smcompo/Freereport";
+// import Freereport from "../Smcompo/Freereport";
 import { useLanguage } from "@/app/context/LangContext";
 import useScrollZoom from "@/Hooks/scrollZoom";
 import { useQuery } from "@apollo/client/react";
@@ -106,7 +106,7 @@ export default function CategoryServices({ categorySlug }) {
         )}
       </div>
 
-      <Freereport />
+      {/* <Freereport /> */}
     </section>
   );
 }

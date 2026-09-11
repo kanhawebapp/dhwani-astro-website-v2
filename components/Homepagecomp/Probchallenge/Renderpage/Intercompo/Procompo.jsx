@@ -1,6 +1,6 @@
 "use client";
 
-import Freereport from "@/components/Smcompo/Freereport";
+// import Freereport from "@/components/Smcompo/Freereport";
 import Image from "next/image";
 
 import Link from "next/link";
@@ -52,7 +52,7 @@ export default function Procompo({ data, heading }) {
                 </div>
 
             </div>
-            <Freereport />
+            {/* <Freereport /> */}
         </>
     );
 }

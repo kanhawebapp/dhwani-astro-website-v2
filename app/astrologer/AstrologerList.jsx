@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useLanguage } from "../context/LangContext";
 import FilterBar from "@/components/Smcompo/Filter";
 import AstroCCard from "@/components/navbarcomp/AstroCCard";
@@ -12,12 +12,17 @@ export default function AstrologerList({
   mode,
 }) {
   const { messages: t } = useLanguage();
+
   const isFirstRender = useRef(true);
   const isFetchingMore = useRef(false);
-const loadedPages = useRef(new Set([1]));
+  const loadedPages = useRef(new Set([1]));
 
   const [sortType, setSortType] = useState("ratingHigh");
   const [page, setPage] = useState(1);
+
+  const [allAstrologers, setAllAstrologers] = useState(
+    serverdata?.data || []
+  );
 
   const [selectedCategory, setSelectedCategory] = useState({
     id: "all",
@@ -26,6 +31,9 @@ const loadedPages = useRef(new Set([1]));
 
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  const totalPages = serverdata?.totalPages || 1;
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -37,47 +45,36 @@ const loadedPages = useRef(new Set([1]));
 
   const searchInput = useMemo(
     () => ({
-      limit: 8,
+      limit: 12,
       query: debouncedSearch || null,
-      category: selectedCategory.id === "all" ? null : selectedCategory.name,
+      category:
+        selectedCategory.id === "all" ? null : selectedCategory.name,
       sortField: "RATING",
       sortOrder: "DESC",
       type: mode?.toUpperCase(),
     }),
-    [debouncedSearch, selectedCategory, mode],
+    [debouncedSearch, selectedCategory, mode]
   );
 
-  const allAstrologers = useMemo(
-    () => serverdata?.data || [],
-    [serverdata?.data],
-  );
+  /*
+   * Initial / Refetched data
+   */
+  useEffect(() => {
+    if (!serverdata?.data) return;
 
-  const totalPages = serverdata?.totalPages || 1;
-
-  const filteredAstrologers = useMemo(() => {
-    const filtered = allAstrologers.filter(
-      (item) => item && typeof item === "object",
-    );
-
-    const sortMap = {
-      expHigh: (a, b) => (b?.experience ?? 0) - (a?.experience ?? 0),
-      expLow: (a, b) => (a?.experience ?? 0) - (b?.experience ?? 0),
-      priceHigh: (a, b) => (b?.price ?? 0) - (a?.price ?? 0),
-      priceLow: (a, b) => (a?.price ?? 0) - (b?.price ?? 0),
-      ratingHigh: (a, b) => (b?.rating ?? 0) - (a?.rating ?? 0),
-      ratingLow: (a, b) => (a?.rating ?? 0) - (b?.rating ?? 0),
-    };
-
-    sortMap[sortType]?.(filtered);
-
-    if (sortMap[sortType]) {
-      filtered.sort(sortMap[sortType]);
+    /*
+     * Sirf page 1 ka data directly set karo.
+     * Page 2 ke baad Apollo ke cache update ki wajah se
+     * existing list reset nahi hogi.
+     */
+    if (page === 1) {
+      setAllAstrologers(serverdata.data);
     }
+  }, [serverdata?.data, page]);
 
-    return filtered;
-  }, [allAstrologers, sortType]);
-
-  // Search / Category Change
+  /*
+   * Search / Category change
+   */
   useEffect(() => {
     if (!refetch) return;
 
@@ -87,7 +84,10 @@ const loadedPages = useRef(new Set([1]));
     }
 
     setPage(1);
-loadedPages.current = new Set([1]);
+    setLoadingMore(false);
+    isFetchingMore.current = false;
+    loadedPages.current = new Set([1]);
+
     refetch({
       searchInput: {
         ...searchInput,
@@ -96,16 +96,11 @@ loadedPages.current = new Set([1]);
     });
   }, [searchInput, refetch]);
 
- // Infinite Scroll
-useEffect(() => {
-  if (!fetchMore) return;
-
-  const handleScroll = async () => {
-    const nearBottom =
-      window.innerHeight + window.scrollY >=
-      document.documentElement.scrollHeight - 100;
-
-    if (!nearBottom) return;
+  /*
+   * Load next page
+   */
+  const loadNextPage = useCallback(async () => {
+    if (!fetchMore) return;
 
     if (isFetchingMore.current) return;
 
@@ -113,10 +108,10 @@ useEffect(() => {
 
     const nextPage = page + 1;
 
-    // Same page dobara fetch mat karo
     if (loadedPages.current.has(nextPage)) return;
 
     isFetchingMore.current = true;
+    setLoadingMore(true);
 
     try {
       const result = await fetchMore({
@@ -126,57 +121,110 @@ useEffect(() => {
             page: nextPage,
           },
         },
-
-        updateQuery: (prev, { fetchMoreResult }) => {
-          if (!fetchMoreResult) return prev;
-
-          const key = prev.getAstrologerListForUser
-            ? "getAstrologerListForUser"
-            : "getAstrologerListBySearch";
-
-          const oldData = prev[key]?.data ?? [];
-          const newData = fetchMoreResult[key]?.data ?? [];
-
-          // ID ke basis par duplicate remove
-          const uniqueData = [
-            ...oldData,
-            ...newData.filter(
-              (newAstro) =>
-                !oldData.some(
-                  (oldAstro) => oldAstro?.id === newAstro?.id
-                )
-            ),
-          ];
-
-          return {
-            [key]: {
-              ...fetchMoreResult[key],
-              data: uniqueData,
-            },
-          };
-        },
       });
 
-      // Page successfully fetch hone ke baad mark karo
-      loadedPages.current.add(nextPage);
+      const resultData =
+        result?.data?.getAstrologerListForUser ||
+        result?.data?.getAstrologerListBySearch;
 
+      const newAstrologers = resultData?.data || [];
+
+      if (newAstrologers.length > 0) {
+        setAllAstrologers((prev) => {
+          const existingIds = new Set(prev.map((astro) => astro?.id));
+
+          const uniqueAstrologers = newAstrologers.filter(
+            (astro) => astro?.id && !existingIds.has(astro.id)
+          );
+
+          return [...prev, ...uniqueAstrologers];
+        });
+      }
+
+      loadedPages.current.add(nextPage);
       setPage(nextPage);
     } catch (error) {
-      console.error("Error loading astrologers:", error);
+      console.error("Error loading next astrologer page:", error);
     } finally {
       isFetchingMore.current = false;
+      setLoadingMore(false);
     }
-  };
+  }, [fetchMore, page, totalPages, searchInput]);
 
-  window.addEventListener("scroll", handleScroll);
+  /*
+   * Scroll based pagination
+   *
+   * Cards ke end se 600px pehle next page load hoga.
+   */
+  useEffect(() => {
+    const handleScroll = () => {
+      if (isFetchingMore.current) return;
 
-  return () => {
-    window.removeEventListener("scroll", handleScroll);
-  };
-}, [fetchMore, searchInput, page, totalPages]);
+      if (page >= totalPages) return;
+
+      const scrollPosition =
+        window.innerHeight + window.scrollY;
+
+      const documentHeight =
+        document.documentElement.scrollHeight;
+
+      const distanceFromBottom =
+        documentHeight - scrollPosition;
+
+      /*
+       * 600px before actual bottom
+       */
+      if (distanceFromBottom <= 600) {
+        loadNextPage();
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, {
+      passive: true,
+    });
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, [loadNextPage, page, totalPages]);
+
+  /*
+   * Sorting
+   */
+  const filteredAstrologers = useMemo(() => {
+    const filtered = allAstrologers.filter(
+      (item) => item && typeof item === "object"
+    );
+
+    const sortMap = {
+      expHigh: (a, b) =>
+        (b?.experience ?? 0) - (a?.experience ?? 0),
+
+      expLow: (a, b) =>
+        (a?.experience ?? 0) - (b?.experience ?? 0),
+
+      priceHigh: (a, b) =>
+        (b?.price ?? 0) - (a?.price ?? 0),
+
+      priceLow: (a, b) =>
+        (a?.price ?? 0) - (b?.price ?? 0),
+
+      ratingHigh: (a, b) =>
+        (b?.rating ?? 0) - (a?.rating ?? 0),
+
+      ratingLow: (a, b) =>
+        (a?.rating ?? 0) - (b?.rating ?? 0),
+    };
+
+    if (sortMap[sortType]) {
+      filtered.sort(sortMap[sortType]);
+    }
+
+    return filtered;
+  }, [allAstrologers, sortType]);
 
   return (
-    <section className="flex flex-col items-center w-full sm:p-5">
+    <section className="flex w-full flex-col items-center sm:p-5">
       <FilterBar
         title={
           mode === "chat"
@@ -190,7 +238,20 @@ useEffect(() => {
         mode={mode}
       />
 
-      <AstroCCard mode={mode} data={filteredAstrologers} loading={false} />
+      <AstroCCard
+        mode={mode}
+        data={filteredAstrologers}
+        loading={false}
+      />
+
+      {loadingMore && page < totalPages && (
+        <div className="flex w-full items-center justify-center py-6">
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            <span className="h-5 w-5 animate-spin rounded-full border-2 border-gray-300 border-t-purple-600" />
+            Loading more astrologers...
+          </div>
+        </div>
+      )}
     </section>
   );
 }
