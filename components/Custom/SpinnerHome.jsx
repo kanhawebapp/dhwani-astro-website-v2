@@ -47,12 +47,12 @@ const spinWheel = () => {
     <> 
 <div
   onClick={() => window.open("https://wa.me/919319490827", "_blank")}
-  className="cursor-pointer"
+  className="cursor-pointer z-999"
 >
   <img
     src="/ds-img/watsapp.gif"
     alt="Gift"
-    className="w-17 h-17 object-contain fixed bottom-0 right-5 z-10"
+    className="sm:w-17 sm:h-17 w-13 h-13 object-contain fixed bottom-0 right-1 sm:right-5 z-10"
   />
 </div>
       <div

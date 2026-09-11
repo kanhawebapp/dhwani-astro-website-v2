@@ -49,16 +49,16 @@ export default function RudrasuggestClient({ formData }) {
         </span>
 
         <div className="flex flex-col gap-3 text-sm">
-          <div className="flex justify-center">
+          {/* <div className="flex justify-center">
             <Image
-              src={`https://json.astrologyapi.com/v1${rudraData.img_url}`}
+              src={`https://json.astrologyapi.com/v1/rudraksha_suggestion${rudraData.img_url}`}
               width={120}
               height={120}
               alt="Rudraksha image"
               className="rounded"
               unoptimized
             />
-          </div>
+          </div> */}
 
           <Info label="Rudraksha Name" value={rudraData.name} />
           <Info label="Rudraksha Key" value={rudraData.rudraksha_key} />

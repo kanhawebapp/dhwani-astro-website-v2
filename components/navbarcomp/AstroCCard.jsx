@@ -24,8 +24,7 @@ function AstroCCard({ mode = "chat", data = [], loading }) {
   useEffect(() => {
     setSameUser(parseInt(id));
   }, [id]);
-  const [visibleCount, setVisibleCount] = useState(20);
-  const loaderRef = useRef(null);
+
   const [quick, setQuick] = useState(false);
   const [auth, setAuth] = useState(true);
   const [astroId, setAstroId] = useState(0);
@@ -54,23 +53,6 @@ function AstroCCard({ mode = "chat", data = [], loading }) {
   });
 
   useEffect(() => {}, [sameUser]);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver((entries) => {
-      const entry = entries[0];
-      if (entry.isIntersecting && visibleCount < data.length) {
-        setVisibleCount((prev) => prev + 4);
-      }
-    });
-
-    if (loaderRef.current) {
-      observer.observe(loaderRef.current);
-    }
-
-    return () => {
-      if (loaderRef.current) observer.unobserve(loaderRef.current);
-    };
-  }, [visibleCount, data.length]);
 
   const handleClick = ({ id, mode, price, astro }) => {
     if (!userData) {
@@ -185,7 +167,7 @@ function AstroCCard({ mode = "chat", data = [], loading }) {
   return (
     <section className="relative flex flex-col items-center w-full p-2 sm:p-5">
       <section className="chatastro-cards-main items-center flex-wrap gap-2 sm:gap-5 grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 justify-around w-full lg:w-[95%]">
-        {data?.slice(0, visibleCount).map((astro, index) => (
+       {data?.map((astro) => (
           <div key={astro?.id}  className="overflow-hidden ">
             <div className="relative w-full   bg-center bg-cover  shadow-lg h-66 md:h-51 sm:p-1 back-astro-image">
               <div className="relative h-full p-2 overflow-hidden flex rounded-xl justify-center items-center text-white 	bg-linear-to-r from-purple-100 via-indigo-100 to-purple-100">
@@ -280,12 +262,12 @@ function AstroCCard({ mode = "chat", data = [], loading }) {
                         {astro?.displayName}
                       </h2>
 
-                      <p className="text-[11px] font- text-gray-700  break-all line-clamp-1">
+                      <p className=" sm:w-57.5 w-35 text-center text-[11px] font- text-gray-700  break-all line-clamp-1">
                         {astro?.skills?.join(", ")}
                       </p>
 
                       <div className="flex items-center gap-2 lang-bar">
-                        <p className="overflow-hidden text-[11px] font- text-gray-700 whitespace-nowrap text-ellipsis">
+                        <p className="sm:w-57.5 w-35 text-center overflow-hidden text-[11px] font- text-gray-700 whitespace-nowrap text-ellipsis">
                           {astro?.languages?.join(", ")}
                         </p>
                       </div>
@@ -390,7 +372,6 @@ function AstroCCard({ mode = "chat", data = [], loading }) {
         </div>
       )}
 
-      <div ref={loaderRef} className="h-10" />
       <AlertLoading show={alert} title="Please Wait.." />
 
       <IntentRechage showrecharge={quick} astro_id={astroId} reqmode={mode} />

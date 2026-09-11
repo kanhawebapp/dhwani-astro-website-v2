@@ -7,8 +7,8 @@ import CustomInput from "../Custom/CustomInput";
 import Kundlioth from "../Smcompo/Kundlioth";
 import Bestsell from "../Smcompo/Bestsell/Bestsell";
 import Sidebanner from "../Smcompo/Sidebanner";
-import Freereport from "../Smcompo/Freereport";
-import Recastro from "../Smcompo/Recastro";
+// import Freereport from "../Smcompo/Freereport";
+// import Recastro from "../Smcompo/Recastro";
 import FAQue from "../FAQue";
 import Callchatsec from "../Smcompo/Callchatsec";
 import { LocationSelector } from "@/app/common";
@@ -375,8 +375,8 @@ export default function Formremedies({ slug }) {
         </div>
       </div>
 
-      <Freereport />
-      <Recastro />
+      {/* <Freereport /> */}
+      {/* <Recastro /> */}
       <FAQue />
       <Callchatsec />
     </section>

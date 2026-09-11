@@ -4,8 +4,8 @@ import { useRouter } from "next/navigation";
 import CustomButton from "@/components/Custom/CustomButton";
 import useScrollZoom from "@/Hooks/scrollZoom";
 import CustomInput from "@/components/Custom/CustomInput";
-import Freereport from "@/components/Smcompo/Freereport";
-import Recastro from "@/components/Smcompo/Recastro";
+// import Freereport from "@/components/Smcompo/Freereport";
+// import Recastro from "@/components/Smcompo/Recastro";
 import FAQue from "@/components/FAQue";
 import Callchatsec from "@/components/Smcompo/Callchatsec";
 import Select from "react-select";
@@ -272,8 +272,8 @@ export default function Numerohome() {
         </div>
       </div>
 
-      <Freereport />
-      <Recastro />
+      {/* <Freereport /> */}
+      {/* <Recastro /> */}
       <FAQue />
       <Callchatsec />
     </section>

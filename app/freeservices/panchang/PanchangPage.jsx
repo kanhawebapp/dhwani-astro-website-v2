@@ -221,27 +221,28 @@ export default function PanchangPage({ initialPanchang, initialChaughadiya, init
           <Image src="/ds-img/ganeshji.png" alt="ganesh ji" width={100} height={100} className="hidden md:block w-40 h-40 object-contain" />
           <div className="flex flex-col text-sm text-gray-800 gap-2 text-center md:text-left">
             <h5 className="text-xl font-semibold">
-              <span className="text-red-500">Today's Panchang:</span> (Aaj Ka Panchang)
+              <span className="text-red-500">Today's Panchang:</span>
+              <br/> (Aaj Ka Panchang)
             </h5>
-            <p>Panchang is the Hindu calendar followed by Vedic astrology, providing details on Tithis, auspicious and inauspicious timings.</p>
+            <p className="text-xs sm:text-sm">Panchang is the Hindu calendar followed by Vedic astrology, providing details on Tithis, auspicious and inauspicious timings.</p>
           </div>
         </div>
       </div>
 
 
       <div className="relative md:w-[90%] w-[95%] bg-cover bg-center rounded-2xl p-6 shadow-lg text-white" style={{ backgroundImage: "url('/ds-img/cho.jpg')" }}>
-        <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
+        <div className="flex flex-row text-xs sm:text-sm justify-between items-start gap-3">
           <span className="flex items-center gap-2">{locationName}</span>
           <span className="flex items-center gap-2">
             <svg width={18} height={18} viewBox="0 0 640 640"><path d="M224 64C241.7 64 256 78.3 256 96L256 128L384 128L384 96C384 78.3 398.3 64 416 64C433.7 64 448 78.3 448 96L448 128L480 128C515.3 128 544 156.7 544 192L544 480C544 515.3 515.3 544 480 544L160 544C124.7 544 96 515.3 96 480L96 192C96 156.7 124.7 128 160 128L192 128L192 96C192 78.3 206.3 64 224 64zM160 304L160 336C160 344.8 167.2 352 176 352L208 352C216.8 352 224 344.8 224 336L224 304C224 295.2 216.8 288 208 288L176 288C167.2 288 160 295.2 160 304zM288 304L288 336C288 344.8 295.2 352 304 352L336 352C344.8 352 352 344.8 352 336L352 304C352 295.2 344.8 288 336 288L304 288C295.2 288 288 295.2 288 304zM432 288C423.2 288 416 295.2 416 304L416 336C416 344.8 423.2 352 432 352L464 352C472.8 352 480 344.8 480 336L480 304C480 295.2 472.8 288 464 288L432 288zM160 432L160 464C160 472.8 167.2 480 176 480L208 480C216.8 480 224 472.8 224 464L224 432C224 423.2 216.8 416 208 416L176 416C167.2 416 160 423.2 160 432zM304 416C295.2 416 288 423.2 288 432L288 464C288 472.8 295.2 480 304 480L336 480C344.8 480 352 472.8 352 464L352 432C352 423.2 344.8 416 336 416L304 416zM416 432L416 464C416 472.8 423.2 480 432 480L464 480C472.8 480 480 472.8 480 464L480 432C480 423.2 472.8 416 464 416L432 416C423.2 416 416 423.2 416 432z" /></svg>          {new Date(date).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}</span>
         </div>
 
         <form onSubmit={handleSearch} className="mt-5 flex flex-col sm:flex-row items-center gap-4">
-          <input type="date" value={date} max={today} onChange={(e) => setDate(e.target.value)} className="rounded-full px-4 py-2 text-black bg-white focus:outline-none focus:ring-2 focus:ring-purple-400" />
-          <div className="relative w-full sm:w-64">
-            <input type="text" value={searchText} onChange={handleInputChange} onFocus={() => setShowSuggestions(true)} placeholder="Enter city name" className="rounded-full px-4 py-2 text-black w-full bg-white focus:outline-none focus:ring-2 focus:ring-purple-400" />
+          <input type="date" value={date} max={today} onChange={(e) => setDate(e.target.value)} className="rounded-full px-4 text-xs sm:text-sm py-1 sm:py-2 text-black bg-white focus:outline-none focus:ring-2 focus:ring-purple-400" />
+          <div className="relative w-full flex  sm:w-64">
+            <input type="text" value={searchText} onChange={handleInputChange} onFocus={() => setShowSuggestions(true)} placeholder="Enter city name" className="rounded-full px-4 text-xs sm:text-sm py-1 sm:py-2 text-black w-full bg-white focus:outline-none focus:ring-2 focus:ring-purple-400" />
             {showSuggestions && suggestions.length > 0 && (
-              <ul className="absolute z-50 bg-white text-black border rounded-md mt-1 max-h-48 overflow-auto shadow-md w-full">
+              <ul className="absolute z-50 bg-white text-black border rounded-md mt-1 max-h-48 overflow-auto shadow-md ">
                 {suggestions.map((item) => (
                   <li key={item.place_id} className="px-3 py-2 hover:bg-gray-200 cursor-pointer text-sm" onClick={() => handleSuggestionClick(item)}>
                     {item.display_name}
@@ -250,7 +251,7 @@ export default function PanchangPage({ initialPanchang, initialChaughadiya, init
               </ul>
             )}
           </div>
-          <button aria-label="Get Panchang" type="submit" className="flex items-center gap-2 bg-purple-500 hover:bg-purple-600 px-4 py-2 rounded-full text-white transition-all">Get Panchang</button>
+          <button aria-label="Get Panchang" type="submit" className="flex items-center gap-2 bg-purple-500 hover:bg-purple-600 px-4 text-xs sm:text-sm py-1 sm:py-2 rounded-full text-white transition-all">Get Panchang</button>
         </form>
       </div>
 
@@ -319,9 +320,9 @@ export default function PanchangPage({ initialPanchang, initialChaughadiya, init
             { id: "chaughadiya", label: "Chaughadiya Muhurata", src: "/ds-img/kundli.webp", comp: <ChaughadiyaPage inputParams={getParams()} initialChaughadiya={initialChaughadiya} initialPanchang={initialPanchang} /> },
             { id: "hora", label: "Hora Muhurata", src: "/ds-img/compass.png", comp: <HoraPage inputParams={getParams()} initialHora={initialHora} /> },
           ].map((p) => (
-            <div key={p.id} onClick={() => setActiveTab(p.id)} className={`cursor-pointer flex flex-col w-100 items-center justify-center p-3 rounded-full text-xs md:text-base transition-all ${activeTab === p.id ? "bg-purple-500 text-white shadow-xl" : "text-black"}`}>
+            <div key={p.id} onClick={() => setActiveTab(p.id)} className={`cursor-pointer flex flex-col w-100 items-center justify-center p-3 rounded-xl text-xs md:text-base transition-all ${activeTab === p.id ? "bg-purple-500 text-white shadow-xl" : "text-black"}`}>
               <Image className={`tab-img-c transition-all duration-300 ${activeTab === p.id ? "filter brightness-0 invert" : ""}`} src={p.src} alt={p.label} height={40} width={40} />
-              <span>{p.label}</span>
+              <span className="text-center">{p.label}</span>
             </div>
           ))}
         </div>

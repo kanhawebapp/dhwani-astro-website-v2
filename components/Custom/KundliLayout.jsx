@@ -22,12 +22,12 @@ const Bestsell = dynamic(
   () => import("@/components/Smcompo/Bestsell/Bestsell"),
   { ssr: false },
 );
-const Freereport = dynamic(() => import("@/components/Smcompo/Freereport"), {
-  ssr: false,
-});
-const Recastro = dynamic(() => import("@/components/Smcompo/Recastro"), {
-  ssr: false,
-});
+// const Freereport = dynamic(() => import("@/components/Smcompo/Freereport"), {
+//   ssr: false,
+// });
+// const Recastro = dynamic(() => import("@/components/Smcompo/Recastro"), {
+//   ssr: false,
+// });
 const Sidebanner = dynamic(() => import("@/components/Smcompo/Sidebanner"), {
   ssr: false,
 });
@@ -145,8 +145,8 @@ if (dob) {
 
   if (isExternalAccess) {
     return (
-      <section className="fixed inset-0 flex items-center justify-center bg-black/30 backdrop-blur-md z-9999 p-5">
-        <div className="bg-white/80 backdrop-blur-xl h-[95vh] overflow-y-scroll shadow-2xl rounded-2xl max-w-5xl w-full px-5 py-2 border border-white/30">
+      <section className="fixed inset-0 flex items-center justify-center bg-black/30 backdrop-blur-md z-9999 p-3">
+        <div className="bg-white/80 backdrop-blur-xl h-[95vh] overflow-y-scroll shadow-2xl rounded-2xl max-w-5xl w-full px-1 py-2 border border-white/30">
           <Link
             href={"/freeservices/kundali/getKundaliPage"}
             className="text-2xl mb-2 flex items-center gap-2 font-bold text-[#2f1254]"
@@ -196,8 +196,8 @@ if (dob) {
           </div>
         </div>
 
-        <Freereport />
-        <Recastro />
+        {/* <Freereport /> */}
+        {/* <Recastro /> */}
         <FAQue />
         <Callchatsec />
       </section>

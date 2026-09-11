@@ -1,7 +1,7 @@
 "use client";
 import { useState } from 'react';
-import Freereport from '../Smcompo/Freereport';
-import Recastro from '../Smcompo/Recastro';
+// import Freereport from '../Smcompo/Freereport';
+// import Recastro from '../Smcompo/Recastro';
 import FAQue from '../FAQue';
 import Callchatsec from '../Smcompo/Callchatsec';
 import { useRouter } from "next/navigation";
@@ -135,8 +135,8 @@ export default function Numerohome() {
                 </div>
             </div>
 
-            <Freereport />
-            <Recastro />
+            {/* <Freereport /> */}
+            {/* <Recastro /> */}
             <FAQue />
             <Callchatsec />
         </section>

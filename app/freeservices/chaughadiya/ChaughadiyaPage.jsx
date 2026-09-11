@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import {SEO_ENDPOINTS } from "../../api/seoEndpoints";
+import { SEO_ENDPOINTS } from "../../api/seoEndpoints";
 
 import usePanchHook from "../../../Hooks/usePanchHook";
 import AbhijitPage from "../abhijeet/page";
@@ -37,13 +37,9 @@ export default function ChaughadiyaPage({
   const getChaughadiyaData = useCallback(async (params) => {
     setLoading(true);
     try {
-     const res = await astrologySeo(
-    SEO_ENDPOINTS.CHAUGHADIYA,
-    params
-);
+      const res = await astrologySeo(SEO_ENDPOINTS.CHAUGHADIYA, params);
 
-setChaughadiyaData(res?.data || res);
-     
+      setChaughadiyaData(res?.data || res);
     } catch (err) {
       console.error("❌ Error fetching Chaughadiya:", err);
     } finally {
@@ -128,13 +124,13 @@ setChaughadiyaData(res?.data || res);
           style={{ backgroundImage: "url('/ds-img/cho.jpg')" }}
         >
           <div className="flex sm:flex-col w-full justify-between relative items-start text-sm gap-3 font-semibold text-white">
-            <span className="flex items-center gap-2 text-base">
+            <span className="flex items-center gap-2 text-xs sm:text-base">
               <svg width={18} height={18} viewBox="0 0 640 640">
                 <path d="M128 252.6C128 148.4 214 64 320 64C426 64 512 148.4 512 252.6C512 371.9 391.8 514.9 341.6 569.4C329.8 582.2 310.1 582.2 298.3 569.4C248.1 514.9 127.9 371.9 127.9 252.6zM320 320C355.3 320 384 291.3 384 256C384 220.7 355.3 192 320 192C284.7 192 256 220.7 256 256C256 291.3 284.7 320 320 320z" />
               </svg>{" "}
               {locationName}
             </span>
-            <span className="flex items-center gap-2 text-base">
+            <span className="flex items-center gap-2 text-xs sm:text-base">
               <svg width={18} height={18} viewBox="0 0 640 640">
                 <path d="M224 64C206.3 64 192 78.3 192 96L192 128L160 128C124.7 128 96 156.7 96 192L96 240L544 240L544 192C544 156.7 515.3 128 480 128L448 128L448 96C448 78.3 433.7 64 416 64C398.3 64 384 78.3 384 96L384 128L256 128L256 96C256 78.3 241.7 64 224 64zM96 288L96 480C96 515.3 124.7 544 160 544L480 544C515.3 544 544 515.3 544 480L544 288L96 288z" />
               </svg>{" "}
@@ -155,7 +151,7 @@ setChaughadiyaData(res?.data || res);
               value={date}
               max={today}
               onChange={(e) => setDate(e.target.value)}
-              className="border-gray-200 p-1 bg-white px-3 text-sm flex-1 rounded-full"
+              className="border-gray-200 p-1 bg-white px-3 text-xs sm:text-sm flex-1 rounded-full"
             />
 
             <div className="relative flex-1">
@@ -186,7 +182,7 @@ setChaughadiyaData(res?.data || res);
             <button
               aria-label="Search Chaughadiya"
               type="submit"
-              className="bg-purple-500 text-white px-4 py-2 rounded-full flex items-center gap-2"
+              className="bg-purple-500 text-white px-4 py-1 text-xs sm:text-sm sm:py-2 rounded-full flex items-center gap-2"
             >
               <svg width={18} height={18} viewBox="0 0 640 640">
                 <path d="M480 272C480 317.9 465.1 360.3 440 394.7L566.6 521.4C579.1 533.9 579.1 554.2 566.6 566.7C554.1 579.2 533.8 579.2 521.3 566.7L394.7 440C360.3 465.1 317.9 480 272 480C157.1 480 64 386.9 64 272C64 157.1 157.1 64 272 64C386.9 64 480 157.1 480 272zM272 416C351.5 416 416 351.5 416 272C416 192.5 351.5 128 272 128C192.5 128 128 192.5 128 272C128 351.5 192.5 416 272 416z" />
@@ -198,8 +194,8 @@ setChaughadiyaData(res?.data || res);
 
         <div className="flex flex-col gap-3 md:flex-row items-center bg-linear-to-r from-pink-100 to-yellow-100 justify-between py-6 shadow-lg px-1 sm:px-6 mt-2 sm:mt-4 w-full rounded-2xl">
           <div className="flex items-center gap-2">
-            <h3 className="font-bold">Current Chaughadiya:</h3>
-            <p className="px-3 py-2 bg-yellow-300 rounded-2xl shadow-lg font-bold ">
+            <h3 className="font-bold"> Chaughadiya:</h3>
+            <p className="px-3 text-xs sm:text-sm py-1 sm:py-2 bg-yellow-300 rounded-2xl shadow-lg font-bold ">
               {getCurrentChaughadiya()}
             </p>
           </div>
@@ -279,9 +275,34 @@ setChaughadiyaData(res?.data || res);
                 ))}
               </div>
 
-              <div className="text-xs md:text-sm text-red-400 text-center">
-                <span className="font-semibold">Note:</span> Timings are in
-                12-hour local time. In Panchang, day starts & ends at sunrise.
+              <div className="text-xs flex flex-col gap-1 md:text-sm text-red-400 text-center">
+                       <div className="flex w-full flex-wrap items-start justify-center gap-5 sm:gap-8">
+                  {[
+                    { color: "bg-green-500", text: "Amrit" },
+                    { color: "bg-green-300", text: "Labh" },
+                    { color: "bg-violet-400", text: "Chaar" },
+                    { color: "bg-red-400", text: "Udveg" },
+                    { color: "bg-red-500", text: "Kaal, Rog" },
+                  ].map((item, index) => (
+                    <div
+                      key={index}
+                      className="flex  flex-col items-center gap-1"
+                    >
+                      <div
+                        className={`h-2 w-2 rounded-full ${item.color} shadow-lg sm:h-5 sm:w-5`}
+                      />
+                      <p className="text-[10px] font-semibold text-gray-700 sm:text-sm">
+                        {item.text}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+                <p>
+                  <span className="font-semibold">Note:</span> Timings are in
+                  12-hour local time. In Panchang, day starts & ends at
+                  sunrise.{" "}
+                </p>
+         
               </div>
             </div>
           )
