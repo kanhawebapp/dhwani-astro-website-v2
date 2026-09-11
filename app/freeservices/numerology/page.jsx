@@ -10,7 +10,7 @@ import FAQue from "@/components/FAQue";
 import Callchatsec from "@/components/Smcompo/Callchatsec";
 import Select from "react-select";
 import { useAuth } from "@/app/context/authContext";
-import { createKundliHash } from "@/utils/kundliHash";
+import { createKundliHash, createNumeroHash } from "@/utils/kundliHash";
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -125,7 +125,7 @@ export default function Numerohome() {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    const hash = createKundliHash(formData);
+    const hash = createNumeroHash(formData);
 
     const route = `/freeservices/kundali/getKundaliPage/numerokundli?hash=${hash}`;
 
@@ -253,18 +253,18 @@ export default function Numerohome() {
                   aria-label="Submit Ruling Number Predictions"
                   type="submit"
                   variant={"purple"}
-                  className="p-2"
+                  className="p-2 px-4"
                 >
-                  SUBMIT
+                  Submit
                 </CustomButton>
                 <CustomButton
                   aria-label="Reset Ruling Number Predictions"
                   type="button"
                   onClick={handleReset}
                   variant={"purple"}
-                  className="p-2"
+                  className="p-2 px-4"
                 >
-                  RESET
+                  Reset
                 </CustomButton>
               </div>
             </form>
