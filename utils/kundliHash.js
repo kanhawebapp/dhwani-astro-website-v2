@@ -1,15 +1,14 @@
 import CryptoJS from "crypto-js";
 
 const SECRET_KEY =   process.env.NEXT_PUBLIC_KUNDLI_SECRET || "kundli-secret-key";
+const NUMERO_SECRET =
+  process.env.NEXT_PUBLIC_NUMERO_SECRET || "numero-secret-key";
 
-
-console.log("keyyyyyyyyyyyyyyyyyyyyyyyyyy", SECRET_KEY);
+console.log("keyyyyyyyyyyyyyyyyyyyyyyyyyy", SECRET_KEY );
 
 
 export function createKundliHash(formData) {
   try {
-    if (!SECRET_KEY) throw new Error("KUNDLI_SECRET missing");
-
     const stablePayload = {
       day: Number(formData.day),
       month: Number(formData.month),
@@ -23,7 +22,7 @@ export function createKundliHash(formData) {
 
     const encrypted = CryptoJS.AES.encrypt(
       JSON.stringify(stablePayload),
-      SECRET_KEY
+      KUNDLI_SECRET
     ).toString();
 
     return encodeURIComponent(encrypted);
@@ -35,14 +34,15 @@ export function createKundliHash(formData) {
 
 export function decodeKundliHash(hash) {
   try {
-    if (!SECRET_KEY) throw new Error("KUNDLI_SECRET missing");
+    if (!hash) return null;
 
     const bytes = CryptoJS.AES.decrypt(
       decodeURIComponent(hash),
-      SECRET_KEY
+      KUNDLI_SECRET
     );
 
     const decrypted = bytes.toString(CryptoJS.enc.Utf8);
+
     if (!decrypted) return null;
 
     return JSON.parse(decrypted);
@@ -51,12 +51,9 @@ export function decodeKundliHash(hash) {
     return null;
   }
 }
+
 export function createNumeroHash(formData) {
   try {
-    if (!SECRET_KEY) {
-      throw new Error("NUMERO_SECRET missing");
-    }
-
     const payload = {
       name: String(formData.name || "").trim(),
       day: Number(formData.day),
@@ -66,7 +63,7 @@ export function createNumeroHash(formData) {
 
     const encrypted = CryptoJS.AES.encrypt(
       JSON.stringify(payload),
-      SECRET_KEY
+      NUMERO_SECRET
     ).toString();
 
     return encodeURIComponent(encrypted);
@@ -78,23 +75,16 @@ export function createNumeroHash(formData) {
 
 export function decodeNumeroHash(hash) {
   try {
-    if (!SECRET_KEY) {
-      throw new Error("NUMERO_SECRET missing");
-    }
+    if (!hash) return null;
 
-    if (!hash) {
-      return null;
-    }
-
-    const decodedHash = decodeURIComponent(hash);
-
-    const bytes = CryptoJS.AES.decrypt(decodedHash, SECRET_KEY);
+    const bytes = CryptoJS.AES.decrypt(
+      decodeURIComponent(hash),
+      NUMERO_SECRET
+    );
 
     const decrypted = bytes.toString(CryptoJS.enc.Utf8);
 
-    if (!decrypted) {
-      return null;
-    }
+    if (!decrypted) return null;
 
     return JSON.parse(decrypted);
   } catch (error) {
