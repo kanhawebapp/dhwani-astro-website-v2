@@ -4,7 +4,9 @@ import NumerokundliClient from "./NumerokundliClient";
 export const revalidate = 3600;
 
 export default async function Page({ searchParams }) {
+  console.log("comming in Page FUNCTION");
   const hash = searchParams.hash;
+   console.log("comming in Page FUNCTION hash",hash);
 
   if (!hash) {
     return (

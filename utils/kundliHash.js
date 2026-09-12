@@ -79,8 +79,8 @@ export function createNumeroHash(formData) {
 
 export function decodeNumeroHash(hash) {
   try {
+    console.log("commitng in decodeNumeroHash-------------:");
     console.log("commitng in decodeNumeroHash-------------:",NUMERO_SECRET);
-    debugger;
     if (!hash) return null;
 
     const bytes = CryptoJS.AES.decrypt(
