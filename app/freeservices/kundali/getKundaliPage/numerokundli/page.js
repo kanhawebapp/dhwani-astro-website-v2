@@ -23,7 +23,7 @@ export default async function Page({ searchParams }) {
   if (!formData) {
     return (
       <p className="text-center text-gray-400">
-        Kundli session expiredddddddddddddddddddddddd
+        Kundli session expired
       </p>
     );
   }
