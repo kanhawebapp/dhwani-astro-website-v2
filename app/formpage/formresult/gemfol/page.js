@@ -9,6 +9,7 @@ export default function Page({ searchParams }) {
   }
 
   const formData = decodeKundliHash(hash);
+  
 
   if (!formData) {
     return <p className="text-center">Invalid or expired link</p>;

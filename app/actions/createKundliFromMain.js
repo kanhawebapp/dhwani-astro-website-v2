@@ -19,7 +19,9 @@ export async function createKundliFromMain(formData) {
   };
   console.log("SERVER ACTION PAYLOAD", payload);
   const hash = createKundliHash(payload);
-
+if (!hash) {
+  throw new Error("Failed to create Kundli hash");
+}
    saveKundli(hash, payload);
 
 redirect(

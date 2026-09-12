@@ -4,7 +4,7 @@ const SECRET_KEY =   process.env.NEXT_PUBLIC_KUNDLI_SECRET || "kundli-secret-key
 const NUMERO_SECRET =
   process.env.NEXT_PUBLIC_NUMERO_SECRET || "numero-secret-key";
 
-console.log("keyyyyyyyyyyyyyyyyyyyyyyyyyy", SECRET_KEY );
+console.log("keyyyyyyyyyyyyyyyyyyyyyyyyyyxxxxxxxxxxxxxxxxx", SECRET_KEY );
 
 
 export function createKundliHash(formData) {
@@ -22,7 +22,7 @@ export function createKundliHash(formData) {
 
     const encrypted = CryptoJS.AES.encrypt(
       JSON.stringify(stablePayload),
-      KUNDLI_SECRET
+      SECRET_KEY
     ).toString();
 
     return encodeURIComponent(encrypted);
@@ -38,7 +38,7 @@ export function decodeKundliHash(hash) {
 
     const bytes = CryptoJS.AES.decrypt(
       decodeURIComponent(hash),
-      KUNDLI_SECRET
+      SECRET_KEY
     );
 
     const decrypted = bytes.toString(CryptoJS.enc.Utf8);

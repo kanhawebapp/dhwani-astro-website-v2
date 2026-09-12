@@ -168,18 +168,10 @@ export default function Formremedies({ slug }) {
     }
 
     // validation
-    if (
-      !formData.name ||
-      !formData.day ||
-      !formData.month ||
-      !formData.year ||
-      !formData.hour ||
-      !formData.min ||
-      !formData.birthplace
-    ) {
-      alert("Please fill all fields.");
-      return;
-    }
+if (!formData.name || !formData.day || !formData.month || !formData.year) {
+  alert("Please enter your name and date of birth.");
+  return;
+}
 
     const fd = new FormData();
 
