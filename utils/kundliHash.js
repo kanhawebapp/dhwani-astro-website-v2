@@ -1,11 +1,25 @@
-import CryptoJS from "crypto-js";
+import AES from "crypto-js/aes";
+import Utf8 from "crypto-js/enc-utf8";
 
-const SECRET_KEY =   process.env.NEXT_PUBLIC_KUNDLI_SECRET || "kundli-secret-key";
+const SECRET_KEY =
+  process.env.NEXT_PUBLIC_KUNDLI_SECRET || "kundli-secret-key";
+
 const NUMERO_SECRET =
   process.env.NEXT_PUBLIC_NUMERO_SECRET || "numero-secret-key";
 
-console.log("keyyyyyyyyyyyyyyyyyyyyyyyyyyxxxxxxxxxxxxxxxxx", SECRET_KEY );
+console.log(
+  "Kundli secret loaded:",
+  SECRET_KEY ? "YES" : "NO"
+);
 
+console.log(
+  "Numero secret loaded:",
+  NUMERO_SECRET ? "YES" : "NO"
+);
+
+// =====================================================
+// KUNDLI
+// =====================================================
 
 export function createKundliHash(formData) {
   try {
@@ -20,44 +34,62 @@ export function createKundliHash(formData) {
       tzone: Number(formData.tzone),
     };
 
-    const encrypted = CryptoJS.AES.encrypt(
+    const encrypted = AES.encrypt(
       JSON.stringify(stablePayload),
       SECRET_KEY
     ).toString();
 
     return encodeURIComponent(encrypted);
-  } catch (err) {
-    console.error("createKundliHash error:", err);
+  } catch (error) {
+    console.error("createKundliHash error:", error);
     return null;
   }
 }
 
 export function decodeKundliHash(hash) {
   try {
-    console.log("commitng in decodeKundliHash-------------:",SECRET_KEY);
-    debugger;
-    if (!hash) return null;
+    if (!hash) {
+      console.error("decodeKundliHash: hash missing");
+      return null;
+    }
 
-    const bytes = CryptoJS.AES.decrypt(
-      decodeURIComponent(hash),
+    const encrypted = decodeURIComponent(hash);
+
+    const bytes = AES.decrypt(
+      encrypted,
       SECRET_KEY
     );
 
-    const decrypted = bytes.toString(CryptoJS.enc.Utf8);
+    const decrypted = bytes.toString(Utf8);
 
-    if (!decrypted) return null;
+    if (!decrypted) {
+      console.error(
+        "decodeKundliHash: empty decrypted value"
+      );
+      return null;
+    }
 
     return JSON.parse(decrypted);
-  } catch (err) {
-    console.error("decodeKundliHash error:", err);
+  } catch (error) {
+    console.error(
+      "decodeKundliHash error:",
+      error
+    );
     return null;
   }
 }
 
+// =====================================================
+// NUMEROLOGY
+// =====================================================
+
 export function createNumeroHash(formData) {
   try {
-     console.log("commitng in createNumeroHash-------------:",NUMERO_SECRET);
-    debugger;
+    console.log(
+      "createNumeroHash - secret loaded:",
+      NUMERO_SECRET ? "YES" : "NO"
+    );
+
     const payload = {
       name: String(formData.name || "").trim(),
       day: Number(formData.day),
@@ -65,36 +97,75 @@ export function createNumeroHash(formData) {
       year: Number(formData.year),
     };
 
-    const encrypted = CryptoJS.AES.encrypt(
+    const encrypted = AES.encrypt(
       JSON.stringify(payload),
       NUMERO_SECRET
     ).toString();
 
+    console.log(
+      "createNumeroHash - hash created successfully"
+    );
+
     return encodeURIComponent(encrypted);
   } catch (error) {
-    console.error("createNumeroHash error:", error);
+    console.error(
+      "createNumeroHash error:",
+      error
+    );
     return null;
   }
 }
 
 export function decodeNumeroHash(hash) {
   try {
-    console.log("commitng in decodeNumeroHash-------------:");
-    console.log("commitng in decodeNumeroHash-------------:",NUMERO_SECRET);
-    if (!hash) return null;
+    console.log(
+      "decodeNumeroHash - starting"
+    );
 
-    const bytes = CryptoJS.AES.decrypt(
-      decodeURIComponent(hash),
+    console.log(
+      "decodeNumeroHash - secret loaded:",
+      NUMERO_SECRET ? "YES" : "NO"
+    );
+
+    if (!hash) {
+      console.error(
+        "decodeNumeroHash: hash missing"
+      );
+      return null;
+    }
+
+    const encrypted = decodeURIComponent(hash);
+
+    console.log(
+      "decodeNumeroHash - encrypted hash received"
+    );
+
+    const bytes = AES.decrypt(
+      encrypted,
       NUMERO_SECRET
     );
 
-    const decrypted = bytes.toString(CryptoJS.enc.Utf8);
+    const decrypted = bytes.toString(Utf8);
 
-    if (!decrypted) return null;
+    if (!decrypted) {
+      console.error(
+        "decodeNumeroHash: empty decrypted value"
+      );
+      return null;
+    }
 
-    return JSON.parse(decrypted);
+    const result = JSON.parse(decrypted);
+
+    console.log(
+      "decodeNumeroHash - successfully decrypted"
+    );
+
+    return result;
   } catch (error) {
-    console.error("decodeNumeroHash error:", error);
+    console.error(
+      "decodeNumeroHash error:",
+      error
+    );
     return null;
   }
 }
