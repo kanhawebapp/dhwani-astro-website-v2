@@ -126,7 +126,8 @@ export default function Numerohome() {
     e.preventDefault();
 
     const hash = createNumeroHash(formData);
-
+    console.log("🔐 NUMERO HASH:", hash);
+    console.log("📦 DECODED NUMERO DATA:", formData);
     const route = `/freeservices/kundali/getKundaliPage/numerokundli?hash=${hash}`;
 
     if (!isLoggedIn) {
