@@ -34,6 +34,8 @@ export function createKundliHash(formData) {
 
 export function decodeKundliHash(hash) {
   try {
+    console.log("commitng in decodeKundliHash-------------:",SECRET_KEY);
+    debugger;
     if (!hash) return null;
 
     const bytes = CryptoJS.AES.decrypt(
@@ -54,6 +56,8 @@ export function decodeKundliHash(hash) {
 
 export function createNumeroHash(formData) {
   try {
+     console.log("commitng in createNumeroHash-------------:",NUMERO_SECRET);
+    debugger;
     const payload = {
       name: String(formData.name || "").trim(),
       day: Number(formData.day),
@@ -75,6 +79,8 @@ export function createNumeroHash(formData) {
 
 export function decodeNumeroHash(hash) {
   try {
+    console.log("commitng in decodeNumeroHash-------------:",NUMERO_SECRET);
+    debugger;
     if (!hash) return null;
 
     const bytes = CryptoJS.AES.decrypt(
