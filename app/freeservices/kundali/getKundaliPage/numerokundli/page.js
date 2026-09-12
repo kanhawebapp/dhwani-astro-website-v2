@@ -5,6 +5,7 @@ export const revalidate = 3600;
 
 export default async function Page({ searchParams }) {
   console.log("comming in Page FUNCTION");
+  debugger;
   const hash = searchParams.hash;
    console.log("comming in Page FUNCTION hash",hash);
 
@@ -21,7 +22,7 @@ export default async function Page({ searchParams }) {
   if (!formData) {
     return (
       <p className="text-center text-gray-400">
-        Kundli session expired
+        Kundli session expiredddddddddddddddddddddddd
       </p>
     );
   }
