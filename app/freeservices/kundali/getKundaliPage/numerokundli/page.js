@@ -1,7 +1,8 @@
-"use client";
+
 import { decodeKundliHash, decodeNumeroHash } from "@/utils/kundliHash";
 import NumerokundliClient from "./NumerokundliClient";
 
+export const revalidate = 3600;
 
 export default async function Page({ searchParams }) {
   console.log("comming in Page FUNCTION");
