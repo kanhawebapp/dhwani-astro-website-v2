@@ -1,3 +1,4 @@
+"use client";
 import { decodeKundliHash, decodeNumeroHash } from "@/utils/kundliHash";
 import NumerokundliClient from "./NumerokundliClient";
 
