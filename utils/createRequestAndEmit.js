@@ -20,7 +20,6 @@ export const createRequestAndEmit = async ({
         ? new Date(Number(profileData.birthDate)).toISOString().split("T")[0]
         : profileData.birthDate;
 
-        console.log("PROFILE DATA", profileData);
 
     const response = await createIntake({
       variables: {
@@ -108,14 +107,6 @@ export const createRequestAndEmit = async ({
     };
 
     const eventName = mode === "call" ? "call_request" : "chat_request";
-
-    // console.log("FINAL ROOMmmmmmmmmmmmmmmmmmmmmmmmmmmmm:", roomId);
-
-    // console.log("FINAL USERrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr:", userId);
-
-    // console.log("FINAL ASTROooooooooooooooooooooooooooooooo:", astro_id);
-
-    // console.log("FINAL PRICEeeeeeeeeeeeeeeeeeeeeeeeeeeee:", pricePerMin);
 
     activeSocket.emit(eventName, req_data);
 
