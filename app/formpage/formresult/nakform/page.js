@@ -1,4 +1,4 @@
-import { decodeKundliHash } from "@/utils/kundliHash";
+import { decodeKundliHash } from "@/utils/kundliHash.server";
 import NakshatraClient from "./NakshatraClient";
 
 export default function Page({ searchParams }) {

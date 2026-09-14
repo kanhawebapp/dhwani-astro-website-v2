@@ -1,5 +1,5 @@
 import RudrasuggestClient from "@/app/freeservices/kundali/getKundaliPage/suggestions/rudra/Rudrasuggest";
-import { decodeKundliHash } from "@/utils/kundliHash";
+import { decodeKundliHash } from "@/utils/kundliHash.server";
 
 export default function Page({ searchParams }) {
   const hash = searchParams.hash;

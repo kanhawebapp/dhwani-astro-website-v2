@@ -1,6 +1,6 @@
 export const revalidate = 3600;
 
-import { decodeKundliHash } from "@/utils/kundliHash";
+import { decodeKundliHash } from "@/utils/kundliHash.server";
 import DoshasClient from "./DoshasClient";
 import { astrologySeo } from "@/app/api/astrologySeo";
 import { SEO_ENDPOINTS } from "@/app/api/seoEndpoints";

@@ -1,4 +1,4 @@
-import { decodeKundliHash } from "@/utils/kundliHash";
+import { decodeKundliHash } from "@/utils/kundliHash.server";
 import MoonBioClient from "./MoonBioClient";
 
 export const revalidate = 3600;

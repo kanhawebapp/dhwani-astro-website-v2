@@ -1,4 +1,4 @@
-import { decodeKundliHash } from "@/utils/kundliHash";
+import { decodeKundliHash } from "@/utils/kundliHash.server";
 import Gemsuggest from "../../../freeservices/kundali/getKundaliPage/suggestions/gem/Gemsuggest";
 
 export default function Page({ searchParams }) {

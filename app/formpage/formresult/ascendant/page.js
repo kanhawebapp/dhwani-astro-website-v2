@@ -1,4 +1,4 @@
-import { decodeKundliHash } from "@/utils/kundliHash";
+import { decodeKundliHash } from "@/utils/kundliHash.server";
 import AscendantClient from "../../../freeservices/kundali/getKundaliPage/ascendant/AscendantClient";
 
 export default function Page({ searchParams }) {

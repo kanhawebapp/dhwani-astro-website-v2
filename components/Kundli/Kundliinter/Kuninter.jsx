@@ -1,9 +1,10 @@
 'use client';
-import {createKundliHash} from "../../../utils/kundliHash"
+
 import { useRouter } from 'next/navigation';
 import { useSelector, shallowEqual } from 'react-redux';
 import Image from 'next/image';
 import useScrollZoom from '@/Hooks/scrollZoom';
+import { createKundliHash } from '@/utils/kundliHash.client';
 
 export default function Kuninter() {
   useScrollZoom(".head-wrap");

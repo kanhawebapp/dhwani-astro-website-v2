@@ -1,6 +1,6 @@
 export const revalidate = 3600;
 
-import { decodeKundliHash } from "@/utils/kundliHash";
+import { decodeKundliHash } from "@/utils/kundliHash.server";
 import AscendantClient from "./AscendantClient";
 
 export default function Page({ searchParams }) {

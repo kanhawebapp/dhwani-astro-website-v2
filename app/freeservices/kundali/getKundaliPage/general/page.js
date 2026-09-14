@@ -1,4 +1,4 @@
-import { decodeKundliHash } from "@/utils/kundliHash";
+import { decodeKundliHash } from "@/utils/kundliHash.server";
 import GeneralClient from "./GeneralClient";
 
 export const revalidate = 3600;

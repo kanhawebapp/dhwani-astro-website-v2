@@ -1,4 +1,4 @@
-import { decodeKundliHash } from "@/utils/kundliHash";
+import { decodeKundliHash } from "@/utils/kundliHash.server";
 import LalkitabClient from "../../../freeservices/kundali/getKundaliPage/lalkitab/LalkitabClient";
 
 export default function Page({ searchParams }) {

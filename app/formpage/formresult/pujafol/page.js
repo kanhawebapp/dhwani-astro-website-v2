@@ -1,5 +1,5 @@
 import PujasuggestClient from "@/app/freeservices/kundali/getKundaliPage/suggestions/puja/Pujasuggest";
-import { decodeKundliHash } from "@/utils/kundliHash";
+import { decodeKundliHash } from "@/utils/kundliHash.server";
 
 export default function Page({ searchParams }) {
   const hash = searchParams.hash;

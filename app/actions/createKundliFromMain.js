@@ -17,14 +17,18 @@ export async function createKundliFromMain(formData) {
     tzone: Number(formData.get("tzone")),
     birthplace: formData.get("birthplace"),
   };
-  console.log("SERVER ACTION PAYLOAD", payload);
-  const hash = createKundliHash(payload);
-if (!hash) {
-  throw new Error("Failed to create Kundli hash");
-}
-   saveKundli(hash, payload);
 
-redirect(
-  `/freeservices/kundali/getKundaliPage?hash=${hash}`
-);
+  console.log("SERVER ACTION PAYLOAD", payload);
+
+  const hash = createKundliHash(payload);
+
+  if (!hash) {
+    throw new Error("Failed to create Kundli hash");
+  }
+
+  saveKundli(hash, payload);
+
+  redirect(
+    `/freeservices/kundali/getKundaliPage?hash=${hash}`
+  );
 }

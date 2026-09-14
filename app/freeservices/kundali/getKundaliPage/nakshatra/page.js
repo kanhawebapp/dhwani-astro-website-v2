@@ -1,7 +1,7 @@
 export const revalidate = 3600;
 
 import { Suspense } from "react";
-import { decodeKundliHash } from "@/utils/kundliHash";
+import { decodeKundliHash } from "@/utils/kundliHash.server";
 import NakshatraTabsClient from "./NakshatraTabsClient";
 
 export default async function Page({ searchParams }) {

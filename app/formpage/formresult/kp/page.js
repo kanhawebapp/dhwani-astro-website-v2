@@ -1,4 +1,4 @@
-import { decodeKundliHash } from "@/utils/kundliHash";
+import { decodeKundliHash } from "@/utils/kundliHash.server";
 import KpClient from "./KpClient";
 
 export const dynamic = "force-dynamic";

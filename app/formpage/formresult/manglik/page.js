@@ -1,4 +1,4 @@
-import { decodeKundliHash } from "@/utils/kundliHash";
+import { decodeKundliHash } from "@/utils/kundliHash.server";
 import ManglikClient from "./ManglikClient";
 
 export default function Page({ searchParams }) {

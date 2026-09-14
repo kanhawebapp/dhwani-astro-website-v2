@@ -1,6 +1,6 @@
 export const revalidate = 3600;
 
-import { decodeKundliHash } from "@/utils/kundliHash";
+import { decodeKundliHash } from "@/utils/kundliHash.server";
 import CharYogClient from "./CharYogClient";
 
 export default function Page({ searchParams }) {

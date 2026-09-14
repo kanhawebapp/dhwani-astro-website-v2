@@ -10,7 +10,7 @@ import FAQue from "@/components/FAQue";
 import Callchatsec from "@/components/Smcompo/Callchatsec";
 import Select from "react-select";
 import { useAuth } from "@/app/context/authContext";
-import { createKundliHash, createNumeroHash } from "@/utils/kundliHash";
+import {  createNumeroHash } from "@/utils/kundliHash.client";
 
 const CURRENT_YEAR = new Date().getFullYear();
 

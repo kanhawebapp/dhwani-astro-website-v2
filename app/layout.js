@@ -46,7 +46,7 @@ export default function RootLayout({ children }) {
   return (
     <html
       lang="en"
-      className={`scroll-smooth ${poppins.variable} ${sonsie.variable}`}
+     
     >
       <body className="antialiased font-sans">
         <ApolloWrapper>

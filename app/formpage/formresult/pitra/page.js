@@ -1,4 +1,4 @@
-import { decodeKundliHash } from "@/utils/kundliHash";
+import { decodeKundliHash } from "@/utils/kundliHash.server";
 import PitradoshaClient from "./PitradoshaClient";
 
 export default function Page({ searchParams }) {
