@@ -1,4 +1,3 @@
-
 import crypto from "crypto";
 
 const SECRET_KEY =
@@ -19,7 +18,10 @@ function evpBytesToKey(
   keyLen = 32,
   ivLen = 16
 ) {
-  const passwordBuffer = Buffer.from(password, "utf8");
+  const passwordBuffer = Buffer.from(
+    password,
+    "utf8"
+  );
 
   let derived = Buffer.alloc(0);
   let previous = Buffer.alloc(0);
@@ -52,18 +54,93 @@ function evpBytesToKey(
 }
 
 // =====================================================
+// ENCRYPT - CRYPTOJS COMPATIBLE
+// Compatible with:
+// CryptoJS.AES.encrypt(data, password)
+// =====================================================
+
+function encryptCryptoJS(payload, password) {
+  if (!payload) {
+    throw new Error(
+      "Payload is empty"
+    );
+  }
+
+  if (!password) {
+    throw new Error(
+      "Encryption password is empty"
+    );
+  }
+
+  // CryptoJS uses 8 byte salt
+  const salt = crypto.randomBytes(8);
+
+  const { key, iv } =
+    evpBytesToKey(
+      password,
+      salt
+    );
+
+  const cipher =
+    crypto.createCipheriv(
+      "aes-256-cbc",
+      key,
+      iv
+    );
+
+  let encrypted =
+    cipher.update(
+      JSON.stringify(payload),
+      "utf8"
+    );
+
+  encrypted = Buffer.concat([
+    encrypted,
+    cipher.final(),
+  ]);
+
+  // CryptoJS format:
+  //
+  // Salted__ + 8 byte salt + ciphertext
+  //
+  const result = Buffer.concat([
+    Buffer.from("Salted__"),
+    salt,
+    encrypted,
+  ]);
+
+  return result.toString("base64");
+}
+
+// =====================================================
 // DECRYPT CRYPTOJS AES
 // =====================================================
 
-function decryptCryptoJS(encrypted, password) {
+function decryptCryptoJS(
+  encrypted,
+  password
+) {
   if (!encrypted) {
-    throw new Error("Encrypted value is empty");
+    throw new Error(
+      "Encrypted value is empty"
+    );
   }
 
-  const data = Buffer.from(encrypted, "base64");
+  if (!password) {
+    throw new Error(
+      "Decryption password is empty"
+    );
+  }
+
+  const data = Buffer.from(
+    encrypted,
+    "base64"
+  );
 
   if (data.length < 16) {
-    throw new Error("Invalid encrypted data");
+    throw new Error(
+      "Invalid encrypted data"
+    );
   }
 
   const prefix = data
@@ -77,31 +154,42 @@ function decryptCryptoJS(encrypted, password) {
   }
 
   const salt = data.subarray(8, 16);
-  const ciphertext = data.subarray(16);
+
+  const ciphertext =
+    data.subarray(16);
 
   if (!ciphertext.length) {
-    throw new Error("Ciphertext is empty");
+    throw new Error(
+      "Ciphertext is empty"
+    );
   }
 
-  const { key, iv } = evpBytesToKey(
-    password,
-    salt
-  );
+  const { key, iv } =
+    evpBytesToKey(
+      password,
+      salt
+    );
 
-  const decipher = crypto.createDecipheriv(
-    "aes-256-cbc",
-    key,
-    iv
-  );
+  const decipher =
+    crypto.createDecipheriv(
+      "aes-256-cbc",
+      key,
+      iv
+    );
 
-  let decrypted = decipher.update(ciphertext);
+  let decrypted =
+    decipher.update(
+      ciphertext
+    );
 
   decrypted = Buffer.concat([
     decrypted,
     decipher.final(),
   ]);
 
-  return decrypted.toString("utf8");
+  return decrypted.toString(
+    "utf8"
+  );
 }
 
 // =====================================================
@@ -110,15 +198,18 @@ function decryptCryptoJS(encrypted, password) {
 
 function normalizeHash(hash) {
   if (!hash) {
-    throw new Error("Hash is missing");
+    throw new Error(
+      "Hash is missing"
+    );
   }
 
-  // URL query parameters may already be decoded by Next.js.
-  // Therefore try the value directly first.
+  // Next.js query params may already
+  // be decoded.
   let encrypted = hash;
 
   try {
-    encrypted = decodeURIComponent(hash);
+    encrypted =
+      decodeURIComponent(hash);
   } catch {
     encrypted = hash;
   }
@@ -127,18 +218,59 @@ function normalizeHash(hash) {
 }
 
 // =====================================================
-// KUNDLI
+// KUNDLI - CREATE HASH
 // =====================================================
 
-export function decodeKundliHash(hash) {
+export function createKundliHash(
+  formData
+) {
   try {
+    const payload = {
+      day: Number(formData.day),
+      month: Number(formData.month),
+      year: Number(formData.year),
+      hour: Number(formData.hour),
+      min: Number(formData.min),
+      lat: Number(formData.lat).toFixed(2),
+      lon: Number(formData.lon).toFixed(2),
+      tzone: Number(formData.tzone),
+    };
 
-    const encrypted = normalizeHash(hash);
+    const encrypted =
+      encryptCryptoJS(
+        payload,
+        SECRET_KEY
+      );
 
-    const decrypted = decryptCryptoJS(
-      encrypted,
-      SECRET_KEY
+    return encodeURIComponent(
+      encrypted
     );
+  } catch (error) {
+    console.error(
+      "createKundliHash error:",
+      error
+    );
+
+    return null;
+  }
+}
+
+// =====================================================
+// KUNDLI - DECODE HASH
+// =====================================================
+
+export function decodeKundliHash(
+  hash
+) {
+  try {
+    const encrypted =
+      normalizeHash(hash);
+
+    const decrypted =
+      decryptCryptoJS(
+        encrypted,
+        SECRET_KEY
+      );
 
     if (!decrypted) {
       throw new Error(
@@ -146,8 +278,8 @@ export function decodeKundliHash(hash) {
       );
     }
 
-    const result = JSON.parse(decrypted);
-   
+    const result =
+      JSON.parse(decrypted);
 
     return result;
   } catch (error) {
@@ -161,18 +293,78 @@ export function decodeKundliHash(hash) {
 }
 
 // =====================================================
-// NUMEROLOGY
+// NUMEROLOGY - CREATE HASH
 // =====================================================
 
-export function decodeNumeroHash(hash) {
+export function createNumeroHash(
+  formData
+) {
   try {
+    const payload = {
+      name: String(
+        formData.name || ""
+      ).trim(),
 
-    const encrypted = normalizeHash(hash);
+      day: Number(
+        formData.day
+      ),
 
-    const decrypted = decryptCryptoJS(
-      encrypted,
-      NUMERO_SECRET
+      month: Number(
+        formData.month
+      ),
+
+      year: Number(
+        formData.year
+      ),
+    };
+
+    console.log(
+      "createNumeroHash - payload:",
+      payload
     );
+
+    const encrypted =
+      encryptCryptoJS(
+        payload,
+        NUMERO_SECRET
+      );
+
+    const hash =
+      encodeURIComponent(
+        encrypted
+      );
+
+    console.log(
+      "createNumeroHash - hash created"
+    );
+
+    return hash;
+  } catch (error) {
+    console.error(
+      "createNumeroHash error:",
+      error
+    );
+
+    return null;
+  }
+}
+
+// =====================================================
+// NUMEROLOGY - DECODE HASH
+// =====================================================
+
+export function decodeNumeroHash(
+  hash
+) {
+  try {
+    const encrypted =
+      normalizeHash(hash);
+
+    const decrypted =
+      decryptCryptoJS(
+        encrypted,
+        NUMERO_SECRET
+      );
 
     if (!decrypted) {
       throw new Error(
@@ -180,7 +372,14 @@ export function decodeNumeroHash(hash) {
       );
     }
 
-    const result = JSON.parse(decrypted);
+    const result =
+      JSON.parse(decrypted);
+
+    console.log(
+      "decodeNumeroHash - success:",
+      result
+    );
+
     return result;
   } catch (error) {
     console.error(
@@ -191,4 +390,3 @@ export function decodeNumeroHash(hash) {
     return null;
   }
 }
-

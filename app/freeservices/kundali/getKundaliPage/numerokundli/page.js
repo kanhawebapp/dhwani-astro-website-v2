@@ -1,5 +1,8 @@
+import {
+  createNumeroHash,
+  decodeNumeroHash,
+} from "@/utils/kundliHash.server";
 
-import { decodeNumeroHash } from "@/utils/kundliHash.server";
 import NumerokundliClient from "./NumerokundliClient";
 
 export default async function Page({ searchParams }) {
@@ -14,11 +17,14 @@ export default async function Page({ searchParams }) {
   let numeroData = null;
 
   // =====================================================
-  // CASE 1: HASH BASED REQUEST
+  // CASE 1
+  // ALREADY HASH AVAILABLE
   // =====================================================
 
   if (hash) {
-    console.log("Numero hash found");
+    console.log(
+      "Numero hash already available"
+    );
 
     numeroData = decodeNumeroHash(hash);
 
@@ -29,16 +35,26 @@ export default async function Page({ searchParams }) {
   }
 
   // =====================================================
-  // CASE 2: DIRECT EXTERNAL PARAMETERS
+  // CASE 2
+  // EXTERNAL DATA
+  // CREATE HASH -> DECODE HASH
   // =====================================================
 
   if (!numeroData) {
     const name = params?.name || "";
-
     const dob = params?.dob || "";
 
+    console.log(
+      "External Numero Params:",
+      {
+        name,
+        dob,
+      }
+    );
+
     if (name && dob) {
-      const dateOnly = dob.split("T")[0];
+      const dateOnly = String(dob).split("T")[0];
+
       const parts = dateOnly.split("-");
 
       if (parts.length === 3) {
@@ -46,8 +62,8 @@ export default async function Page({ searchParams }) {
         const month = Number(parts[1]);
         const day = Number(parts[2]);
 
-        numeroData = {
-          name,
+        const externalData = {
+          name: String(name).trim(),
           day,
           month,
           year,
@@ -55,8 +71,38 @@ export default async function Page({ searchParams }) {
 
         console.log(
           "External Numero Data:",
-          numeroData
+          externalData
         );
+
+        // =============================================
+        // CREATE NUMERO HASH
+        // =============================================
+
+        const generatedHash =
+          createNumeroHash(
+            externalData
+          );
+
+        console.log(
+          "Generated Numero Hash:",
+          generatedHash
+        );
+
+        if (generatedHash) {
+          // ===========================================
+          // DECODE SAME HASH
+          // ===========================================
+
+          numeroData =
+            decodeNumeroHash(
+              generatedHash
+            );
+
+          console.log(
+            "Decoded Generated Numero Data:",
+            numeroData
+          );
+        }
       }
     }
   }
@@ -74,7 +120,7 @@ export default async function Page({ searchParams }) {
   }
 
   // =====================================================
-  // RENDER
+  // RENDER NUMERO CLIENT
   // =====================================================
 
   return (
@@ -83,4 +129,3 @@ export default async function Page({ searchParams }) {
     />
   );
 }
-
