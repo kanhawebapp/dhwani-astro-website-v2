@@ -1,3 +1,4 @@
+
 import crypto from "crypto";
 
 const SECRET_KEY =
@@ -18,10 +19,7 @@ function evpBytesToKey(
   keyLen = 32,
   ivLen = 16
 ) {
-  const passwordBuffer = Buffer.from(
-    password,
-    "utf8"
-  );
+  const passwordBuffer = Buffer.from(password, "utf8");
 
   let derived = Buffer.alloc(0);
   let previous = Buffer.alloc(0);
@@ -57,14 +55,16 @@ function evpBytesToKey(
 // DECRYPT CRYPTOJS AES
 // =====================================================
 
-function decryptCryptoJS(
-  encrypted,
-  password
-) {
-  const data = Buffer.from(
-    encrypted,
-    "base64"
-  );
+function decryptCryptoJS(encrypted, password) {
+  if (!encrypted) {
+    throw new Error("Encrypted value is empty");
+  }
+
+  const data = Buffer.from(encrypted, "base64");
+
+  if (data.length < 16) {
+    throw new Error("Invalid encrypted data");
+  }
 
   const prefix = data
     .subarray(0, 8)
@@ -72,28 +72,29 @@ function decryptCryptoJS(
 
   if (prefix !== "Salted__") {
     throw new Error(
-      "Invalid CryptoJS encrypted data"
+      `Invalid CryptoJS encrypted data prefix: ${prefix}`
     );
   }
 
   const salt = data.subarray(8, 16);
   const ciphertext = data.subarray(16);
 
-  const { key, iv } =
-    evpBytesToKey(
-      password,
-      salt
-    );
+  if (!ciphertext.length) {
+    throw new Error("Ciphertext is empty");
+  }
 
-  const decipher =
-    crypto.createDecipheriv(
-      "aes-256-cbc",
-      key,
-      iv
-    );
+  const { key, iv } = evpBytesToKey(
+    password,
+    salt
+  );
 
-  let decrypted =
-    decipher.update(ciphertext);
+  const decipher = crypto.createDecipheriv(
+    "aes-256-cbc",
+    key,
+    iv
+  );
+
+  let decrypted = decipher.update(ciphertext);
 
   decrypted = Buffer.concat([
     decrypted,
@@ -104,35 +105,62 @@ function decryptCryptoJS(
 }
 
 // =====================================================
-// DECODE KUNDLI HASH
+// COMMON HASH NORMALIZATION
+// =====================================================
+
+function normalizeHash(hash) {
+  if (!hash) {
+    throw new Error("Hash is missing");
+  }
+
+  // URL query parameters may already be decoded by Next.js.
+  // Therefore try the value directly first.
+  let encrypted = hash;
+
+  try {
+    encrypted = decodeURIComponent(hash);
+  } catch {
+    encrypted = hash;
+  }
+
+  return encrypted;
+}
+
+// =====================================================
+// KUNDLI
 // =====================================================
 
 export function decodeKundliHash(hash) {
   try {
-    if (!hash) {
-      console.error(
-        "decodeKundliHash: hash missing"
-      );
-      return null;
-    }
+    console.log(
+      "decodeKundliHash - starting"
+    );
 
-    const encrypted =
-      decodeURIComponent(hash);
+    console.log(
+      "decodeKundliHash - secret loaded:",
+      SECRET_KEY ? "YES" : "NO"
+    );
 
-    const decrypted =
-      decryptCryptoJS(
-        encrypted,
-        SECRET_KEY
-      );
+    const encrypted = normalizeHash(hash);
+
+    const decrypted = decryptCryptoJS(
+      encrypted,
+      SECRET_KEY
+    );
 
     if (!decrypted) {
-      console.error(
-        "decodeKundliHash: empty decrypted value"
+      throw new Error(
+        "Kundli decrypted value is empty"
       );
-      return null;
     }
 
-    return JSON.parse(decrypted);
+    const result = JSON.parse(decrypted);
+
+    console.log(
+      "decodeKundliHash - successfully decrypted"
+    );
+
+    return result;
   } catch (error) {
     console.error(
       "decodeKundliHash error:",
@@ -144,7 +172,7 @@ export function decodeKundliHash(hash) {
 }
 
 // =====================================================
-// DECODE NUMERO HASH
+// NUMEROLOGY
 // =====================================================
 
 export function decodeNumeroHash(hash) {
@@ -158,38 +186,28 @@ export function decodeNumeroHash(hash) {
       NUMERO_SECRET ? "YES" : "NO"
     );
 
-    if (!hash) {
-      console.error(
-        "decodeNumeroHash: hash missing"
-      );
-      return null;
-    }
-
-    const encrypted =
-      decodeURIComponent(hash);
+    const encrypted = normalizeHash(hash);
 
     console.log(
       "decodeNumeroHash - encrypted hash received"
     );
 
-    const decrypted =
-      decryptCryptoJS(
-        encrypted,
-        NUMERO_SECRET
-      );
+    const decrypted = decryptCryptoJS(
+      encrypted,
+      NUMERO_SECRET
+    );
 
     if (!decrypted) {
-      console.error(
-        "decodeNumeroHash: empty decrypted value"
+      throw new Error(
+        "Numero decrypted value is empty"
       );
-      return null;
     }
 
-    const result =
-      JSON.parse(decrypted);
+    const result = JSON.parse(decrypted);
 
     console.log(
-      "decodeNumeroHash - successfully decrypted"
+      "decodeNumeroHash - successfully decrypted",
+      result
     );
 
     return result;
@@ -202,3 +220,4 @@ export function decodeNumeroHash(hash) {
     return null;
   }
 }
+
