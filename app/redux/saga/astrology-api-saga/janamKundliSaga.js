@@ -29,17 +29,6 @@ function* handleKundliFormSubmit(action) {
       tzone: formData.tzone,
     };
 
- 
-console.log("Headers:", {
-  Authorization: basicAuth,
-  "Content-Type": "application/json",
-});
-console.log("Data:", formattedData);
-
-    console.log("Calling:", API_ENDPOINTS.JANAM_KUNDLI);
-    console.log("Headers:", headers);
-    console.log("Data:", formattedData);
-
     const response = yield call(axios.post, API_ENDPOINTS.JANAM_KUNDLI, formattedData, { headers });
 
     yield put(submitFormSuccess({ formData, responseData: response.data }));

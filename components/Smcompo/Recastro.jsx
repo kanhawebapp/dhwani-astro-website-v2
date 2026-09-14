@@ -24,7 +24,6 @@ export default function Recastro({ astrologers = [] }) {
     const router = useRouter();
 
     const astrologerlist = astrologers || [];
-console.log("xxxxxxxxxxxxxxxx",astrologerlist);
 
     const chatredirect = (astroid) => {
         setAlert(true);

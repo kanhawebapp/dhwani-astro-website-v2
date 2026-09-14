@@ -175,24 +175,19 @@ const client = agoraClientRef.current;
     return;
   }
 
-  console.log("================================");
-  console.log("Subscribing User:", user.uid);
-  console.log("Media Type:", mediaType);
+  
 
   await client.subscribe(user, mediaType);
 
-  console.log("Subscribed Successfully");
 
   // Video
   if (mediaType === "video") {
     setHostJoined(true);
 
-    console.log("Video Track:", user.videoTrack);
 
     const videoContainer =
       document.getElementById("remote-video");
 
-    console.log("Container:", videoContainer);
 
     if (!videoContainer) {
       console.error("Remote video container not found");
@@ -201,7 +196,6 @@ const client = agoraClientRef.current;
 
     if (user.videoTrack) {
       user.videoTrack.play("remote-video");
-      console.log("Video Playing...");
     }
   }
 
@@ -209,11 +203,9 @@ const client = agoraClientRef.current;
   if (mediaType === "audio") {
     if (user.audioTrack) {
       user.audioTrack.play();
-      console.log("Audio Playing...");
     }
   }
 
-  console.log("================================");
 } catch (err) {
   console.error("Subscribe Error:", err);
 }
@@ -226,7 +218,6 @@ const client = agoraClientRef.current;
 // ---------------------------------------------------------
 const initializeLive = async () => {
 if (initializingRef.current) {
-console.log("Live initialization already running");
 return;
 }
 
@@ -237,7 +228,6 @@ try {
   setLoading(true);
   setError("");
 
-  console.log("Loading Agora SDKs...");
 
   // -----------------------------------------------------
   // IMPORTANT:
@@ -254,7 +244,6 @@ try {
     return;
   }
 
-  console.log("Agora SDKs loaded successfully");
 
   // Store modules
   agoraRTCRef.current = AgoraRTC;
@@ -290,7 +279,6 @@ try {
         return;
       }
 
-      console.log("Live chat message:", msg);
 
       setMessages((prev) => [
         ...prev,
@@ -321,7 +309,6 @@ try {
 
   const live = data.joinLive;
 
-  console.log("Live information:", live);
 
   setLiveInfo(live);
 

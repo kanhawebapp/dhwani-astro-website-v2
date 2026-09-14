@@ -150,7 +150,6 @@ export const useAPIFetchMHook = (
   }, [payload, dependentCondition, dependentFilterId]);
 
   useEffect(() => {
-    // if (payload) console.log("📤 API Payload:", payload);
   }, [payload]);
 
   return { mainData, dependentData, extraData, loading, error };

@@ -23,7 +23,6 @@ function* getCouponList(){
 
 const response= yield call(couponlist);
 
-console.log("res",response?.data);
 if(response?.status === 200){
     yield put(fetchCouponList(response?.data))
 }else{

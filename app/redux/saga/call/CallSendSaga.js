@@ -27,7 +27,6 @@ function* send_new_request(action) {
     }
   } catch (error) {
 
-console.log("axaXAS",error.message);
     yield put(sendCallReqFail(error?.message));
   }
 }

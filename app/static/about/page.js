@@ -19,12 +19,8 @@ export default async function AboutP() {
 
   const result = await res.json();
 
-  console.log("GRAPHQL STATUS:", res.status);
-  console.log("GRAPHQL RESULT:", JSON.stringify(result, null, 2));
 
   const about = result?.data?.getAboutPage;
-
-  console.log("ABOUT:", about);
 
   const mentor = about?.mentors?.[0];
   const founder = about?.founders?.[0];

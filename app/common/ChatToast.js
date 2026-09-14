@@ -177,7 +177,6 @@ function ChatToast({
 
 
   const handleAccept = () => {
-    console.log("Accepting chat request for room:111111111111111111", room_Id);
     socket.emit("chat_accepted_user", { room_id: room_Id });
     dispatch(setOpenCode());
     dispatch(resetChatAlertData());

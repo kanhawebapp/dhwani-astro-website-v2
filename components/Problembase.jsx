@@ -19,13 +19,11 @@ async function getConsultationServices() {
   });
 
   if (!res.ok) {
-    console.log(await res.text());
     throw new Error("Failed to fetch consultation services");
   }
 
   const json = await res.json();
 
-  console.log(json);
 
   return json.data?.getCategory?.services || [];
 }

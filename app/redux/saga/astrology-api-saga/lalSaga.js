@@ -71,14 +71,6 @@ function* handleFormSubmit(action) {
   try {
     const { formData } = action.payload;
 
-    console.log('Formatted Data:', formData);
-    console.log('Headers:', {
-      Authorization: basicAuth,
-      'Content-Type': 'application/json',
-    });
-    console.log('Data:', formData);
-    console.log('Calling:', API_ENDPOINTS.LAL_KITAB);
-
     const response = yield call(axios.post, API_ENDPOINTS.LAL_KITAB, formData, {
       headers: {
         Authorization: basicAuth,

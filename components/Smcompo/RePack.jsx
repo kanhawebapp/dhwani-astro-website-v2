@@ -39,7 +39,6 @@ const RePack = ({ setShowProDetail }) => {
 
   useEffect(() => {
 
-    console.log("packData", packData);
     if (!packData || packData.length === 0) {
       dispatch(fetchPack());
     }

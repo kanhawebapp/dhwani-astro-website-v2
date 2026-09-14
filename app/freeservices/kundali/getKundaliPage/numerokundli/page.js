@@ -8,17 +8,7 @@ export default async function Page({ searchParams }) {
 
   const hash = params?.hash;
 
-  console.log(
-    "comming in Page FUNCTION hash",
-    hash
-  );
-
   const numeroData = decodeNumeroHash(hash);
-
-  console.log(
-    "NUMERO DATA:",
-    numeroData
-  );
 
   if (!numeroData) {
     return (

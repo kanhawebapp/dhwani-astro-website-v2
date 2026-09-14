@@ -85,7 +85,6 @@ const CallRequestCard = ({
 
   const handleAccept = () => {
     socket.emit("chat_accepted_user", { room_id: room_Id }, (response) => {
-      // console.log("Chat accepted response:", response);
     });
   };
 

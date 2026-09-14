@@ -12,11 +12,9 @@ export default function CartPage() {
   const searchParams = useSearchParams();
   const params = useParams();
 
-  console.log(params);
 
   const bookingId = params.bookingId;
 
-  console.log("bookingId =", bookingId);
 
   const {
     data: bookingData,

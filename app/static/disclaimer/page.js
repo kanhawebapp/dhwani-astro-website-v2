@@ -66,11 +66,9 @@ export default async function Disclaimer() {
 
   const result = await res.json();
 
-console.log("DISCLAIMER API RESPONSE:", result);
 
 const disclaimer = result?.data?.getDisclaimerPage;
 
-console.log("DISCLAIMER DATA:", disclaimer);
 
 if (!disclaimer) {
   notFound();

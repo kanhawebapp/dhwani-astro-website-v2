@@ -29,7 +29,6 @@ function* fetchCustomerIntakeDataWorker(action) {
    yield put(fetchIntakeSuccess(response.data));
   } catch (error) {
 
-    console.log("Xx",error);
     yield put(
       fetchIntakeFailure(error.message || "Failed to fetch intake data")
     );

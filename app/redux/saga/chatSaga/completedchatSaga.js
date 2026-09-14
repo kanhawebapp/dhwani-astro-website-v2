@@ -28,12 +28,10 @@ function* CompletedChat(action) {
     if (response?.data.status) {
       yield put(chatCompleted(response?.data));
     } else {
-      console.log("Response indicates failure:", response?.data);
       yield put(chatCompletedFail(response?.data));
     }
   } catch (error) {
 
-    console.log("Error in completed chat saga:", error.message);
     yield put(chatCompletedFail(error?.message));
   }
 }

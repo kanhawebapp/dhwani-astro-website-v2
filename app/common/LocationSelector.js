@@ -62,7 +62,6 @@ const SearchLocation = ({ placeholder, onSelect }) => {
       latitude: parseFloat(city.latitude),
       longitude: parseFloat(city.longitude),
     };
-    console.log("senddddddddddddddddddddddddddddddd", dataToSend);
 
     onSelect(dataToSend);
     setShow(false);

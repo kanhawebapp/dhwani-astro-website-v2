@@ -132,14 +132,6 @@ function normalizeHash(hash) {
 
 export function decodeKundliHash(hash) {
   try {
-    console.log(
-      "decodeKundliHash - starting"
-    );
-
-    console.log(
-      "decodeKundliHash - secret loaded:",
-      SECRET_KEY ? "YES" : "NO"
-    );
 
     const encrypted = normalizeHash(hash);
 
@@ -155,10 +147,7 @@ export function decodeKundliHash(hash) {
     }
 
     const result = JSON.parse(decrypted);
-
-    console.log(
-      "decodeKundliHash - successfully decrypted"
-    );
+   
 
     return result;
   } catch (error) {
@@ -177,20 +166,8 @@ export function decodeKundliHash(hash) {
 
 export function decodeNumeroHash(hash) {
   try {
-    console.log(
-      "decodeNumeroHash - starting"
-    );
-
-    console.log(
-      "decodeNumeroHash - secret loaded:",
-      NUMERO_SECRET ? "YES" : "NO"
-    );
 
     const encrypted = normalizeHash(hash);
-
-    console.log(
-      "decodeNumeroHash - encrypted hash received"
-    );
 
     const decrypted = decryptCryptoJS(
       encrypted,
@@ -204,12 +181,6 @@ export function decodeNumeroHash(hash) {
     }
 
     const result = JSON.parse(decrypted);
-
-    console.log(
-      "decodeNumeroHash - successfully decrypted",
-      result
-    );
-
     return result;
   } catch (error) {
     console.error(

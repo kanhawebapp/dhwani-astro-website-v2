@@ -48,7 +48,6 @@ const SignInModal = ({ onClose }) => {
 
   const { pendingRoute, setPendingRoute } = useAuth();
 
-  console.log("comming step value:", step);
   useEffect(() => {
     const scrollY = window.scrollY;
 

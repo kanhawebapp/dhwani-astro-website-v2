@@ -62,21 +62,17 @@ export const useOTP = () => {
 
   const sendOtp = async (countryCode, mobile) => {
   try {
-    // console.log("1. sendOtp started");
 
     const res = await requestOtp({
       variables: { countryCode, mobile },
     });
 
-    console.log("2. API response:", res.data.requestOtp.message);
 
     if (res.data.requestOtp.message === "OTP sent successfully") {
-      // console.log("3. BEFORE setStep OTP");
 
       setStep("OTP");
       startTimer(60);
 
-      // console.log("4. AFTER setStep OTP");
     } else {
       alert("Failed to send OTP");
     }

@@ -128,8 +128,6 @@ const handleCardClick = (href) => {
 
   const kundliHash = createKundliHash(formData);
 
-  console.log("CLIENT Kundli Hash:", kundliHash, formData);
-  console.log("CLIENT Final URL:", `${href}?hash=${kundliHash}`);
 
   window.scrollTo({ top: 0, behavior: "smooth" });
 

@@ -24,7 +24,6 @@ export default function Userchatscr() {
             setIsLoading(true);
             // Simulate API call
             await new Promise(resolve => setTimeout(resolve, 500));
-            // console.log("Sending message to:", { roomid, astroid, message });
             setMessage("");
             setError(null);
         } catch (e) {
