@@ -199,7 +199,7 @@ export default function Footerlinks() {
                     </svg>
                     <Link
                       href="https://astro-panel.onrender.com/"
-                      className="text-xs sm:text-sm lg:text-base"
+                      className="text-xs sm:text-sm lg:text-sm"
                     >
                       {t?.footer?.astro2 || "Astrologer Login"}
                     </Link>
