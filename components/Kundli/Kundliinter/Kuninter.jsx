@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useSelector, shallowEqual } from 'react-redux';
 import Image from 'next/image';
 import useScrollZoom from '@/Hooks/scrollZoom';
-import { createKundliHash } from '@/utils/kundliHash.client';
+import { createKundliHash, createNumeroHash } from '@/utils/kundliHash.client';
 
 export default function Kuninter() {
   useScrollZoom(".head-wrap");
@@ -117,22 +117,55 @@ const handleCardClick = (href) => {
   ];
 
   const missingFields = requiredFields.filter(
-    (field) => formData?.[field] === undefined || formData?.[field] === null
+    (field) =>
+      formData?.[field] === undefined ||
+      formData?.[field] === null
   );
 
   if (missingFields.length > 0) {
-    alert("Please fill all required form inputs in Kundalimain form first!");
+    alert(
+      "Please fill all required form inputs in Kundalimain form first!"
+    );
     return;
   }
 
+  let hash;
 
-  const kundliHash = createKundliHash(formData);
+  // =====================================================
+  // NUMEROLOGY
+  // =====================================================
+  if (href.endsWith("/numerokundli")) {
+    const numeroFormData = {
+      name: formData?.name || "",
+      day: Number(formData?.day),
+      month: Number(formData?.month),
+      year: Number(formData?.year),
+    };
 
+    hash = createNumeroHash(numeroFormData);
 
-  window.scrollTo({ top: 0, behavior: "smooth" });
+    console.log("NUMERO FORM DATA:", numeroFormData);
+    console.log("NUMERO HASH:", hash);
+  }
 
-  
-  router.push(`${href}?hash=${kundliHash}`);
+  // =====================================================
+  // ALL OTHER KUNDLI CARDS
+  // =====================================================
+  else {
+    hash = createKundliHash(formData);
+
+    console.log("KUNDLI FORM DATA:", formData);
+    console.log("KUNDLI HASH:", hash);
+  }
+
+  console.log("FINAL URL:", `${href}?hash=${hash}`);
+
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth",
+  });
+
+  router.push(`${href}?hash=${encodeURIComponent(hash)}`);
 };
 
 
