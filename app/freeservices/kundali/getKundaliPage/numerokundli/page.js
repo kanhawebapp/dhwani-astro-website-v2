@@ -20,6 +20,7 @@ export default async function Page({ searchParams }) {
   }
 
   const numeroData = decodeNumeroHash(hash);
+console.log("console consloe",numeroData );
 
   console.log("DECODED NUMERO DATA:", numeroData);
 
