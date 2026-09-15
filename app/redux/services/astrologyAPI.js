@@ -13,7 +13,6 @@ const sanitizeBody = (body = {}) => ({
   lon: Number(body.lon),
   tzone: Number(body.tzone),
 });
-console.log("hello");
 
 const ASTRO_ENDPOINTS = {
   DAILY_PRED: "daily_nakshatra_prediction",

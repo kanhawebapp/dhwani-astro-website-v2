@@ -168,7 +168,6 @@ export default function GiftPop({ open, onClose, astrologername, astro_id }) {
 
       const order = data?.createOrder;
 
-      console.log("GraphQL Order:", order);
 
       if (!order?.success) {
         toast.error("Error creating order");
@@ -196,7 +195,6 @@ export default function GiftPop({ open, onClose, astrologername, astro_id }) {
         },
 
         handler: async function (response) {
-          console.log("Payment Success:", response);
 
           toast.success("Payment Successful");
 
@@ -228,7 +226,6 @@ export default function GiftPop({ open, onClose, astrologername, astro_id }) {
     }
   };
   const handleClose = () => {
-    console.log("Closing Gift Popup");
     onClose?.();
   };
   if (!open) return null;

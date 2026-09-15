@@ -69,7 +69,6 @@ export default function Header({ openSignInModal }) {
       router.replace("/");
     }
   };
-// console.log("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", user)
   useEffect(() => {
     const handleClickOutside = (event) => {
       const dropdown = document.querySelector(".user-container");

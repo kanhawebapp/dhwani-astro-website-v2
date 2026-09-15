@@ -31,7 +31,6 @@ function CustomButton({
       return;
     }
 
-    console.log("Calling original onClick");
     onClick?.();
   };
 

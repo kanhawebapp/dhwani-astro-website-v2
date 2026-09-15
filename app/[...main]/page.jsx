@@ -55,7 +55,6 @@ import Charyogd from "@/app/freeservices/kundali/getKundaliPage/charyogdasha/pag
 export default function ServicePage() {
     const params = useParams();
     const path = Array.isArray(params.main) ? params.main : [params.main];
-    // console.log(path);
 
     const navmainComponent = {
         chatAstro: <Chatastro />,

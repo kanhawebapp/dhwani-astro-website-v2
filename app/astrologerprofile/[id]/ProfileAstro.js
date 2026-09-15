@@ -119,8 +119,6 @@ export default function ProfileAstro({ astrologerId }) {
   });
 
   const similarAstrologers = similarData?.getSimilarAstrologers || [];
-  console.log("Astrologer ID:", id);
-  console.log("Skip Value:", !id);
   const [userData, setUserData] = useState({
     user_status: 0,
     balance_amount: 0,

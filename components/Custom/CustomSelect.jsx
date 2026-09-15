@@ -21,7 +21,6 @@ const CustomSelect = forwardRef(
     },
     ref
   ) => {
-     console.log("nnnnnnnnnnnnnnnnnnnnnnn",props);
     return (
       <div className={`${variantClasses[variant]} flex flex-col gap-1`}>
         {label && (

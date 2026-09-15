@@ -113,7 +113,6 @@ const UserChat = ({
       try {
         const res = await fetch("https://ipapi.co/json/");
         const data = await res.json();
-        // console.log("ghjghjgjhjg", data);
 
         setGeoInfo({
           ip: data.ip,

@@ -42,7 +42,6 @@ export default function PayOPT({
       try {
         const res = await fetch("https://ipapi.co/json/");
         const data = await res.json();
-        console.log("ghjghjgjhjg", data);
 
         setGeoInfo({
           ip: data.ip,
@@ -124,7 +123,6 @@ export default function PayOPT({
         order = data.createHealingOrder;
       }
 
-      console.log("GraphQL Order:", order);
 
       if (!order?.success) {
         toast.error("Error creating order");
@@ -179,7 +177,6 @@ export default function PayOPT({
           if (type === "SERVICE") {
             route.push("/");
           }
-          console.log("Razorpay Response:", response);
 
           toast.success("Payment Successful");
         },

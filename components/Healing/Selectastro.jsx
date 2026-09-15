@@ -6,7 +6,6 @@ import Image from "next/image";
 import CustomButton from "../Custom/CustomButton";
 
 export default function Selectastro({ open, astrologers, onSelect, onClose }) {
-   console.log("Astrologers:", astrologers);
   if (!open) return null;
 
   return (

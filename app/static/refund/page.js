@@ -65,7 +65,6 @@ export default async function RefundP() {
   );
 
   const result = await res.json();
-  console.log("xxxxxx",result);
   
 
 const refund = result?.data?.getRefundPolicyPage;

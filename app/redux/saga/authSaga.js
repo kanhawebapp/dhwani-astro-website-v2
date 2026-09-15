@@ -21,7 +21,6 @@ const updatename = (payload) => axios.post(API_ENDPOINTS.USERNAME_UPDATE, payloa
 
 function* handleSendOtp(action) {
   try {
-    console.log("Redux receivedxxxxxxxxxxxxxxxxxxxxxxxxx:", action.payload);
 
     const response = yield call(sendOtpApi, action.payload);
   if (response.status === 200 || response.status === 201) {
@@ -54,7 +53,6 @@ function* handleVerifyOtp(action) {
     }
   } catch (error) {
 
-    console.log("SXasxasx",error.message);
     yield put(verifyOtpFailure("Invalid OTP"));
   }
 }
@@ -64,7 +62,6 @@ function* handleVerifyOtp(action) {
 function* HandleUpdateName(action){
  try {
    const response= yield call(updatename,action.payload);
-   console.log("aSas",response);
   if(response?.status === 200){
     yield put(updateNameDone(response?.data))
   }

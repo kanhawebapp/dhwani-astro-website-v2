@@ -8,7 +8,6 @@ import React,{memo} from "react";
 
 
 
-  console.log("re-render compotent");
   if (!show) return null;
 
 

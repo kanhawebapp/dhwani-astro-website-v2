@@ -27,10 +27,8 @@ function* createReviewSaga(action) {
       withCredentials: true, 
     });
 
-    console.log("Sasa",response);
     yield put(createReviewSuccess(response.data.review));
   } catch (error) {
-    console.log("ADSAsdad",error?.message);
     yield put(createReviewFailure(error.response?.data?.error || "Something went wrong"));
   }
 }

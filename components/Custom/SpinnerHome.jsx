@@ -37,7 +37,6 @@ const spinWheel = () => {
   setAngle((prev) => prev + fullRotations + landingAngle);
 
   setTimeout(() => {
-    console.log("Landed on:", slices[randomIndex]);
     setSpinning(false);
   }, 5200);
 };

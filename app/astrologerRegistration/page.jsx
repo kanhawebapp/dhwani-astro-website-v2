@@ -215,7 +215,7 @@ const problemOptions =
             label="Languages"
             field="languages" required
             selected={form.languages}
-            options={["English", "Hindi", "Gujarati", "Tamil", "Punjabi", "Others"]}
+            options={["English", "Hindi", "Gujarati", "Tamil", "Punjabi","Telugu","Kannada","Sanskrit","Bangla", "Others"]}
             handleCheckbox={handleCheckbox}
             error={errors.languages}
           />

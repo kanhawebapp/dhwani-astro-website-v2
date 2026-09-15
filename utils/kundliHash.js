@@ -7,16 +7,6 @@ const SECRET_KEY =
 const NUMERO_SECRET =
   process.env.NEXT_PUBLIC_NUMERO_SECRET || "numero-secret-key";
 
-console.log(
-  "Kundli secret loaded:",
-  SECRET_KEY ? "YES" : "NO"
-);
-
-console.log(
-  "Numero secret loaded:",
-  NUMERO_SECRET ? "YES" : "NO"
-);
-
 // =====================================================
 // KUNDLI
 // =====================================================
@@ -85,10 +75,6 @@ export function decodeKundliHash(hash) {
 
 export function createNumeroHash(formData) {
   try {
-    console.log(
-      "createNumeroHash - secret loaded:",
-      NUMERO_SECRET ? "YES" : "NO"
-    );
 
     const payload = {
       name: String(formData.name || "").trim(),
@@ -102,9 +88,7 @@ export function createNumeroHash(formData) {
       NUMERO_SECRET
     ).toString();
 
-    console.log(
-      "createNumeroHash - hash created successfully"
-    );
+    
 
     return encodeURIComponent(encrypted);
   } catch (error) {
@@ -118,14 +102,6 @@ export function createNumeroHash(formData) {
 
 export function decodeNumeroHash(hash) {
   try {
-    console.log(
-      "decodeNumeroHash - starting"
-    );
-
-    console.log(
-      "decodeNumeroHash - secret loaded:",
-      NUMERO_SECRET ? "YES" : "NO"
-    );
 
     if (!hash) {
       console.error(
@@ -136,9 +112,6 @@ export function decodeNumeroHash(hash) {
 
     const encrypted = decodeURIComponent(hash);
 
-    console.log(
-      "decodeNumeroHash - encrypted hash received"
-    );
 
     const bytes = AES.decrypt(
       encrypted,
@@ -155,10 +128,6 @@ export function decodeNumeroHash(hash) {
     }
 
     const result = JSON.parse(decrypted);
-
-    console.log(
-      "decodeNumeroHash - successfully decrypted"
-    );
 
     return result;
   } catch (error) {

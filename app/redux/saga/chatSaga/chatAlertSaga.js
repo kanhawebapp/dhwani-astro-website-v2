@@ -9,7 +9,6 @@ function*fetchChatAlertData(action) {
   const { data } = action.payload;
 
 
-  console.log("Fetching chat alert data with payload:", action.payload);
 
 yield put(setChatAlertData(action.payload));
 } catch (error) {

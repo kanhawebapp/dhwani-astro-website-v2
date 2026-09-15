@@ -9,7 +9,6 @@ import {
 
 
 const astrologerapi = (payload) => {
-  console.log("server",2);
  return axios.get(API_ENDPOINTS.ASTROLOGER_DETAIL, {
  params: payload, 
   });
@@ -21,7 +20,6 @@ function* getAstrologerDetail(action) {
 const existingData = yield select((state) => state.astrologerdetail.astrologerdata);
 
 
-console.log("SsA",existingData);
 
 if (existingData && existingData.length > 0) {
   return;
@@ -33,7 +31,6 @@ const response = yield call(astrologerapi, { astro_id });
   } catch (error) {
 
 
-    console.log("asaSA",error?.message);
 
     yield put(getFailAstrologer(error?.message));
   }

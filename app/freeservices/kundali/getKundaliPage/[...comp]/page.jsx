@@ -15,7 +15,6 @@ export default function Kundlipage() {
   }
 
   const handleSubmit = (formData) => {
-    // console.log("Submitted data:", formData);
   };
 
   // Component references

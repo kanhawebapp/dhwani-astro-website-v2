@@ -1,7 +1,6 @@
 "use client";
 
 export default function Sadhesati(props) {
-  console.log("CLIENT Sadhesati PROPS:", props);
 
   const { satiData, remeData, detailsData } = props;
 

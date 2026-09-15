@@ -83,7 +83,6 @@ export default function Formdcalc({ slug }) {
 
     router.push(`/doubleform/doubleresult/${slug}`);
   };
-  console.log("Current matchData:", matchData);
 
   return (
     <div className="basic-kundli-charts max-w-7xl flex flex-col gap-3 md:col-span-4 items-center">

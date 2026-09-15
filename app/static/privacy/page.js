@@ -64,7 +64,6 @@ export default async function PrivacyP() {
   );
 
   const result = await res.json();
-  console.log("xxxx",result);
   
 
 const privacy = result?.data?.getPrivacyPage;

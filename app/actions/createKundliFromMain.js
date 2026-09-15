@@ -18,7 +18,6 @@ export async function createKundliFromMain(formData) {
     birthplace: formData.get("birthplace"),
   };
 
-  console.log("SERVER ACTION PAYLOAD", payload);
 
   const hash = createKundliHash(payload);
 

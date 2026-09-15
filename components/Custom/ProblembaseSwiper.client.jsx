@@ -12,7 +12,6 @@ import "swiper/css/navigation";
 import "swiper/css/pagination";
 
 export default function ProblembaseSwiper({ categorySlug }) {
-    console.log("categorySlug:", categorySlug);
   const { data, loading, error } = useQuery(GET_CATEGORY, {
     variables: {
       slug: categorySlug,
