@@ -1,8 +1,4 @@
-import {
-  createNumeroHash,
-  decodeNumeroHash,
-} from "@/utils/kundliHash.server";
-
+import { decodeNumeroHash } from "@/utils/kundliHash.server";
 import NumerokundliClient from "./NumerokundliClient";
 
 export default async function Page({ searchParams }) {
@@ -11,107 +7,77 @@ export default async function Page({ searchParams }) {
   const params = await searchParams;
 
   const hash = params?.hash;
+  const source = params?.source;
 
   console.log("NUMERO HASH:", hash);
+  console.log("NUMERO SOURCE:", source);
 
   let numeroData = null;
 
-  // =====================================================
-  // CASE 1
-  // ALREADY HASH AVAILABLE
-  // =====================================================
 
   if (hash) {
-    console.log(
-      "Numero hash already available"
-    );
+    console.log("INTERNAL NUMERO FLOW - HASH FOUND");
 
     numeroData = decodeNumeroHash(hash);
 
-    console.log(
-      "Decoded Numero Data:",
-      numeroData
-    );
+    console.log("DECODED NUMERO DATA:", numeroData);
   }
 
-  // =====================================================
-  // CASE 2
-  // EXTERNAL DATA
-  // CREATE HASH -> DECODE HASH
-  // =====================================================
+  if (!numeroData && source === "dashboard") {
+    console.log("EXTERNAL NUMERO FLOW - NO HASH");
 
-  if (!numeroData) {
     const name = params?.name || "";
     const dob = params?.dob || "";
 
-    console.log(
-      "External Numero Params:",
-      {
-        name,
-        dob,
+    let day = null;
+    let month = null;
+    let year = null;
+
+    if (dob) {
+      const dateOnly = dob.split("T")[0];
+
+      // YYYY-MM-DD
+      if (dateOnly.includes("-")) {
+        const parts = dateOnly.split("-");
+
+        if (parts.length === 3) {
+          year = Number(parts[0]);
+          month = Number(parts[1]);
+          day = Number(parts[2]);
+        }
       }
-    );
 
-    if (name && dob) {
-      const dateOnly = String(dob).split("T")[0];
+      // DD/MM/YYYY
+      else if (dateOnly.includes("/")) {
+        const parts = dateOnly.split("/");
 
-      const parts = dateOnly.split("-");
-
-      if (parts.length === 3) {
-        const year = Number(parts[0]);
-        const month = Number(parts[1]);
-        const day = Number(parts[2]);
-
-        const externalData = {
-          name: String(name).trim(),
-          day,
-          month,
-          year,
-        };
-
-        console.log(
-          "External Numero Data:",
-          externalData
-        );
-
-        // =============================================
-        // CREATE NUMERO HASH
-        // =============================================
-
-        const generatedHash =
-          createNumeroHash(
-            externalData
-          );
-
-        console.log(
-          "Generated Numero Hash:",
-          generatedHash
-        );
-
-        if (generatedHash) {
-          // ===========================================
-          // DECODE SAME HASH
-          // ===========================================
-
-          numeroData =
-            decodeNumeroHash(
-              generatedHash
-            );
-
-          console.log(
-            "Decoded Generated Numero Data:",
-            numeroData
-          );
+        if (parts.length === 3) {
+          day = Number(parts[0]);
+          month = Number(parts[1]);
+          year = Number(parts[2]);
         }
       }
     }
+
+    numeroData = {
+      name,
+      day,
+      month,
+      year,
+    };
+
+    console.log("EXTERNAL NUMERO DATA:", numeroData);
   }
 
-  // =====================================================
-  // INVALID REQUEST
-  // =====================================================
+  if (
+    !numeroData ||
+    !numeroData.name ||
+    !Number.isInteger(Number(numeroData.day)) ||
+    !Number.isInteger(Number(numeroData.month)) ||
+    !Number.isInteger(Number(numeroData.year))
+  ) {
+    console.error("INVALID NUMERO DATA:", numeroData);
 
-  if (!numeroData) {
     return (
       <div>
         Invalid or expired numerology link.
@@ -119,13 +85,15 @@ export default async function Page({ searchParams }) {
     );
   }
 
-  // =====================================================
-  // RENDER NUMERO CLIENT
-  // =====================================================
+ 
+  const formData = {
+    name: numeroData.name,
+    day: Number(numeroData.day),
+    month: Number(numeroData.month),
+    year: Number(numeroData.year),
+  };
 
-  return (
-    <NumerokundliClient
-      formData={numeroData}
-    />
-  );
+  console.log("FINAL NUMERO FORM DATA:", formData);
+
+  return <NumerokundliClient formData={formData} />;
 }
