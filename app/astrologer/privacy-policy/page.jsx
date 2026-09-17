@@ -259,9 +259,32 @@ const sections = [
       </>
     ),
   },
+    {
+    number: "9",
+    title: "Photos and Video Sharing",
+    content: (
+      <>
+        <p>
+         Dhwani Astro allows users and astrologers to voluntarily select and share images/videos during chats or consultations. These images/videos may include, for example, kundli charts, palm photographs, documents, screenshots, or other consultation-related images/videos.
+        </p>
+
+        <p className="mt-1">
+          Dhwani Astro accesses only the images/videos that the user specifically selects for upload or sharing through the device’s system photo picker or similar selection mechanism. We do not require continuous or unrestricted access to the user’s complete photo library for this functionality.
+        </p>
+
+        <p className="mt-2">
+        Images/Videos selected by users may be uploaded, transmitted, stored, and displayed to the intended astrologer or user for the purpose of providing consultation services, customer support, or related platform functionality. Users should avoid sharing unnecessary personal or sensitive information in images/videos.
+        </p>
+
+        <p className="mt-2">
+        Where image access is optional, users may choose not to upload images/videos and may manage relevant permissions through their device settings.
+        </p>
+      </>
+    ),
+  },
 
   {
-    number: "9",
+    number: "10",
     title: "Permission Controls",
     content: (
       <>
@@ -290,7 +313,7 @@ const sections = [
   },
 
   {
-    number: "10",
+    number: "11",
     title: "Data Security",
     content: (
       <>
@@ -313,7 +336,7 @@ const sections = [
   },
 
   {
-    number: "11",
+    number: "12",
     title: "Changes to This Privacy Policy",
     content: (
       <p>
