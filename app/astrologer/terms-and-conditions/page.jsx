@@ -621,7 +621,7 @@ export default function TermsAndConditionsPage() {
     <main className="min-h-screen bg-white text-gray-900">
       {/* Hero */}
       <section className="border-b bg-gray-50">
-        <div className="mx-auto max-w-5xl px-6 py-16 md:px-8">
+        <div className="mx-auto max-w-6xl px-6 py-16 md:px-8">
           <p className="mb-3 text-sm font-medium uppercase tracking-wider text-gray-500">
             Dhwani Astro
           </p>
@@ -642,7 +642,7 @@ export default function TermsAndConditionsPage() {
       </section>
 
       {/* Content */}
-      <section className="mx-auto max-w-5xl px-6 py-12 md:px-8 md:py-16">
+      <section className="mx-auto max-w-6xl px-6 py-12 md:px-8 md:py-16">
         <div className="grid gap-12 lg:grid-cols-[220px_1fr]">
           {/* Sidebar */}
           <aside className="hidden lg:block">
