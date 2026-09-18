@@ -5,14 +5,22 @@ import { onError } from "@apollo/client/link/error";
 import UploadHttpLink from "apollo-upload-client/UploadHttpLink.mjs";
 
 /* =========================
-UPLOAD LINK (IMPORTANT)
+BASE URL
+========================= */
+
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+
+const GRAPHQL_URL = `${BASE_URL}/userAuth/graphql`;
+
+/* =========================
+UPLOAD LINK
 ========================= */
 
 const uploadLink = new UploadHttpLink({
-  uri: "https://dhwaniastro.com/userAuth/graphql",
+  uri: GRAPHQL_URL,
   credentials: "include",
   headers: {
-    "apollo-require-preflight": "true", 
+    "apollo-require-preflight": "true",
   },
 });
 
@@ -31,7 +39,7 @@ const resolvePendingRequests = () => {
 const errorLink = onError(({ graphQLErrors, operation, forward }) => {
   if (!graphQLErrors) return;
 
-  for (let err of graphQLErrors) {
+  for (const err of graphQLErrors) {
     if (
       err.message === "Unauthorized" ||
       err.extensions?.code === "UNAUTHENTICATED"
@@ -40,7 +48,7 @@ const errorLink = onError(({ graphQLErrors, operation, forward }) => {
         isRefreshing = true;
 
         return new Promise((resolve, reject) => {
-          fetch("https://dhwaniastro.com/userAuth/graphql", {
+          fetch(GRAPHQL_URL, {
             method: "POST",
             credentials: "include",
             headers: {
@@ -69,7 +77,10 @@ const errorLink = onError(({ graphQLErrors, operation, forward }) => {
             })
             .catch((err) => {
               console.error("Refresh token failed:", err);
+
               isRefreshing = false;
+              pendingRequests = [];
+
               reject(err);
             });
         });
@@ -89,7 +100,7 @@ APOLLO CLIENT
 ========================= */
 
 const client = new ApolloClient({
-  link: from([errorLink, uploadLink]), 
+  link: from([errorLink, uploadLink]),
   cache: new InMemoryCache(),
   connectToDevTools: process.env.NODE_ENV === "development",
 });
