@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useQuery } from "@apollo/client/react";
 import { useBlog } from "@/app/context/blogContext";
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
 export default function CategoryBlogsPage() {
   const { slug } = useParams();
@@ -31,7 +32,7 @@ const { blogs, blogsLoading } = useBlog();
           <div className="blog-bx-nw gap-2 /md:gap-0  grid grid-cols-5 hover:scale-102   md:flex flex-col">
             <div className="col-span-2 ">
               <Image
-                src={`https://www.dhwaniastro.com${blog.featuredImage}`}
+                src={`${BASE_URL}${blog.featuredImage}`}
                 alt="image here"
                 width={100}
                 height={100}

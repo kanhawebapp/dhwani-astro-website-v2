@@ -4,6 +4,7 @@ import { GET_FOLLOWED_ASTROLOGERS } from "@/app/graphql/gqlQuery";
 import { useQuery } from "@apollo/client/react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 export default function FollowingPage() {
   const { data, loading, error } = useQuery(GET_FOLLOWED_ASTROLOGERS, {
     variables: {
@@ -94,7 +95,7 @@ export default function FollowingPage() {
                   <Image
                     src={
                       astrologer?.profilePic
-                        ? `https://www.dhwaniastro.com${astrologer.profilePic}`
+                        ? `${BASE_URL}${astrologer.profilePic}`
                         : "/man.png"
                     }
                     // src={astrologer.profilePic || "/images/default-user.png"}

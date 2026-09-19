@@ -10,6 +10,7 @@ import SocketContext from "@/app/context/socketContext";
 import { useLanguage } from "../../app/context/LangContext";
 import { useLazyQuery, gql } from "@apollo/client";
 import RecentRequestPopup from "../Custom/RecentRequestPopUp";
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
 function AstroCCard({ mode = "chat", data = [], loading }) {
   const busySet = new Set();
@@ -185,7 +186,7 @@ function AstroCCard({ mode = "chat", data = [], loading }) {
                     <Image
                       src={
                         astro?.profilePic
-                          ? `https://www.dhwaniastro.com${astro.profilePic}`
+                          ? `${BASE_URL}${astro.profilePic}`
                           : "/man.png"
                       }
                       className="object-cover cursor-pointer border-3 border-purple-200 rounded-full shadow-md w-18 h-18 sm:w-22 sm:h-22"

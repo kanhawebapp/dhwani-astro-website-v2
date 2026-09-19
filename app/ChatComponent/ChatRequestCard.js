@@ -7,6 +7,7 @@ import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { removeActiveRequest } from "../redux/reducer/chat/sendRequestSlice";
 import { useDispatch } from "react-redux";
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
 const ChatRequestCard = ({
   room_Id,
@@ -611,7 +612,7 @@ const ChatRequestCard = ({
           <Image
             src={
               astroimage
-                ? `https://www.dhwaniastro.com${astroimage}`
+                ? `${BASE_URL}${astroimage}`
                 : "/man.png"
             }
             alt="Neha Vermaaaa"
@@ -641,7 +642,7 @@ const ChatRequestCard = ({
           <Image
             src={
               astroimage
-                ? `https://www.dhwaniastro.com${astroimage}`
+                ? `${BASE_URL}${astroimage}`
                 : "/man.png"
             }
             alt="Neha Verma"

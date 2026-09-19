@@ -1,10 +1,11 @@
 import Image from "next/image";
 import { GET_ABOUT_PAGE } from "../../graphql/seoQuery";
 //export const revalidate = 604800; 
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
 export default async function AboutP() {
   const res = await fetch(
-    "https://dhwaniastro.com/userAuth/graphql",
+    `${BASE_URL}/userAuth/graphql`,
     {
       method: "POST",
       headers: {
@@ -70,7 +71,7 @@ export default async function AboutP() {
                       mentor?.image
                         ? mentor.image.startsWith("http")
                           ? mentor.image
-                          : `https://dhwaniastro.com${mentor.image}`
+                          : `${BASE_URL}${mentor.image}`
                         : "/prblm/gajanand.jpeg"
                     }
                     alt={mentor?.name || "Mentor"}
@@ -109,7 +110,7 @@ export default async function AboutP() {
                       founder?.image
                         ? founder.image.startsWith("http")
                           ? founder.image
-                          : `https://dhwaniastro.com${founder.image}`
+                          : `${BASE_URL}${founder.image}`
                         : "/prblm/dhwani-jain.jpg"
                     }
                     alt={founder?.name || "Founder"}

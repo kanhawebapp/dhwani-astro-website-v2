@@ -1,11 +1,12 @@
 
 import { GET_DISCLAIMER_PAGE } from "@/app/graphql/seoQuery";
 import { notFound } from "next/navigation";
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
 export async function generateMetadata() {
   try {
     const res = await fetch(
-      "https://dhwaniastro.com/userAuth/graphql",
+      `${BASE_URL}/userAuth/graphql`,
       {
         method: "POST",
         headers: {
@@ -51,7 +52,7 @@ export async function generateMetadata() {
 export const dynamic = "force-static";
 export default async function Disclaimer() {
   const res = await fetch(
-    "https://dhwaniastro.com/userAuth/graphql",
+    "${BASE_URL}/userAuth/graphql",
     {
       method: "POST",
       headers: {

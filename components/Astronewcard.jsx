@@ -22,6 +22,7 @@ import { GET_ASTROLOGERS_USER } from "@/app/graphql/gqlQuery";
 import RecentRequestPopup from "./Custom/RecentRequestPopUp";
 import { useSelector } from "react-redux";
 import Recastro from "./Smcompo/Recastro";
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
 export default function Astronewcard() {
   const busySet = new Set();
@@ -374,7 +375,7 @@ export default function Astronewcard() {
                         <Image
                           src={
                             astro?.profilePic
-                              ? `https://www.dhwaniastro.com${astro.profilePic}`
+                              ? `${BASE_URL}${astro.profilePic}`
                               : "/man.png"
                           }
                           className="object-cover w-16 h-16 border-4 border-yellow-400 rounded-full shadow-md sm:w-22 sm:h-22"

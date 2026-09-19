@@ -1,8 +1,9 @@
 import { print } from "graphql";
 import { GET_CATEGORY } from "@/app/graphql/gqlQuery";
 import ProblembaseClient from "../components/Custom/ProblembaseClient"
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 async function getConsultationServices() {
-  const res = await fetch("https://dhwaniastro.com/userAuth/graphql", {
+  const res = await fetch(`${BASE_URL}/userAuth/graphql`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

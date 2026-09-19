@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
 export default function BlogSidebar({ categories, recentBlogs, loading }) {
     if (loading) {
@@ -66,7 +66,7 @@ export default function BlogSidebar({ categories, recentBlogs, loading }) {
               <div className="bg-[#ffffffba] pr-2 rounded-full flex gap-2 items-center hover:scale-102">
                 <div className="trend-bi w-14 h-14 rounded-full overflow-hidden">
                   <Image
-                    src={`https://www.dhwaniastro.com${item.featuredImage}`}
+                    src={`${BASE_URL}${item.featuredImage}`}
                     width={100}
                     height={100}
                     alt={item.title}

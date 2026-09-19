@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect } from "react";
 import Searchtop from "@/components/Smcompo/Searchtop";
 import { useBlog } from "../context/blogContext";
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
 export default function Blogcomp() {
   const { blogs, categories } = useBlog();
@@ -77,7 +78,7 @@ export default function Blogcomp() {
                 <div className="blog-bx-nw gap-2 /md:gap-0  grid grid-cols-5 hover:scale-102   md:flex flex-col">
                   <div className="col-span-2 ">
                     <Image
-                      src={`https://www.dhwaniastro.com${blog.featuredImage}`}
+                      src={`${BASE_URL}${blog.featuredImage}`}
                       alt="image here"
                       width={100}
                       height={100}

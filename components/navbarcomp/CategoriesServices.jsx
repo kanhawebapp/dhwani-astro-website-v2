@@ -11,6 +11,7 @@ import useScrollZoom from "@/Hooks/scrollZoom";
 import { useQuery } from "@apollo/client/react";
 import { GET_CATEGORY } from "@/app/graphql/gqlQuery";
 import CategorySkeleton from "../Custom/categorySkeleton";
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
 export default function CategoryServices({ categorySlug }) {
   const [search, setSearch] = useState("");
@@ -58,7 +59,7 @@ export default function CategoryServices({ categorySlug }) {
             >
               <div className="relative w-full sm:h-50 h-35 overflow-hidden">
                 <Image
-                  src={`https://dhwaniastro.com${heal.image}`}
+                  src={`${BASE_URL}${heal.image}`}
                   alt="heal image"
                   width={300}
                   height={160}

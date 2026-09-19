@@ -8,6 +8,7 @@ import { useDispatch } from "react-redux";
 import { removeActiveRequest } from "@/app/redux/reducer/chat/sendRequestSlice";
 import { useQuery, useMutation } from "@apollo/client/react";
 import { gql } from "@apollo/client";
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
 const UPLOAD_CALL_RECORDING = gql`
   mutation UploadCallRecording(
@@ -799,7 +800,7 @@ export default function CallPage(
              <Image width={100} height={100} 
               src={
                 astroImage
-                  ? `https://www.dhwaniastro.com${astroImage}`
+                  ? `${BASE_URL}${astroImage}`
                   : "/man.png"
               }
               alt={astroData?.astrologer?.name}

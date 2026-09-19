@@ -4,6 +4,7 @@ import Image from "next/image";
 import dynamic from "next/dynamic";
 import useScrollZoom from "@/Hooks/scrollZoom";
 import { useLanguage } from "@/app/context/LangContext";
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
 const ProblembaseSwiper = dynamic(
   () => import("./ProblembaseSwiper.client"),
@@ -23,7 +24,7 @@ export default function ProblembaseClient({ services }) {
   const swiperData =
     services?.map((service) => ({
       id: service.id,
-      src: `https://dhwaniastro.com${service.image}`,
+      src: `${BASE_URL}${service.image}`,
       alt: service.name,
       ulname: service.name,
       href: `/consultation/${service.slug}`,

@@ -9,7 +9,7 @@ import {
 } from "@/app/graphql/gqlQuery";
 import { useQuery } from "@apollo/client/react";
 import Link from "next/link";
-
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 export default function BlogDetail() {
   const { slug } = useParams();
 
@@ -102,7 +102,7 @@ export default function BlogDetail() {
           {blog.featuredImage && (
             <div className="overflow-hidden col-span-4 rounded-xl">
               <Image
-                src={`https://www.dhwaniastro.com${blog.featuredImage}`}
+                src={`${BASE_URL}${blog.featuredImage}`}
                 className="w-full h-45 sm:h-80 rounded-2xl"
                 width={400}
                 height={200}
