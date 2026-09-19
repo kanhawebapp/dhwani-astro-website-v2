@@ -177,7 +177,7 @@ export default function GiftPop({ open, onClose, astrologername, astro_id }) {
 
       const options = {
         key:
-          process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_SNXjhTOgP1CIx0",
+          process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ,
 
         amount: order.amount,
 

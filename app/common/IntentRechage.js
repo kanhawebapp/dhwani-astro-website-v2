@@ -75,7 +75,7 @@ function IntentRechage({ showrecharge = false, astro_id, reqmode }) {
                 return;
             }
             const options = {
-                key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_live_3zT42YgMgCfOim",
+                key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ,
                 amount: order.amount,
                 currency: order.currency,
                 name: "Dhwani Astro LLp",
