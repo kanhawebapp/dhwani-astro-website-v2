@@ -6,6 +6,8 @@ const nextConfig = {
     domains: [
       "json.astrologyapi.com",
       "dhwaniastro.com",
+      "www.dhwaniastro.com",
+      "staging.dhwaniastro.com",
     ],
 
     remotePatterns: [
@@ -16,6 +18,10 @@ const nextConfig = {
       {
         protocol: "https",
         hostname: "www.dhwaniastro.com",
+      },
+      {
+        protocol: "https",
+        hostname: "staging.dhwaniastro.com",
       },
     ],
   },
