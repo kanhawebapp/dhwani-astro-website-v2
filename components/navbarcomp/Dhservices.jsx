@@ -8,6 +8,7 @@ import useScrollZoom from "@/Hooks/scrollZoom";
 import { useState } from "react";
 import { useQuery } from "@apollo/client/react";
 import { GET_CATEGORIES, GET_SERVICES } from "@/app/graphql/gqlQuery";
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
 const ServiceCardSkeleton = () => {
   return (
@@ -186,7 +187,7 @@ export default function Dhservices() {
                 <div className="relative h-35 w-full overflow-hidden sm:h-50">
                   <Image
                     src={
-                      `https://www.dhwaniastro.com${item.image}` ||
+                      `${BASE_URL}${item.image}` ||
                       "/placeholder.webp"
                     }
                     alt={item.name}

@@ -5,7 +5,8 @@ import { io } from "socket.io-client";
 
 const SocketContext = createContext();
 
-const SOCKET_BASE_URL = "https://dhwaniastro.com//dhwani-astro";
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+const SOCKET_BASE_URL = `${BASE_URL}/dhwani-astro`;
 
 export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
@@ -16,18 +17,18 @@ export const SocketProvider = ({ children }) => {
       return socket;
     }
 
-    const socketInstance = io("https://dhwaniastro.com/dhwani-astro", {
+    const socketInstance = io(SOCKET_BASE_URL, {
       path: "/user-socket-service-v2/socket.io",
       transports: ["websocket", "polling"],
       withCredentials: true,
     });
 
     socketInstance.on("connect", () => {
-      console.log(" Socket connected:", socketInstance.id);
+      console.log("Socket connected:", socketInstance.id);
     });
 
     socketInstance.on("connect_error", (err) => {
-      console.error(" Socket error:", err.message);
+      console.error("Socket error:", err.message);
     });
 
     socketInstance.on("disconnect", (reason) => {

@@ -2,6 +2,7 @@
 
 import { useGetPujaSuggestionQuery } from "@/app/redux/services/astrologyAPI";
 import CustomButton from "@/components/Custom/CustomButton";
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
 export default function PujasuggestClient({ formData }) {
   const skip = !formData;
@@ -86,12 +87,12 @@ export default function PujasuggestClient({ formData }) {
                       let url = null;
                       if (sug.title === "Kal Sarpa Dosha Shanti Pujan") {
                         url =
-                          "https://dhwaniastro.com/product-details/kaalsarp-dosha-nivaran-pooja";
+                          `${BASE_URL}/product-details/kaalsarp-dosha-nivaran-pooja`;
                       } else if (
                         sug.title === "Pitri Dosha Shanti Pujan"
                       ) {
                         url =
-                          "https://dhwaniastro.com/product-details/pitra-dosha-nivaran";
+                          "${BASE_URL}/product-details/pitra-dosha-nivaran";
                       }
 
                       if (url) window.location.href = url;

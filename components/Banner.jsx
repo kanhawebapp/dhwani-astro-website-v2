@@ -13,6 +13,7 @@ import "swiper/css/pagination";
 
 import { GET_BANNERS } from "@/app/graphql/gqlQuery";
 import { useQuery } from "@apollo/client/react";
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
 const SwiperStyles = dynamic(
   () => import("./Custom/SwiperStyles"),
@@ -87,7 +88,7 @@ export default function Banner() {
           <SwiperSlide key={banner.id}>
             <div className="relative w-full h-[230px] sm:h-[215px] lg:h-[450px]">
               <Image
-                src={`https://dhwaniastro.com${banner.imageUrl}`}
+                src={`${BASE_URL}${banner.imageUrl}`}
                 alt={banner.heading || "Banner"}
                 fill
                 unoptimized

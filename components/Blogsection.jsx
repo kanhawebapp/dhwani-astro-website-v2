@@ -14,6 +14,7 @@ import useScrollZoom from "@/Hooks/scrollZoom";
 import { GET_BLOGS } from "@/app/graphql/gqlQuery";
 import { useQuery } from "@apollo/client/react";
 import { useRouter } from "next/navigation";
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
 export default function Blogsection() {
   const router = useRouter();
@@ -119,7 +120,7 @@ export default function Blogsection() {
                     src={
                       blog.featuredImage?.startsWith("http")
                         ? blog.featuredImage
-                        : `https://www.dhwaniastro.com${blog.featuredImage}`
+                        : `${BASE_URL}${blog.featuredImage}`
                     }
                     className="w-full sm:h-55 h-25 rounded-2xl"
                     width={400}

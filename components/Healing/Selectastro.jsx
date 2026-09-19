@@ -4,6 +4,7 @@ import { Healdata } from "./Healcompo/healdata";
 import Link from "next/link";
 import Image from "next/image";
 import CustomButton from "../Custom/CustomButton";
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
 export default function Selectastro({ open, astrologers, onSelect, onClose }) {
   if (!open) return null;
@@ -40,7 +41,7 @@ export default function Selectastro({ open, astrologers, onSelect, onClose }) {
                       <Image
                         src={
                           astro?.profilePic
-                            ? `https://www.dhwaniastro.com${astro.profilePic}`
+                            ? `${BASE_URL}${astro.profilePic}`
                             : "/defaultastro.png"
                         }
                         alt={astro.name}

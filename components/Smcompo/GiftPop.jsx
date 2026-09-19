@@ -10,6 +10,7 @@ import { GET_GIFTS } from "@/app/graphql/gqlQuery";
 import { useQuery, useMutation } from "@apollo/client/react";
 import { gql } from "@apollo/client";
 import CustomButton from "../Custom/CustomButton";
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const GET_RECHARGE_PACKS = gql`
   query GetRechargePacks {
     getRechargePacks {
@@ -177,7 +178,7 @@ export default function GiftPop({ open, onClose, astrologername, astro_id }) {
 
       const options = {
         key:
-          process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_SNXjhTOgP1CIx0",
+          process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ,
 
         amount: order.amount,
 
@@ -273,7 +274,7 @@ const storedUser = localStorage.getItem("user");
               <Image
                 src={
                   gift?.image
-                    ? `https://www.dhwaniastro.com${gift.image}`
+                    ? `${BASE_URL}${gift.image}`
                     : "/default-gift.png"
                 }
                 alt={gift.name}

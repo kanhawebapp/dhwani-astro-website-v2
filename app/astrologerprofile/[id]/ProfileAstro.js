@@ -20,6 +20,7 @@ import {
 import { useQuery, useMutation } from "@apollo/client/react";
 import { gql } from "@apollo/client";
 import RecentRequestPopup from "@/components/Custom/RecentRequestPopUp";
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 export const FOLLOW_ASTROLOGER = gql`
   mutation FollowAstrologer($astrologerId: ID!) {
     followAstrologer(astrologerId: $astrologerId) {
@@ -319,7 +320,7 @@ export default function ProfileAstro({ astrologerId }) {
             <Image
               src={
                 astrologerdetail?.profilePic
-                  ? `https://www.dhwaniastro.com${astrologerdetail.profilePic}`
+                  ? `${BASE_URL}${astrologerdetail.profilePic}`
                   : "/man.png"
               }
               alt="image"
@@ -556,7 +557,7 @@ export default function ProfileAstro({ astrologerId }) {
                           <Image
                             src={
                               astro.profilePic
-                                ? `https://www.dhwaniastro.com${astro.profilePic}`
+                                ? `${BASE_URL}${astro.profilePic}`
                                 : "/man.png"
                             }
                             width={60}

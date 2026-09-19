@@ -16,6 +16,7 @@ import { removeActiveRequest } from "../redux/reducer/chat/sendRequestSlice";
 import { BiCheckDouble } from "react-icons/bi";
 import Zoom from "react-medium-image-zoom";
 import "react-medium-image-zoom/dist/styles.css";
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 // ================= GRAPHQL =================
 const CREATE_ORDER = gql`
   mutation CreateOrder($input: CreateOrderInput!) {
@@ -272,7 +273,7 @@ const UserChat = ({
       try {
         if (!room_Id) return;
 
-        const res = await fetch("https://dhwaniastro.com/userAuth/graphql", {
+        const res = await fetch(`${BASE_URL}/userAuth/graphql`, {
           method: "POST",
           credentials: "include",
           headers: {
@@ -416,7 +417,7 @@ const UserChat = ({
 
       const options = {
         key:
-          process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_live_3zT42YgMgCfOim",
+          process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ,
 
         // Backend ke Razorpay order se aaya amount
         amount: order.amount,
@@ -913,7 +914,7 @@ const UserChat = ({
             <Image
               src={
                 astro_Image
-                  ? `https://www.dhwaniastro.com${astro_Image}`
+                  ? `${BASE_URL}${astro_Image}`
                   : "/man.png"
               }
               width={45}

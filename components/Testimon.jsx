@@ -12,6 +12,7 @@ import { useLanguage } from "@/app/context/LangContext";
 import useScrollZoom from "@/Hooks/scrollZoom";
 import { GET_TESTIMONIALS } from "@/app/graphql/gqlQuery";
 import { useQuery } from "@apollo/client/react";
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
 export default function Testimon() {
   const { messages: t } = useLanguage();
@@ -37,7 +38,7 @@ export default function Testimon() {
       return image;
     }
 
-    return `https://dhwaniastro.com${image}`;
+    return `${BASE_URL}${image}`;
   };
   const formatDate = (timestamp) => {
     return new Date(Number(timestamp)).toLocaleDateString("en-GB", {

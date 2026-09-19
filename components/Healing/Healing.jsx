@@ -10,6 +10,7 @@ import { useLanguage } from "@/app/context/LangContext";
 import useScrollZoom from "@/Hooks/scrollZoom";
 import { useQuery } from "@apollo/client/react";
 import { GET_CATEGORY } from "@/app/graphql/gqlQuery";
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
 export default function Healing() {
   const [search, setSearch] = useState("");
@@ -74,7 +75,7 @@ export default function Healing() {
             >
               <div className="relative w-full overflow-hidden sm:h-50 h-35">
                 <Image
-                  src={`https://dhwaniastro.com${heal.image}`}
+                  src={`${BASE_URL}${heal.image}`}
                   alt="heal image"
                   width={300}
                   height={160}

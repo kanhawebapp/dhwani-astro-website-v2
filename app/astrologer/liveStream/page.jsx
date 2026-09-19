@@ -5,6 +5,7 @@ import { GET_UPCOMING_LIVES } from "@/app/graphql/gqlQuery";
 
 import Image from "next/image";
 import Link from "next/link";
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
 export default function UpcomingLives() {
   const { data, loading, error } =
@@ -81,7 +82,7 @@ export default function UpcomingLives() {
                       src={
                         live?.astrologer
                           ?.profilePic
-                          ? `https://www.dhwaniastro.com${live.astrologer.profilePic}`
+                          ? `${BASE_URL}${live.astrologer.profilePic}`
                           : "/man.png"
                       }
                       alt="astrologer"

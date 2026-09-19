@@ -10,6 +10,7 @@ import { Navigation, Pagination, Autoplay } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
 export default function ProblembaseSwiper({ categorySlug }) {
   const { data, loading, error } = useQuery(GET_CATEGORY, {
@@ -61,7 +62,7 @@ export default function ProblembaseSwiper({ categorySlug }) {
               className="prob-wrap prblm-card-top flex items-center justify-center sm:w-75 sm:h-55 xl:min-w-70 xl:h-60 min-w-40 sm:min-w-55 h-40"
             >
               <Image
-                src={`https://dhwaniastro.com${service.image}`}
+                src={`${BASE_URL}${service.image}`}
                 alt={service.name}
                 width={300}
                 height={300}

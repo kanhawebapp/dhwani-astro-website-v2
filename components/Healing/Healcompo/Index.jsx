@@ -12,6 +12,7 @@ import Searchtop from "@/components/Smcompo/Searchtop";
 import { GET_SERVICE } from "@/app/graphql/gqlQuery";
 import { useQuery } from "@apollo/client/react";
 import Image from "next/image";
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
 const Heal = ({ categorySlug, serviceSlug }) => {
   const dispatch = useDispatch();
@@ -104,7 +105,7 @@ const Heal = ({ categorySlug, serviceSlug }) => {
             className="object-cover bg-center w-full h-73"
             src={
               service?.image
-                ? `https://www.dhwaniastro.com${service.image}`
+                ? `${BASE_URL}${service.image}`
                 : "/placeholder.webp"
             }
             alt={service?.name}
