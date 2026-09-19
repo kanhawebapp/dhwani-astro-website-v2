@@ -52,7 +52,7 @@ export async function generateMetadata() {
 export const dynamic = "force-static";
 export default async function Disclaimer() {
   const res = await fetch(
-    "${BASE_URL}/userAuth/graphql",
+    `${BASE_URL}/userAuth/graphql`,
     {
       method: "POST",
       headers: {
