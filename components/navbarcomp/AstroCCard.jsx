@@ -1,37 +1,18 @@
 "use client";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import React, { useState, useEffect, useRef, useContext } from "react";
+import React, { useState, useEffect } from "react";
 import CustomButton from "../Custom/CustomButton";
-import { useDispatch, useSelector } from "react-redux";
 import toast from "react-hot-toast";
 import AlertLoading from "@/app/common/AlertLoading";
 import AstrologerPrice from "@/app/common/AstrologerPrice";
-import SocketContext from "@/app/context/socketContext";
 import { useLanguage } from "../../app/context/LangContext";
-import { useLazyQuery, gql } from "@apollo/client";
 import RecentRequestPopup from "../Custom/RecentRequestPopUp";
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
 function AstroCCard({ mode = "chat", data = [], loading }) {
-  const busySet = new Set();
   const { messages: t } = useLanguage();
-  const socket = useContext(SocketContext);
-  const [busyAstros, setBusyAstros] = useState([]);
-  const { code } = useSelector((state) => state.chatAlert);
-  const [search, setSearch] = useState("");
   const router = useRouter();
-  const dispatch = useDispatch();
-  const { id } = useSelector((state) => state.id_slice);
-  useEffect(() => {
-    setSameUser(parseInt(id));
-  }, [id]);
-
-  const [quick, setQuick] = useState(false);
-  const [auth, setAuth] = useState(true);
-  const [astroId, setAstroId] = useState(0);
-  const [busyastro, setBusyAstro] = useState(null);
-  const [sameUser, setSameUser] = useState(0);
   const [alert, setAlert] = useState(false);
 
   // =====================================
@@ -49,21 +30,9 @@ function AstroCCard({ mode = "chat", data = [], loading }) {
     setShowRecentPopup(true);
   };
 
-  const [userData, setUserData] = useState({
-    user_status: 0,
-    balance_amount: 0,
-  });
-
-  useEffect(() => {}, [sameUser]);
-
   const handleClick = ({ id, mode, price, astro }) => {
-    if (!userData) {
-      toast.error("User data not loaded yet");
-      return;
-    }
-
     const goToRequest = () => {
-      if (!mode || !id) return;
+      if (!mode ) return;
 
       openRecentPopup({
         astroId: id,
@@ -71,34 +40,6 @@ function AstroCCard({ mode = "chat", data = [], loading }) {
         astrologer: astro,
       });
     };
-
-    if (userData.user_status === 0) {
-      if (code === 200) {
-        toast.error("Astrologer selected by Your Chat Running Already!");
-      } else {
-        goToRequest();
-      }
-
-      return;
-    }
-
-    if (userData.user_status === 1 || userData.user_status === 2) {
-      const astro_price = (price || 0) * 5;
-
-      if (astro_price > userData.balance_amount) {
-        setQuick(true);
-        setAstroId(id);
-      } else {
-        if (code === 200) {
-          toast.error("Astrologer selected by Your Chat Running Already!");
-        } else {
-          goToRequest();
-        }
-      }
-
-      return;
-    }
-
     goToRequest();
   };
 
@@ -108,11 +49,7 @@ function AstroCCard({ mode = "chat", data = [], loading }) {
     );
   };
 
-  // const astrologerbusy = () => {
-  //   toast.success(
-  //     "Astrologer selected by you is Busy now so please choose another astrologer.",
-  //   );
-  // };
+  
   
 
   const astrologerprofile = (id) => {
@@ -375,7 +312,6 @@ function AstroCCard({ mode = "chat", data = [], loading }) {
 
       <AlertLoading show={alert} title="Please Wait.." />
 
-      {/* <IntentRechage showrecharge={quick} astro_id={astroId} reqmode={mode} /> */}
       <RecentRequestPopup
         show={showRecentPopup}
         onClose={() => setShowRecentPopup(false)}

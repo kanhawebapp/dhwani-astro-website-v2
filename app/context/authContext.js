@@ -1,7 +1,5 @@
 "use client";
 
-import { gql } from "@apollo/client";
-import { useQuery } from "@apollo/client/react";
 import { createContext, useContext, useEffect, useState } from "react";
 
 export const AuthContext = createContext();

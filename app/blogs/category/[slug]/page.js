@@ -3,15 +3,13 @@
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { useQuery } from "@apollo/client/react";
 import { useBlog } from "@/app/context/blogContext";
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
 export default function CategoryBlogsPage() {
   const { slug } = useParams();
 
-const { blogs, blogsLoading } = useBlog();
- 
+  const { blogs, blogsLoading } = useBlog();
 
   const filteredBlogs = blogs.filter((blog) =>
     blog.categories?.some((category) => category.slug === slug),
@@ -23,7 +21,7 @@ const { blogs, blogsLoading } = useBlog();
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-      {filteredBlogs.map((blog,index) => (
+      {filteredBlogs.map((blog, index) => (
         <Link
           href={`/blogs/${blog.slug}`}
           key={index}

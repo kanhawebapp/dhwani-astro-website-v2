@@ -60,9 +60,8 @@ export default function PayOPT({
 
   const payAmount = amount || 0;
 
-  const { statusCode } = useSelector((state) => state.recharge_payment);
 
-  const { userData } = useSelector((state) => state.getuserDetail);
+  //const { userData } = useSelector((state) => state.getuserDetail);
 
   const [user, setUserData] = useState("");
 
@@ -74,23 +73,15 @@ export default function PayOPT({
 
   const [createHealingOrder] = useMutation(CREATE_HEALING_ORDER);
 
-  useEffect(() => {
-    if (userData) {
-      setUserData(userData);
-    }
-  }, [userData]);
+  // useEffect(() => {
+  //   if (userData) {
+  //     setUserData(userData);
+  //   }
+  // }, [userData]);
 
   useEffect(() => {}, [oriamount]);
 
-  useEffect(() => {
-    if (statusCode === 200) {
-      setLoading(false);
-
-      toast.success("Payment Add successfully!");
-
-      route.push("/chat-with-astrologer");
-    }
-  }, [statusCode]);
+ 
 
   const handleCheckout = async () => {
     try {

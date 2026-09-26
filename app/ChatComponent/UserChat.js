@@ -10,7 +10,6 @@ import { gql } from "@apollo/client";
 import toast from "react-hot-toast";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { createReviewRequest } from "../redux/reducer/auth/reviewSlice";
 import { debug } from "three/src/nodes/utils/DebugNode";
 import { removeActiveRequest } from "../redux/reducer/chat/sendRequestSlice";
 import { BiCheckDouble } from "react-icons/bi";

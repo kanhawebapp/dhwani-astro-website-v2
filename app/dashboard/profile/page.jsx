@@ -9,8 +9,7 @@ import { gql } from "@apollo/client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useDispatch } from "react-redux";
-//import { persistor } from "@/app/redux/store";
-import { resetPaymentStatus } from "@/app/redux/reducer/auth/userSlice";
+//import { resetPaymentStatus } from "@/app/redux/reducer/auth/userSlice";
 import toast from "react-hot-toast";
 import client from "@/utils/apolloClient";
 
@@ -60,7 +59,7 @@ export default function UserProfilePage() {
     } finally {
       localStorage.removeItem("user");
 
-      dispatch(resetPaymentStatus());
+      //dispatch(resetPaymentStatus());
 
       await client.clearStore();
      // await persistor.purge();

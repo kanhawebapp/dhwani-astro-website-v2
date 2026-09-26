@@ -1,6 +1,10 @@
-import CryptoJS from 'crypto-js';
+import CryptoJS from "crypto-js";
 
-const SECRET_KEY = 'your-very-secure-key'; 
+const SECRET_KEY = process.env.NEXT_PUBLIC_SECRET_KEY_FOR_CRYPTO;
+
+if (!SECRET_KEY) {
+  throw new Error("NEXT_PUBLIC_SECRET_KEY_FOR_CRYPTO is not defined");
+}
 
 export const encryptData = (data) => {
   try {
@@ -8,9 +12,9 @@ export const encryptData = (data) => {
       JSON.stringify(data),
       SECRET_KEY
     ).toString();
+
     return encodeURIComponent(encrypted);
   } catch (error) {
-    // console.error(' failed:', error);
     return null;
   }
 };
@@ -21,10 +25,11 @@ export const decryptData = (encryptedData) => {
       decodeURIComponent(encryptedData),
       SECRET_KEY
     );
+
     const decrypted = bytes.toString(CryptoJS.enc.Utf8);
+
     return JSON.parse(decrypted);
   } catch (error) {
-    // console.error('Decryption failed:', error);
     return null;
   }
 };

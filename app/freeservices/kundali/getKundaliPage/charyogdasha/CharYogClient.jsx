@@ -3,9 +3,12 @@
 import { useState } from "react";
 import Chardasha from "./chardasha/Chardasha";
 import Yoginidasha from "./yognidasha/Yognidasha";
-import { useGetCharDashaQuery, useGetCurrentCharDashaQuery, useGetCurrentYoginiDashaQuery, useGetYoginiDashaQuery } from "@/app/redux/services/astrologyAPI";
-
-
+import {
+  useGetCharDashaQuery,
+  useGetCurrentCharDashaQuery,
+  useGetCurrentYoginiDashaQuery,
+  useGetYoginiDashaQuery,
+} from "@/app/redux/services/astrologyAPI";
 
 const TABS = [
   { id: "char", label: "Char Dasha" },
@@ -42,16 +45,10 @@ export default function CharYogClient({ formData }) {
   } = useGetCurrentYoginiDashaQuery(formData, { skip });
 
   const loading =
-    charLoading ||
-    charCurrentLoading ||
-    yoginiLoading ||
-    yoginiCurrentLoading;
+    charLoading || charCurrentLoading || yoginiLoading || yoginiCurrentLoading;
 
   const error =
-    charError ||
-    charCurrentError ||
-    yoginiError ||
-    yoginiCurrentError;
+    charError || charCurrentError || yoginiError || yoginiCurrentError;
 
   if (loading) {
     return (
@@ -63,9 +60,7 @@ export default function CharYogClient({ formData }) {
 
   if (error) {
     return (
-      <p className="text-center text-red-500">
-        Failed to load Dasha data.
-      </p>
+      <p className="text-center text-red-500">Failed to load Dasha data.</p>
     );
   }
 
@@ -78,9 +73,7 @@ export default function CharYogClient({ formData }) {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`cursor-pointer px-4 py-1 rounded-full text-xs sm:text-sm ${
-                activeTab === tab.id
-                  ? "bg-purple-500 text-white"
-                  : "text-white"
+                activeTab === tab.id ? "bg-purple-500 text-white" : "text-white"
               }`}
             >
               {tab.label}
@@ -91,17 +84,11 @@ export default function CharYogClient({ formData }) {
 
       <div className="sm:py-5">
         {activeTab === "char" && (
-          <Chardasha
-            charData={charData}
-            charcData={charcData}
-          />
+          <Chardasha charData={charData} charcData={charcData} />
         )}
 
         {activeTab === "yogni" && (
-          <Yoginidasha
-            yogniData={yogniData}
-            yognicData={yognicData}
-          />
+          <Yoginidasha yogniData={yogniData} yognicData={yognicData} />
         )}
       </div>
     </>

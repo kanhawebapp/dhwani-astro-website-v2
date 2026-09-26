@@ -10,12 +10,8 @@ export default function ChatPage() {
   const { roomId } = useParams();
 
   const dispatch = useDispatch();
-
   const { activeRequests } = useSelector((state) => state.send_request_chat);
-
-  // ✅ find by roomId
   const activeRequest = activeRequests.find((item) => item.roomId === roomId);
-
   const [restored, setRestored] = useState(false);
 
   useEffect(() => {

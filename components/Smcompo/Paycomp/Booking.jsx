@@ -8,9 +8,9 @@ import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 
 
-import { ResetCode, setPaymentInput } from "@/app/redux/reducer/Booking/PaymentSlice";
+//import { ResetCode, setPaymentInput } from "@/app/redux/reducer/Booking/PaymentSlice";
 import { decryptData } from "@/app/helper/cryptoHelper";
-import { bookingResetCode } from "@/app/redux/reducer/Booking/BookingReducer";
+//import { bookingResetCode } from "@/app/redux/reducer/Booking/BookingReducer";
 
 export default function Booking({ amount, generateid }) {
 
@@ -40,8 +40,8 @@ export default function Booking({ amount, generateid }) {
 
             const timeout = setTimeout(() => {
                 router.push("/chat-with-astrologer");
-                dispatch(ResetCode());
-                dispatch(bookingResetCode());
+               // dispatch(ResetCode());
+                //dispatch(bookingResetCode());
             }, 4000);
 
 
@@ -98,15 +98,15 @@ export default function Booking({ amount, generateid }) {
                         const method = order.paymentmethod;
                         const paystaus = order.paymentstatus;
 
-                        const res = dispatch(setPaymentInput({
-                            oty: 1,
-                            orderId: generateid,
-                            amount: parseInt(amount),
-                            totalamount: parseInt(totalamount),
-                            txt_id: paymentId,
-                            method: method,
-                            pay_status: paystaus
-                        }))
+                        // const res = dispatch(setPaymentInput({
+                        //     oty: 1,
+                        //     orderId: generateid,
+                        //     amount: parseInt(amount),
+                        //     totalamount: parseInt(totalamount),
+                        //     txt_id: paymentId,
+                        //     method: method,
+                        //     pay_status: paystaus
+                        // }))
 
 
                     } else {

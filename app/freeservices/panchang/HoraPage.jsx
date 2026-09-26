@@ -45,7 +45,7 @@ export default function HoraPage({ initialHora = null }) {
 setHoraData(res?.data || res);
     
     } catch (err) {
-      console.error("❌ Error fetching Hora:", err);
+      console.error(" Error fetching Hora:", err);
     } finally {
       setLoading(false);
     }

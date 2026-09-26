@@ -73,7 +73,7 @@ export async function generateMetadata() {
         `Today's Panchang including ${nakshatra}, ${yoga}, Hora and Chaughadiya.`,
 
       url:
-        "https://yourdomain.com/freeservices/panchang",
+        "https://dhwaniastro.com/freeservices/panchang",
 
       type: "website",
 
@@ -98,7 +98,7 @@ export async function generateMetadata() {
 
     alternates: {
       canonical:
-        "https://yourdomain.com/freeservices/panchang",
+        "https://dhwaniastro.com/freeservices/panchang",
     },
   };
 }

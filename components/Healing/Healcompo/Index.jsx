@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 import CustomButton from "@/components/Custom/CustomButton";
 import Forminp from "@/components/Homepagecomp/Consultations/Concompo/Forminp";
 import { useDispatch } from "react-redux";
-import { setBookingInput } from "@/app/redux/reducer/Booking/BookingReducer";
+//import { setBookingInput } from "@/app/redux/reducer/Booking/BookingReducer";
 import { validateEmail, validatePhone } from "@/app/helper/validation";
 // import Freereport from "@/components/Smcompo/Freereport";
 import Searchtop from "@/components/Smcompo/Searchtop";
@@ -80,18 +80,18 @@ const Heal = ({ categorySlug, serviceSlug }) => {
     } else if (!validateEmail(formDat["mail"])) {
       toast.error("Please enter a valid email address.");
     } else {
-      dispatch(
-        setBookingInput({
-          name: formDat["name"],
-          dob: formDat["dob"],
-          tob: formDat["tob"],
-          mail: formDat["mail"],
-          number: formDat["num"],
-          gender: formDat["gender"],
-          txt: formDat["txt"],
-          bookingid: 3,
-        }),
-      );
+      // dispatch(
+      //   setBookingInput({
+      //     name: formDat["name"],
+      //     dob: formDat["dob"],
+      //     tob: formDat["tob"],
+      //     mail: formDat["mail"],
+      //     number: formDat["num"],
+      //     gender: formDat["gender"],
+      //     txt: formDat["txt"],
+      //     bookingid: 3,
+      //   }),
+      // );
     }
   };
 

@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchAstrologers } from "@/app/redux/reducer/astrologer/astrlogerSlice";
+//import { fetchAstrologers } from "@/app/redux/reducer/astrologer/astrlogerSlice";
 
 export const useAstroList = () => {
   const dispatch = useDispatch();
@@ -39,7 +39,7 @@ export const useAstroList = () => {
   }, [allAstrologers, search, sortType]);
 
   const loadAstrologers = useCallback(() => {
-    dispatch(fetchAstrologers({ page, limit }));
+    //dispatch(fetchAstrologers({ page, limit }));
   }, [dispatch, page]);
 
   useEffect(() => {

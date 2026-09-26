@@ -121,7 +121,7 @@ export default function BlogDetail() {
             </p>
             <div className="flex flex-col gap-2">
               <button
-               onClick={() => router.push("/astrologer/call")}
+                onClick={() => router.push("/astrologer/call")}
                 type="button"
                 className="rounded-full text-xs sm:text-sm px-2 py-1 bg-green-500"
               >

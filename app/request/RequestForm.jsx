@@ -3,24 +3,20 @@ import React, { useEffect, useState, useContext, useMemo, useRef } from "react";
 import CustomInput from "@/components/Custom/CustomInput";
 import CustomSelect from "@/components/Custom/CustomSelect";
 import { useDispatch, useSelector } from "react-redux";
-import { CustomerRequest, AlertLoading, LocationSelector } from "@/app/common";
-import toast from "react-hot-toast";
+import AlertLoading from "@/app/common/AlertLoading";
+import LocationSelector from "@/app/common/LocationSelector";
 import SocketContext from "@/app/context/socketContext";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "@apollo/client/react";
 import { gql } from "@apollo/client";
 import metadata from "libphonenumber-js/metadata.min.json";
 
-//  RHF + ZOD
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { requestFormSchema } from "@/lib/userZodIntake";
 import Image from "next/image";
-import { StarIcon } from "flowbite-react";
-import { addActiveRequest } from "../redux/reducer/chat/sendRequestSlice";
 import { createRequestAndEmit } from "@/utils/createRequestAndEmit";
 import Select from "react-select";
-// import { createRequestAndEmit } from "@/utils/createRequestAndEmit";
 
 const CREATE_INTAKE = gql`
   mutation CreateIntake($input: IntakeInput!) {
@@ -74,7 +70,7 @@ const GET_ASTROLOGER_BY_ID = gql`
 `;
 
 export default function RequestForm({ mode, astroId }) {
-  const debounceRef = useRef(null); //  debounce added
+  const debounceRef = useRef(null); 
 
   const [createIntake] = useMutation(CREATE_INTAKE);
   const astro_id = astroId;

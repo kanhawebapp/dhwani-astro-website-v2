@@ -4,7 +4,7 @@ import CartPage from "../Healing/CartPage";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 //import { fetchPack } from "../../app/redux/reducer/payment/packSlice";
-import { getUserFetch } from "../../app/redux/reducer/auth/userSlice";
+//import { getUserFetch } from "../../app/redux/reducer/auth/userSlice";
 
 import CustomButton from "../Custom/CustomButton";
 import { useLanguage } from "@/app/context/LangContext";
@@ -32,7 +32,7 @@ const RePack = ({ setShowProDetail }) => {
     const user = JSON.parse(localStorage.getItem("user") || "{} ");
 
     if (user.name) {
-      dispatch(getUserFetch());
+     // dispatch(getUserFetch());
     } else {
     }
   }, []);

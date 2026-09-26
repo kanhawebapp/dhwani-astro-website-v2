@@ -3,7 +3,6 @@
 import { useParams } from "next/navigation";
 import Astroskelton from "@/components/Smcompo/Astroskelton";
 import AstrologerList from "../AstrologerList";
-import { gql } from "@apollo/client";
 import { useQuery } from "@apollo/client/react";
 import { useAuth } from "@/app/context/authContext";
 import {

@@ -18,16 +18,13 @@ import { useLanguage } from "../app/context/LangContext";
 import useScrollZoom from "@/Hooks/scrollZoom";
 
 import { useQuery } from "@apollo/client/react";
-import { GET_ASTROLOGERS_USER } from "@/app/graphql/gqlQuery";
+import { GET_ASTROLOGERS_GUEST } from "@/app/graphql/gqlQuery";
 import RecentRequestPopup from "./Custom/RecentRequestPopUp";
-import { useSelector } from "react-redux";
-import Recastro from "./Smcompo/Recastro";
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
 export default function Astronewcard() {
   const busySet = new Set();
   const [showRecentPopup, setShowRecentPopup] = useState(false);
-  // const { code } = useSelector((state) => state.chatAlert);
 
   const [selectedAstroData, setSelectedAstroData] = useState(null);
 
@@ -57,7 +54,7 @@ export default function Astronewcard() {
     data: astrologerResponse,
     loading: astrologerLoading,
     error: astrologerError,
-  } = useQuery(GET_ASTROLOGERS_USER, {
+  } = useQuery(GET_ASTROLOGERS_GUEST, {
     variables: {
       searchInput: {
         limit: 10,
@@ -71,9 +68,10 @@ export default function Astronewcard() {
   });
 
   const { socket } = useContext(SocketContext);
-
-  const astrologerlist =
-    astrologerResponse?.getAstrologerListForUser?.data || [];
+const astrologerlist =
+  astrologerResponse?.getAstrologerListBySearch?.data?.filter(
+    (item) => item.isOnline
+  ) || [];
 
   useEffect(() => {
     if (!socket) {
@@ -137,11 +135,6 @@ export default function Astronewcard() {
     };
 
     if (userData.user_status === 0) {
-      // if (code === 200) {
-      //   toast.error("Astrologer selected by Your Chat Running Already!");
-      // } else {
-      //   goToRequest();
-      // }
 
       return;
     }
@@ -153,11 +146,7 @@ export default function Astronewcard() {
         setQuick(true);
         setAstroId(id);
       } else {
-        // if (code === 200) {
-        //   toast.error("Astrologer selected by Your Chat Running Already!");
-        // } else {
-        //   goToRequest();
-        // }
+        
       }
 
       return;

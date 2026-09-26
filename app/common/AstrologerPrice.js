@@ -2,8 +2,6 @@
 
 import React from "react";
 import { gql } from "@apollo/client";
-import { useQuery } from "@apollo/client/react";
-import { useLanguage } from "../context/LangContext";
 
 const ME_QUERY = gql`
   query Me {

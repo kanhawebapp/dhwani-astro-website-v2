@@ -10,7 +10,7 @@ import Link from "next/link";
 import CustomButton from "@/components/Custom/CustomButton";
 import GiftPop from "@/components/Smcompo/GiftPop";
 import { useLanguage } from "@/app/context/LangContext";
-import { AlertLoading, IntentRechage, SingleButton } from "@/app/common";
+//import { AlertLoading, IntentRechage } from "@/app/common";
 
 import { useRouter } from "next/navigation";
 import {
@@ -725,11 +725,11 @@ export default function ProfileAstro({ astrologerId }) {
         astro_id={astrologerdetail?.id}
         onClose={() => setShowGiftPopup(false)}
       />
-      <IntentRechage
+      {/* <IntentRechage
         showrecharge={quick}
         astro_id={astroId}
         reqmode={selectedAstroData?.mode}
-      />
+      /> */}
 
       <RecentRequestPopup
         show={showRecentPopup}
@@ -739,10 +739,10 @@ export default function ProfileAstro({ astrologerId }) {
         astrologer={selectedAstroData?.astrologer}
       />
 
-      <AlertLoading
+      {/* <AlertLoading
         show={followLoading || unfollowLoading}
         title="Please Wait..."
-      />
+      /> */}
     </div>
   );
 }

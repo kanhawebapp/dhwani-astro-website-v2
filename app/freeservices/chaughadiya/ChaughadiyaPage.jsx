@@ -41,7 +41,7 @@ export default function ChaughadiyaPage({
 
       setChaughadiyaData(res?.data || res);
     } catch (err) {
-      console.error("❌ Error fetching Chaughadiya:", err);
+      console.error(" Error fetching Chaughadiya:", err);
     } finally {
       setLoading(false);
     }

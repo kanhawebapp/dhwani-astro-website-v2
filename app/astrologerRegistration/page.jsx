@@ -1,7 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { CREATE_APPLICATION, GET_ACTIVE_PROBLEMS, GET_ACTIVE_SKILLS } from "../graphql/gqlQuery";
+import {
+  CREATE_APPLICATION,
+  GET_ACTIVE_PROBLEMS,
+  GET_ACTIVE_SKILLS,
+} from "../graphql/gqlQuery";
 import { useMutation, useQuery } from "@apollo/client/react";
 
 export default function AstrologerRegistration() {
@@ -57,10 +61,13 @@ export default function AstrologerRegistration() {
     if (!form.name) newErrors.name = "Name is required";
     if (!form.dob) newErrors.dob = "DOB is required";
     if (!form.gender) newErrors.gender = "Gender is required";
-    if (form.languages.length === 0) newErrors.languages = "Select at least one language";
-    if (form.problems.length === 0) newErrors.problems = "Select at least one problems";
+    if (form.languages.length === 0)
+      newErrors.languages = "Select at least one language";
+    if (form.problems.length === 0)
+      newErrors.problems = "Select at least one problems";
 
-    if (form.skills.length === 0) newErrors.skills = "Select at least one skill";
+    if (form.skills.length === 0)
+      newErrors.skills = "Select at least one skill";
     if (!form.experience) newErrors.experience = "Experience required";
     if (!form.phone) newErrors.phone = "Phone required";
     if (!form.address) newErrors.address = "Address required";
@@ -84,12 +91,11 @@ export default function AstrologerRegistration() {
   };
   const { data: skillsData } = useQuery(GET_ACTIVE_SKILLS);
 
-const { data: problemsData } = useQuery(GET_ACTIVE_PROBLEMS);
-const skillOptions =
-  skillsData?.getActiveSkills?.map((x) => x.name) || [];
+  const { data: problemsData } = useQuery(GET_ACTIVE_PROBLEMS);
+  const skillOptions = skillsData?.getActiveSkills?.map((x) => x.name) || [];
 
-const problemOptions =
-  problemsData?.getActiveProblems?.map((x) => x.name) || [];
+  const problemOptions =
+    problemsData?.getActiveProblems?.map((x) => x.name) || [];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -113,7 +119,7 @@ const problemOptions =
 
             ...(form.email && { email: form.email }),
             ...(form.pincode && { pincode: form.pincode }),
-          }
+          },
         },
       });
 
@@ -150,15 +156,12 @@ const problemOptions =
           Astrologer Registration
         </h2>
 
-
-
-
         <form onSubmit={handleSubmit} className="space-y-6 text-black">
-
           <div className="grid md:grid-cols-2 gap-4">
             <Input
               label="Name"
-              name="name" required
+              name="name"
+              required
               value={form.name}
               onChange={handleChange}
               error={errors.name}
@@ -166,7 +169,8 @@ const problemOptions =
             <Input
               label="Date of Birth"
               name="dob"
-              type="date" required
+              type="date"
+              required
               value={form.dob}
               onChange={handleChange}
               error={errors.dob}
@@ -174,8 +178,6 @@ const problemOptions =
           </div>
 
           <div className="grid md:grid-cols-2 gap-4">
-
-
             <div>
               <label className="block mb-2 font-medium">
                 Gender <span className="text-red-500">*</span>
@@ -186,7 +188,8 @@ const problemOptions =
                     <input
                       type="radio"
                       name="gender"
-                      value={g} required
+                      value={g}
+                      required
                       checked={form.gender === g}
                       onChange={handleChange}
                       className="accent-indigo-500"
@@ -203,42 +206,52 @@ const problemOptions =
             <Input
               label="Experience (years)"
               name="experience"
-              type="number" required value={form.experience}
+              type="number"
+              required
+              value={form.experience}
               onChange={handleChange}
               error={errors.experience}
             />
           </div>
 
-
-
           <MultiSelect
             label="Languages"
-            field="languages" required
+            field="languages"
+            required
             selected={form.languages}
-            options={["English", "Hindi", "Gujarati", "Tamil", "Punjabi","Telugu","Kannada","Sanskrit","Bangla", "Others"]}
+            options={[
+              "English",
+              "Hindi",
+              "Gujarati",
+              "Tamil",
+              "Punjabi",
+              "Telugu",
+              "Kannada",
+              "Sanskrit",
+              "Bangla",
+              "Others",
+            ]}
             handleCheckbox={handleCheckbox}
             error={errors.languages}
           />
 
-        <MultiSelect
-  label="Handle Problems"
-  field="problems"
-  selected={form.problems}
-  options={problemOptions}
-  handleCheckbox={handleCheckbox}
-  error={errors.problems}
-/>
+          <MultiSelect
+            label="Handle Problems"
+            field="problems"
+            selected={form.problems}
+            options={problemOptions}
+            handleCheckbox={handleCheckbox}
+            error={errors.problems}
+          />
 
-    <MultiSelect
-  label="Skills"
-  field="skills"
-  selected={form.skills}
-  options={skillOptions}
-  handleCheckbox={handleCheckbox}
-  error={errors.skills}
-/>
-
-
+          <MultiSelect
+            label="Skills"
+            field="skills"
+            selected={form.skills}
+            options={skillOptions}
+            handleCheckbox={handleCheckbox}
+            error={errors.skills}
+          />
 
           <div className="grid md:grid-cols-2 gap-4">
             <Input
@@ -251,7 +264,8 @@ const problemOptions =
             <Input
               label="Phone"
               name="phone"
-              type="tel" required
+              type="tel"
+              required
               value={form.phone}
               onChange={handleChange}
               error={errors.phone}
@@ -260,7 +274,8 @@ const problemOptions =
           <div className="grid md:grid-cols-2 gap-4">
             <Input
               label="Address"
-              name="address" required
+              name="address"
+              required
               type="text"
               value={form.address}
               onChange={handleChange}
@@ -275,7 +290,6 @@ const problemOptions =
             />
           </div>
 
-
           <div>
             <label className="block mb-2 font-medium">About Yourself</label>
             <textarea
@@ -287,21 +301,20 @@ const problemOptions =
             />
           </div>
 
-
           {error && (
             <p className="text-red-500 text-sm">
               {error.message || "Something went wrong"}
             </p>
           )}
 
-
           <button
             type="submit"
             disabled={loading}
-            className={`w-full py-3 rounded-xl text-white transition ${loading
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-indigo-600 hover:bg-indigo-700"
-              }`}
+            className={`w-full py-3 rounded-xl text-white transition ${
+              loading
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-indigo-600 hover:bg-indigo-700"
+            }`}
           >
             {loading ? "Submitting..." : "Submit"}
           </button>
@@ -311,8 +324,15 @@ const problemOptions =
   );
 }
 
-
-function Input({ label, name, value, onChange, type = "text", error, required }) {
+function Input({
+  label,
+  name,
+  value,
+  onChange,
+  type = "text",
+  error,
+  required,
+}) {
   return (
     <div>
       <label className="block mb-2 font-medium">
@@ -323,14 +343,14 @@ function Input({ label, name, value, onChange, type = "text", error, required })
         type={type}
         value={value}
         onChange={onChange}
-        className={`w-full p-3 rounded-xl outline-none border ${error ? "border-red-500" : "border-gray-200"
-          }`}
+        className={`w-full p-3 rounded-xl outline-none border ${
+          error ? "border-red-500" : "border-gray-200"
+        }`}
       />
       {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
     </div>
   );
 }
-
 
 function MultiSelect({
   label,
@@ -339,7 +359,7 @@ function MultiSelect({
   selected,
   handleCheckbox,
   error,
-  required
+  required,
 }) {
   return (
     <div>
@@ -348,8 +368,9 @@ function MultiSelect({
       </label>
 
       <div
-        className={`grid grid-cols-2 gap-2 rounded-xl p-3 border ${error ? "border-red-500" : "border-gray-200"
-          }`}
+        className={`grid grid-cols-2 gap-2 rounded-xl p-3 border ${
+          error ? "border-red-500" : "border-gray-200"
+        }`}
       >
         {options.map((opt) => (
           <label key={opt} className="flex items-center gap-2">

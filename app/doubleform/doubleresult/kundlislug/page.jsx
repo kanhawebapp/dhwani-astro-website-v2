@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
-import Personal from "@/components/Smcompo/Personal";
 import { useSelector } from "react-redux";
 import {
   useGetMatchAsktPMutation,

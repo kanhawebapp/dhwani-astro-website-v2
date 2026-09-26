@@ -1,7 +1,7 @@
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import PayOPT from "../Smcompo/Paycomp/PayOPT";
-import { formatDate, gst, rechargepercentage, totalAmount } from "../../app/helper/helper";
+// import { formatDate, gst, rechargepercentage, totalAmount } from "../../app/helper/helper";
 import { useDispatch, useSelector } from "react-redux";
 //import { sendRequestCoupon } from "../../app/redux/reducer/coupon/getCouponList";
 
@@ -180,7 +180,7 @@ export default function CartPage({ rechargedata }) {
                               Cashback of ₹ {item?.percentage}
                             </div>
 
-                            <small>Expires on: {formatDate(item?.end_date)}</small>
+                            {/* <small>Expires on: {formatDate(item?.end_date)}</small> */}
                           </div>
                         ))
                       )
