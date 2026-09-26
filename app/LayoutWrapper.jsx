@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import Footerlinks from "@/components/Footerlinks";
 import CookieConsent from "@/components/cookieConsent";
-import { ChatToast } from "./common";
+
 
 export default function LayoutWrapper({ children }) {
   const pathname = usePathname();
@@ -24,7 +24,7 @@ const hideGlobalHeader =
       >
         {children}
         <div id="modal-root" />
-        <ChatToast />
+      
       </main>
 
       {!hideGlobalHeader && (

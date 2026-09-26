@@ -46,7 +46,7 @@ import RePack from "@/components/Smcompo/RePack";
 import Userchatscr from "@/components/Smcompo/Userchatscr";
 import AstrowaitPop from "@/components/Smcompo/AstrowaitPop";
 import Lalkitab from "@/app/freeservices/kundali/getKundaliPage/lalkitab/LalkitabClient";
-import CallOptionModal from "@/components/Smcompo/CallOptionModal";
+//import CallOptionModal from "@/components/Smcompo/CallOptionModal";
 // import Numerokundli from "@/components/Kundli/Kundliinter/Numerokundli/Numerokundli";
 // import Nakshatra from "@/components/Kundli/Kundliinter/Nakshatra/Nakshatra";
 import Charyogd from "@/app/freeservices/kundali/getKundaliPage/charyogdasha/page";
@@ -93,7 +93,7 @@ export default function ServicePage() {
 
         userchat: <Userchatscr />,
         lalkitab: <Lalkitab />,
-        webmob: <CallOptionModal />,
+       // webmob: <CallOptionModal />,
         // kundlislug: <KundliMilanPage />,
 
     };

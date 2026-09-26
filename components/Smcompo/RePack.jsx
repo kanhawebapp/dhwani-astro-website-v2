@@ -3,7 +3,7 @@
 import CartPage from "../Healing/CartPage";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchPack } from "../../app/redux/reducer/payment/packSlice";
+//import { fetchPack } from "../../app/redux/reducer/payment/packSlice";
 import { getUserFetch } from "../../app/redux/reducer/auth/userSlice";
 
 import CustomButton from "../Custom/CustomButton";
@@ -40,7 +40,7 @@ const RePack = ({ setShowProDetail }) => {
   useEffect(() => {
 
     if (!packData || packData.length === 0) {
-      dispatch(fetchPack());
+     // dispatch(fetchPack());
     }
   }, [dispatch, packData]);
 

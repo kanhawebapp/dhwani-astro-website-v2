@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useContext } from "react";
 import SocketContext from "../context/socketContext";
-import { AlertLoading } from "../common";
+//import { AlertLoading } from "../common/AlertLoading";
 import Script from "next/script";
 import { useDispatch } from "react-redux";
 import { useQuery, useMutation } from "@apollo/client/react";
@@ -1210,7 +1210,7 @@ const UserChat = ({
           </div>
         )}
 
-        <AlertLoading show={isLoading} title="Loading..." />
+        {/* <AlertLoading show={isLoading} title="Loading..." /> */}
       </div>
     </div>
   );

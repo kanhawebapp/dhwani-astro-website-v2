@@ -5,7 +5,6 @@ import Providers from "./redux/provider";
 import { SocketProvider } from "./context/socketContext";
 import Footerlinks from "@/components/Footerlinks";
 import SignInModalWrapper from "../components/Homepagecomp/Signin/SignInWrap";
-import { ChatToast } from "./common";
 import ScrollToTop from "../Hooks/ScrollTop";
 import { LanguageProvider } from "./context/LangContext";
 import { Poppins, Sonsie_One } from "next/font/google";

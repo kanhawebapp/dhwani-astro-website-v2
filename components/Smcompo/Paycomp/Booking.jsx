@@ -3,7 +3,7 @@ import Image from "next/image";
 import Script from "next/script";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { AlertLoading } from "../../../app/common";
+//import { AlertLoading } from "../../../app/common";
 import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -171,7 +171,7 @@ export default function Booking({ amount, generateid }) {
                     </button>
                 ))}
 
-                <AlertLoading show={loading} title="Please Wait.." />
+                {/* <AlertLoading show={loading} title="Please Wait.." /> */}
             </div>
         </div>
     );

@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useDispatch } from "react-redux";
 import { useRouter } from "next/navigation";
-import { persistor } from "../app/redux/store";
+//import { persistor } from "../app/redux/store";
 import { resetPaymentStatus } from "../app/redux/reducer/auth/userSlice";
 import toast from "react-hot-toast";
 import { useQuery, useMutation } from "@apollo/client/react";
@@ -64,7 +64,7 @@ export default function Header({ openSignInModal }) {
       setUser(null);
 
       await client.clearStore();
-      await persistor.purge();
+      //await persistor.purge();
 
       router.replace("/");
     }

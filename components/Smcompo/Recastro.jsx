@@ -12,7 +12,7 @@ import { Navigation, Pagination, Autoplay } from "swiper/modules";
 import CustomButton from "../Custom/CustomButton";
 import { useDispatch, useSelector } from "react-redux";
 import { useEffect, useState } from "react";
-import { AlertLoading } from "@/app/common";
+//import { AlertLoading } from "@/app/common/AlertLoading";
 import SocketContext from "@/app/context/socketContext";
 import toast from "react-hot-toast";
 import React, { useContext } from "react";
@@ -166,7 +166,7 @@ export default function Recastro({ astrologers = [] }) {
                     ))}
                 </Swiper>
 
-                <AlertLoading show={alert} title="Please Wait .." />
+                {/* <AlertLoading show={alert} title="Please Wait .." /> */}
             </div>
         </section>
     );

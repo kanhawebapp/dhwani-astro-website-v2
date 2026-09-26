@@ -12,7 +12,7 @@ import CustomButton from "./Custom/CustomButton";
 
 import { useEffect, useState, useContext } from "react";
 
-import { AlertLoading, AstrologerPrice } from "@/app/common";
+//import { AlertLoading, AstrologerPrice } from "@/app/common/AlertLoading";
 import SocketContext from "@/app/context/socketContext";
 import { useLanguage } from "../app/context/LangContext";
 import useScrollZoom from "@/Hooks/scrollZoom";
@@ -113,7 +113,7 @@ export default function Astronewcard() {
   };
 
   if (astrologerLoading) {
-    return <AlertLoading show={true} title="Please Wait.." />;
+    // return <AlertLoading show={true} title="Please Wait.." />;
   }
 
   if (astrologerError) {
@@ -590,7 +590,7 @@ export default function Astronewcard() {
         </Swiper>
       </div>
         {/* <Recastro astrologers={astrologerlist} /> */}
-      <AlertLoading show={alert} title="Please Wait.." />
+      {/* <AlertLoading show={alert} title="Please Wait.." /> */}
       <RecentRequestPopup
         show={showRecentPopup}
         onClose={() => setShowRecentPopup(false)}

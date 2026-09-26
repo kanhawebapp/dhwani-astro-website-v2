@@ -5,7 +5,8 @@ import React, { useState, useEffect, useRef, useContext } from "react";
 import CustomButton from "../Custom/CustomButton";
 import { useDispatch, useSelector } from "react-redux";
 import toast from "react-hot-toast";
-import { AlertLoading, AstrologerPrice, IntentRechage } from "@/app/common";
+import AlertLoading from "@/app/common/AlertLoading";
+import AstrologerPrice from "@/app/common/AstrologerPrice";
 import SocketContext from "@/app/context/socketContext";
 import { useLanguage } from "../../app/context/LangContext";
 import { useLazyQuery, gql } from "@apollo/client";
@@ -374,7 +375,7 @@ function AstroCCard({ mode = "chat", data = [], loading }) {
 
       <AlertLoading show={alert} title="Please Wait.." />
 
-      <IntentRechage showrecharge={quick} astro_id={astroId} reqmode={mode} />
+      {/* <IntentRechage showrecharge={quick} astro_id={astroId} reqmode={mode} /> */}
       <RecentRequestPopup
         show={showRecentPopup}
         onClose={() => setShowRecentPopup(false)}

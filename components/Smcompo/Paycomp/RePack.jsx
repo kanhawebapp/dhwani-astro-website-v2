@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import { useLanguage } from "@/app/context/LangContext";
-import { fetchPack,fetchPackSucess } from "@/app/redux/reducer/payment/packSlice";
+//import { fetchPack,fetchPackSucess } from "@/app/redux/reducer/payment/packSlice";
 import CustomButton from "@/components/Custom/CustomButton";
 import CartPage from "@/components/Healing/CartPage";
 
@@ -25,7 +25,7 @@ const handleSelect = (id) => {
   };
 useEffect(() => {
    if (serverdata && serverdata.length > 0) {
-      dispatch(fetchPackSucess(serverdata));
+      //dispatch(fetchPackSucess(serverdata));
       return; 
     }
 if (!packData || packData.length === 0) {

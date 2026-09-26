@@ -2,7 +2,7 @@
 
 import React from "react";
 import CustomInput from "../Custom/CustomInput";
-import { LocationSelector } from "@/app/common";
+// import { LocationSelector } from "@/app/common/LocationSelector";
 import { useLanguage } from "@/app/context/LangContext";
 import Select from "react-select";
 const CURRENT_YEAR = new Date().getFullYear();
@@ -257,10 +257,10 @@ const UserDetFD = ({
         </div>
 
         <div>
-          <LocationSelector
+          {/* <LocationSelector
             placeholder={t?.kform?.placeh || "Your birth place/location"}
             onSelect={handleLocationSelect}
-          />
+          /> */}
         </div>
       </div>
     </div>

@@ -11,10 +11,10 @@ import Sidebanner from "../Smcompo/Sidebanner";
 // import Recastro from "../Smcompo/Recastro";
 import FAQue from "../FAQue";
 import Callchatsec from "../Smcompo/Callchatsec";
-
+import AlertLoading from "@/app/common/AlertLoading";
+import LocationSelector from "@/app/common/LocationSelector";
 import CustomInput from "../Custom/CustomInput";
 import CustomButton from "../Custom/CustomButton";
-import { AlertLoading, LocationSelector } from "@/app/common";
 import { useLanguage } from "@/app/context/LangContext";
 
 import { createKundliFromMain } from "../../app/actions/createKundliFromMain";
