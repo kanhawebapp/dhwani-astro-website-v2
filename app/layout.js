@@ -138,13 +138,11 @@ export default function RootLayout({ children }) {
               <Providers>
                 <SocketProvider>
                   <SignInModalWrapper>
-                    <SocketProvider>
-                      <LayoutWrapper>
-                        {children}
-                      </LayoutWrapper>
+                    <LayoutWrapper>
+                      {children}
+                    </LayoutWrapper>
 
-                      <GlobalChatPopup />
-                    </SocketProvider>
+                    <GlobalChatPopup />
                   </SignInModalWrapper>
 
                   <Toaster
@@ -152,9 +150,9 @@ export default function RootLayout({ children }) {
                     reverseOrder={false}
                   />
                 </SocketProvider>
-              </Providers>
 
-              <ScrollToTop />
+                <ScrollToTop />
+              </Providers>
             </LanguageProvider>
           </AuthProvider>
         </ApolloWrapper>
