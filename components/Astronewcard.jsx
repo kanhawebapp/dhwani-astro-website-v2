@@ -27,7 +27,7 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 export default function Astronewcard() {
   const busySet = new Set();
   const [showRecentPopup, setShowRecentPopup] = useState(false);
-  const { code } = useSelector((state) => state.chatAlert);
+  // const { code } = useSelector((state) => state.chatAlert);
 
   const [selectedAstroData, setSelectedAstroData] = useState(null);
 
@@ -137,11 +137,11 @@ export default function Astronewcard() {
     };
 
     if (userData.user_status === 0) {
-      if (code === 200) {
-        toast.error("Astrologer selected by Your Chat Running Already!");
-      } else {
-        goToRequest();
-      }
+      // if (code === 200) {
+      //   toast.error("Astrologer selected by Your Chat Running Already!");
+      // } else {
+      //   goToRequest();
+      // }
 
       return;
     }
@@ -153,11 +153,11 @@ export default function Astronewcard() {
         setQuick(true);
         setAstroId(id);
       } else {
-        if (code === 200) {
-          toast.error("Astrologer selected by Your Chat Running Already!");
-        } else {
-          goToRequest();
-        }
+        // if (code === 200) {
+        //   toast.error("Astrologer selected by Your Chat Running Already!");
+        // } else {
+        //   goToRequest();
+        // }
       }
 
       return;
