@@ -1,4 +1,5 @@
 import { BASE_URL } from "@/utils/siteConfig";
+
 export const metadata = {
   title: "Numerology | Free Numerology Predictions Online",
 

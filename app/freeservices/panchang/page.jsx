@@ -1,9 +1,13 @@
 import { astrologySeo } from "@/app/api/astrologySeo";
 import PanchangPage from "./PanchangPage";
 import { SEO_ENDPOINTS } from "@/app/api/seoEndpoints";
+import JsonLd from "@/components/seo/JsonLd";
+import { createBreadcrumbSchema } from "@/utils/schema";
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_BASE_URL || "https://dhwaniastro.com";
+
+const PAGE_URL = `${BASE_URL}/freeservices/panchang`;
 
 function getTodayParams() {
   const now = new Date();
@@ -26,7 +30,7 @@ async function safeAstrologySeo(endpoint, params) {
   } catch (error) {
     console.error(
       `Astrology API failed for endpoint ${endpoint}:`,
-      error?.message || error
+      error?.message || error,
     );
 
     return null;
@@ -55,7 +59,7 @@ export async function generateMetadata() {
 
   const data = await safeAstrologySeo(
     SEO_ENDPOINTS.ADV_PANCHANG,
-    params
+    params,
   );
 
   const tithi =
@@ -85,22 +89,33 @@ export async function generateMetadata() {
     keywords: [
       "Today's Panchang",
       "Aaj Ka Panchang",
-      tithi,
-      nakshatra,
-      yoga,
+      "Panchang Today",
+      "Hindu Panchang",
+      "Hindu Calendar",
+      "Vedic Panchang",
+      "Panchang timings",
+      "Tithi",
+      "Nakshatra",
+      "Yoga",
       "Hora",
       "Chaughadiya",
       "Rahu Kaal",
-      "Hindu Calendar",
-      "Vedic Panchang",
+      tithi,
+      nakshatra,
+      yoga,
     ].filter(Boolean),
+
+    alternates: {
+      canonical: PAGE_URL,
+    },
 
     openGraph: {
       title: `${tithi} Panchang - ${formattedDate}`,
       description: `Today's Panchang including ${nakshatra}, ${yoga}, Hora and Chaughadiya.`,
-      url: `${BASE_URL}/freeservices/panchang`,
+      url: PAGE_URL,
       siteName: "Dhwani Astro",
       type: "website",
+      locale: "en_IN",
 
       images: [
         {
@@ -119,53 +134,119 @@ export async function generateMetadata() {
       images: [`${BASE_URL}/ds-img/panchang-banner.webp`],
     },
 
-    alternates: {
-      canonical: `${BASE_URL}/freeservices/panchang`,
-    },
-
     robots: {
       index: true,
       follow: true,
+
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+        "max-video-preview": -1,
+      },
     },
   };
 }
 
+/*
+ * Breadcrumb structured data
+ */
+const breadcrumbSchema = createBreadcrumbSchema([
+  {
+    name: "Home",
+    url: `${BASE_URL}/`,
+  },
+  {
+    name: "Free Services",
+    url: `${BASE_URL}/freeservices`,
+  },
+  {
+    name: "Panchang",
+    url: PAGE_URL,
+  },
+]);
+
+/*
+ * WebPage structured data
+ *
+ * Keep this generic because the actual
+ * Tithi/Nakshatra/Yoga values are dynamic.
+ */
+const panchangPageSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "@id": `${PAGE_URL}#webpage`,
+
+  name: "Today's Panchang | Hindu Panchang | Dhwani Astro",
+
+  url: PAGE_URL,
+
+  description:
+    "Check today's Hindu Panchang including Tithi, Nakshatra, Yoga, sunrise, sunset, Hora, Chaughadiya and Rahu Kaal timings.",
+
+  inLanguage: "en-IN",
+
+  isPartOf: {
+    "@type": "WebSite",
+    "@id": `${BASE_URL}/#website`,
+    name: "Dhwani Astro",
+    url: `${BASE_URL}/`,
+  },
+
+  about: {
+    "@type": "Thing",
+    name: "Hindu Panchang",
+  },
+};
+
 export default async function Panchang() {
   const params = getTodayParams();
 
-  const [panchangResult, chaughadiyaResult, horaResult] =
-    await Promise.all([
-      safeAstrologySeo(
-        SEO_ENDPOINTS.ADV_PANCHANG,
-        params
-      ),
+  const [
+    panchangResult,
+    chaughadiyaResult,
+    horaResult,
+  ] = await Promise.all([
+    safeAstrologySeo(
+      SEO_ENDPOINTS.ADV_PANCHANG,
+      params,
+    ),
 
-      safeAstrologySeo(
-        SEO_ENDPOINTS.CHAUGHADIYA,
-        params
-      ),
+    safeAstrologySeo(
+      SEO_ENDPOINTS.CHAUGHADIYA,
+      params,
+    ),
 
-      safeAstrologySeo(
-        SEO_ENDPOINTS.HORA,
-        params
-      ),
-    ]);
+    safeAstrologySeo(
+      SEO_ENDPOINTS.HORA,
+      params,
+    ),
+  ]);
 
   return (
-    <PanchangPage
-      initialPanchang={
-        panchangResult?.data || panchangResult || null
-      }
-      initialChaughadiya={
-        chaughadiyaResult?.data ||
-        chaughadiyaResult ||
-        null
-      }
-      initialHora={
-        horaResult?.data ||
-        horaResult ||
-        null
-      }
-    />
+    <>
+      <JsonLd data={panchangPageSchema} />
+
+      <JsonLd data={breadcrumbSchema} />
+
+      <PanchangPage
+        initialPanchang={
+          panchangResult?.data ||
+          panchangResult ||
+          null
+        }
+        initialChaughadiya={
+          chaughadiyaResult?.data ||
+          chaughadiyaResult ||
+          null
+        }
+        initialHora={
+          horaResult?.data ||
+          horaResult ||
+          null
+        }
+      />
+    </>
   );
 }

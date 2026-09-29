@@ -1,9 +1,13 @@
 import { astrologySeo } from "@/app/api/astrologySeo";
 import { SEO_ENDPOINTS } from "@/app/api/seoEndpoints";
 import HoroscopePage from "./horoscopePage";
+import JsonLd from "@/components/seo/JsonLd";
+import { createBreadcrumbSchema } from "@/utils/schema";
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_BASE_URL || "https://dhwaniastro.com";
+
+const PAGE_URL = `${BASE_URL}/freeservices/horoscope`;
 
 export const metadata = {
   title: "Daily Horoscope | Free Zodiac Predictions | Dhwani Astro",
@@ -11,17 +15,32 @@ export const metadata = {
   description:
     "Read your free daily horoscope based on Vedic Astrology. Explore daily zodiac predictions, astrology insights and guidance on Dhwani Astro.",
 
+  keywords: [
+    "daily horoscope",
+    "horoscope today",
+    "free horoscope",
+    "daily horoscope today",
+    "zodiac horoscope",
+    "zodiac predictions",
+    "today horoscope",
+    "vedic astrology",
+    "daily astrology",
+    "horoscope by zodiac sign",
+    "Dhwani Astro",
+  ],
+
   alternates: {
-    canonical: `${BASE_URL}/freeservices/horoscope`,
+    canonical: PAGE_URL,
   },
 
   openGraph: {
     title: "Daily Horoscope | Free Zodiac Predictions | Dhwani Astro",
     description:
       "Read your free daily horoscope based on Vedic Astrology. Explore daily zodiac predictions and astrology insights.",
-    url: `${BASE_URL}/freeservices/horoscope`,
+    url: PAGE_URL,
     siteName: "Dhwani Astro",
     type: "website",
+    locale: "en_IN",
   },
 
   twitter: {
@@ -34,6 +53,14 @@ export const metadata = {
   robots: {
     index: true,
     follow: true,
+
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
   },
 };
 
@@ -106,12 +133,50 @@ async function safeAstrologySeo(endpoint, body) {
   } catch (error) {
     console.error(
       `Horoscope Astrology API failed for endpoint ${endpoint}:`,
-      error?.message || error
+      error?.message || error,
     );
 
     return null;
   }
 }
+
+const breadcrumbSchema = createBreadcrumbSchema([
+  {
+    name: "Home",
+    url: `${BASE_URL}/`,
+  },
+  {
+    name: "Free Services",
+    url: `${BASE_URL}/freeservices`,
+  },
+  {
+    name: "Horoscope",
+    url: PAGE_URL,
+  },
+]);
+
+const horoscopePageSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "@id": `${PAGE_URL}#webpage`,
+  name: "Daily Horoscope | Free Zodiac Predictions | Dhwani Astro",
+  url: PAGE_URL,
+  description:
+    "Read your free daily horoscope based on Vedic Astrology. Explore daily zodiac predictions, astrology insights and guidance on Dhwani Astro.",
+  inLanguage: "en-IN",
+
+  isPartOf: {
+    "@type": "WebSite",
+    "@id": `${BASE_URL}/#website`,
+    name: "Dhwani Astro",
+    url: `${BASE_URL}/`,
+  },
+
+  about: {
+    "@type": "Thing",
+    name: "Daily Horoscope",
+  },
+};
 
 export default async function Page() {
   const zodiac = "Aries";
@@ -120,30 +185,36 @@ export default async function Page() {
     timezone: 5.5,
   };
 
-  const [today, tomorrow, yesterday] = await Promise.all([
-    safeAstrologySeo(
-      `${SEO_ENDPOINTS.HOROSCOPE_TODAY}/aries`,
-      body
-    ),
+  let horoscopeData = null;
 
-    safeAstrologySeo(
-      `${SEO_ENDPOINTS.HOROSCOPE_NEXT}/aries`,
-      body
-    ),
+  try {
+    const response = await safeAstrologySeo(
+      SEO_ENDPOINTS.HOROSCOPE,
+      body,
+    );
 
-    safeAstrologySeo(
-      `${SEO_ENDPOINTS.HOROSCOPE_PREVIOUS}/aries`,
-      body
-    ),
-  ]);
+    horoscopeData =
+      response?.data?.horoscope ||
+      response?.horoscope ||
+      response?.data ||
+      null;
+  } catch (error) {
+    console.error(
+      "Error fetching initial Horoscope data:",
+      error?.message || error,
+    );
+  }
 
   return (
-    <HoroscopePage
-      horoscopezod={horoscopezod}
-      zodiac={zodiac}
-      today={today}
-      tomorrow={tomorrow}
-      yesterday={yesterday}
-    />
+    <>
+      <JsonLd data={horoscopePageSchema} />
+      <JsonLd data={breadcrumbSchema} />
+
+      <HoroscopePage
+        zodiac={zodiac}
+        horoscopezod={horoscopezod}
+        initialHoroscope={horoscopeData}
+      />
+    </>
   );
 }

@@ -1,6 +1,8 @@
-// app/inKundli/getKundlipage/layout.jsx
+// app/freeservices/kundali/getKundaliPage/layout.js
+
 import { Suspense } from "react";
 import KundliLayout from "@/components/Custom/KundliLayout";
+
 export default function Layout({ children }) {
   return (
     <Suspense fallback={<div>Loading...</div>}>

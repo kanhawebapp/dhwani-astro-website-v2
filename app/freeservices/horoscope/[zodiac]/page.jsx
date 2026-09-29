@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { SEO_ENDPOINTS } from "@/app/api/seoEndpoints";
 import { astrologySeo } from "@/app/api/astrologySeo";
 import HoroscopePage from "../horoscopePage";
+import JsonLd from "@/components/seo/JsonLd";
+import { createBreadcrumbSchema } from "@/utils/schema";
 
 const SITE_URL =
   process.env.NEXT_PUBLIC_BASE_URL || "https://dhwaniastro.com";
@@ -61,7 +63,7 @@ const horoscopezod = [
   {
     name: "Scorpio",
     img: "/ds-img/Scorpio.webp",
-    indate: "Oct 24 - Nov 21",
+    indate: "Oct 23 - Nov 21",
   },
   {
     name: "Sagittarius",
@@ -102,6 +104,27 @@ function getZodiacInfo(zodiac) {
 }
 
 /**
+ * Safely call Astrology API.
+ *
+ * Important:
+ * During `next build`, all generateStaticParams()
+ * pages are prerendered. If an Astrology API endpoint
+ * returns 404, the build should not fail.
+ */
+async function safeAstrologySeo(endpoint, body) {
+  try {
+    return await astrologySeo(endpoint, body);
+  } catch (error) {
+    console.error(
+      `Horoscope Astrology API failed for endpoint ${endpoint}:`,
+      error?.message || error,
+    );
+
+    return null;
+  }
+}
+
+/**
  * Generate dynamic SEO metadata for each zodiac page.
  */
 export async function generateMetadata({ params }) {
@@ -109,9 +132,9 @@ export async function generateMetadata({ params }) {
 
   if (!zodiac || !VALID_SIGNS.includes(zodiac)) {
     return {
-      title: "Horoscope Today | DhwaniAstro",
+      title: "Horoscope Today | Dhwani Astro",
       description:
-        "Read daily horoscope predictions for all zodiac signs on DhwaniAstro.",
+        "Read daily horoscope predictions for all zodiac signs on Dhwani Astro.",
       robots: {
         index: false,
         follow: false,
@@ -124,9 +147,10 @@ export async function generateMetadata({ params }) {
 
   const title = `${zodiacName} Horoscope Today - Daily ${zodiacName} Horoscope`;
 
-  const description = `Read ${zodiacName} horoscope today with daily predictions for love, career, health, finance and relationships. Check today's ${zodiacName} horoscope on DhwaniAstro.`;
+  const description = `Read ${zodiacName} horoscope today with daily predictions for love, career, health, finance and relationships. Check today's ${zodiacName} horoscope on Dhwani Astro.`;
 
-  const canonicalUrl = `${SITE_URL}/freeservices/horoscope/${zodiac}`;
+  const canonicalUrl =
+    `${SITE_URL}/freeservices/horoscope/${zodiac}`;
 
   const imageUrl = zodiacInfo?.img
     ? `${SITE_URL}${zodiacInfo.img}`
@@ -161,6 +185,7 @@ export async function generateMetadata({ params }) {
     robots: {
       index: true,
       follow: true,
+
       googleBot: {
         index: true,
         follow: true,
@@ -175,7 +200,7 @@ export async function generateMetadata({ params }) {
       url: canonicalUrl,
       title,
       description,
-      siteName: "DhwaniAstro",
+      siteName: "Dhwani Astro",
       locale: "en_IN",
 
       images: [
@@ -192,7 +217,6 @@ export async function generateMetadata({ params }) {
       card: "summary_large_image",
       title,
       description,
-
       images: [imageUrl],
     },
   };
@@ -201,7 +225,7 @@ export async function generateMetadata({ params }) {
 /**
  * Generate static paths for all zodiac signs.
  *
- * This helps Next.js know the valid zodiac routes ahead of time.
+ * This allows Next.js to prerender all 12 zodiac pages.
  */
 export function generateStaticParams() {
   return VALID_SIGNS.map((zodiac) => ({
@@ -220,12 +244,9 @@ export default async function ZodiacPage({ params }) {
   }
 
   const zodiacName = formatZodiac(zodiac);
-
   const zodiacInfo = getZodiacInfo(zodiac);
 
   /**
-   * API timezone.
-   *
    * India Standard Time = UTC + 5:30
    */
   const body = {
@@ -233,23 +254,23 @@ export default async function ZodiacPage({ params }) {
   };
 
   /**
-   * Fetch all horoscope data on the server.
+   * Fetch all horoscope data safely.
    *
-   * This means the initial horoscope content can be rendered
-   * into the HTML instead of waiting for the browser.
+   * If one endpoint returns 404, the page still builds.
+   * The failed API response becomes null.
    */
   const [today, tomorrow, yesterday] = await Promise.all([
-    astrologySeo(
+    safeAstrologySeo(
       `${SEO_ENDPOINTS.HOROSCOPE_TODAY}/${zodiac}`,
       body,
     ),
 
-    astrologySeo(
+    safeAstrologySeo(
       `${SEO_ENDPOINTS.HOROSCOPE_NEXT}/${zodiac}`,
       body,
     ),
 
-    astrologySeo(
+    safeAstrologySeo(
       `${SEO_ENDPOINTS.HOROSCOPE_PREVIOUS}/${zodiac}`,
       body,
     ),
@@ -259,14 +280,13 @@ export default async function ZodiacPage({ params }) {
     `${SITE_URL}/freeservices/horoscope/${zodiac}`;
 
   /**
-   * Structured data.
-   *
-   * This describes the individual zodiac horoscope page
-   * to search engines.
+   * WebPage structured data.
    */
   const horoscopeStructuredData = {
     "@context": "https://schema.org",
     "@type": "WebPage",
+
+    "@id": `${canonicalUrl}#webpage`,
 
     name: `${zodiacName} Horoscope Today`,
 
@@ -278,8 +298,9 @@ export default async function ZodiacPage({ params }) {
 
     isPartOf: {
       "@type": "WebSite",
-      name: "DhwaniAstro",
-      url: SITE_URL,
+      "@id": `${SITE_URL}/#website`,
+      name: "Dhwani Astro",
+      url: `${SITE_URL}/`,
     },
 
     about: {
@@ -287,54 +308,43 @@ export default async function ZodiacPage({ params }) {
       name: `${zodiacName} Zodiac Sign`,
     },
 
-    primaryImageOfPage: zodiacInfo?.img
+    ...(zodiacInfo?.img
       ? {
-          "@type": "ImageObject",
-          url: `${SITE_URL}${zodiacInfo.img}`,
+          primaryImageOfPage: {
+            "@type": "ImageObject",
+            url: `${SITE_URL}${zodiacInfo.img}`,
+          },
         }
-      : undefined,
-
-    breadcrumb: {
-      "@type": "BreadcrumbList",
-
-      itemListElement: [
-        {
-          "@type": "ListItem",
-          position: 1,
-          name: "Home",
-          item: SITE_URL,
-        },
-        {
-          "@type": "ListItem",
-          position: 2,
-          name: "Free Services",
-          item: `${SITE_URL}/freeservices`,
-        },
-        {
-          "@type": "ListItem",
-          position: 3,
-          name: "Horoscope",
-          item: `${SITE_URL}/freeservices/horoscope`,
-        },
-        {
-          "@type": "ListItem",
-          position: 4,
-          name: `${zodiacName} Horoscope`,
-          item: canonicalUrl,
-        },
-      ],
-    },
+      : {}),
   };
+
+  /**
+   * Breadcrumb structured data.
+   */
+  const breadcrumbSchema = createBreadcrumbSchema([
+    {
+      name: "Home",
+      url: `${SITE_URL}/`,
+    },
+    {
+      name: "Free Services",
+      url: `${SITE_URL}/freeservices`,
+    },
+    {
+      name: "Horoscope",
+      url: `${SITE_URL}/freeservices/horoscope`,
+    },
+    {
+      name: `${zodiacName} Horoscope`,
+      url: canonicalUrl,
+    },
+  ]);
 
   return (
     <>
-      {/* JSON-LD structured data */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(horoscopeStructuredData),
-        }}
-      />
+      <JsonLd data={horoscopeStructuredData} />
+
+      <JsonLd data={breadcrumbSchema} />
 
       <HoroscopePage
         horoscopezod={horoscopezod}

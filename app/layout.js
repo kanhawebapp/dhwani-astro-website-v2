@@ -14,6 +14,13 @@ import GlobalChatPopup from "@/components/Custom/GlobalChatPopup";
 import CookieConsent from "@/components/cookieConsent";
 import LayoutWrapper from "./LayoutWrapper";
 
+// SEO JSON-LD
+import JsonLd from "@/components/seo/JsonLd";
+import {
+  organizationSchema,
+  websiteSchema,
+} from "@/utils/schema";
+
 const poppins = Poppins({
   subsets: ["latin"],
   weight: ["400", "600"],
@@ -102,6 +109,14 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
+      <head>
+        {/* Global Organization Schema */}
+        <JsonLd data={organizationSchema} />
+
+        {/* Global Website Schema */}
+        <JsonLd data={websiteSchema} />
+      </head>
+
       <body className="antialiased font-sans">
         <ApolloWrapper>
           <AuthProvider>
