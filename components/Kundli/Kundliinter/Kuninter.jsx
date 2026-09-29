@@ -144,8 +144,6 @@ const handleCardClick = (href) => {
 
     hash = createNumeroHash(numeroFormData);
 
-    console.log("NUMERO FORM DATA:", numeroFormData);
-    console.log("NUMERO HASH:", hash);
   }
 
   // =====================================================
@@ -154,11 +152,8 @@ const handleCardClick = (href) => {
   else {
     hash = createKundliHash(formData);
 
-    console.log("KUNDLI FORM DATA:", formData);
-    console.log("KUNDLI HASH:", hash);
   }
 
-  console.log("FINAL URL:", `${href}?hash=${hash}`);
 
   window.scrollTo({
     top: 0,

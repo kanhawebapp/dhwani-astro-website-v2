@@ -1,5 +1,6 @@
 import "@/app/styles/globals.css";
 
+import Script from "next/script";
 import { Toaster } from "react-hot-toast";
 import Providers from "./redux/provider";
 import { SocketProvider } from "./context/socketContext";
@@ -133,6 +134,22 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className="antialiased font-sans">
+        {/* Google Analytics - GA4 */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-P0WX3Q7KR8"
+          strategy="afterInteractive"
+        />
+
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+
+            gtag('config', 'G-P0WX3Q7KR8');
+          `}
+        </Script>
+
         <ApolloWrapper>
           <AuthProvider>
             <LanguageProvider>
