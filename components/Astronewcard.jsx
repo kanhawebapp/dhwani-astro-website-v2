@@ -12,7 +12,6 @@ import CustomButton from "./Custom/CustomButton";
 
 import { useEffect, useState, useContext } from "react";
 
-//import { AlertLoading, AstrologerPrice } from "@/app/common/AlertLoading";
 import SocketContext from "@/app/context/socketContext";
 import { useLanguage } from "../app/context/LangContext";
 import useScrollZoom from "@/Hooks/scrollZoom";
@@ -20,12 +19,13 @@ import useScrollZoom from "@/Hooks/scrollZoom";
 import { useQuery } from "@apollo/client/react";
 import { GET_ASTROLOGERS_GUEST } from "@/app/graphql/gqlQuery";
 import RecentRequestPopup from "./Custom/RecentRequestPopUp";
+
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
 export default function Astronewcard() {
   const busySet = new Set();
-  const [showRecentPopup, setShowRecentPopup] = useState(false);
 
+  const [showRecentPopup, setShowRecentPopup] = useState(false);
   const [selectedAstroData, setSelectedAstroData] = useState(null);
 
   const openRecentPopup = ({ astroId, mode, astrologer }) => {
@@ -37,6 +37,7 @@ export default function Astronewcard() {
 
     setShowRecentPopup(true);
   };
+
   const { messages: t } = useLanguage();
   const router = useRouter();
 
@@ -48,6 +49,7 @@ export default function Astronewcard() {
     user_status: 0,
     balance_amount: 0,
   });
+
   useScrollZoom(".setup-wrap");
 
   const {
@@ -68,10 +70,11 @@ export default function Astronewcard() {
   });
 
   const { socket } = useContext(SocketContext);
-const astrologerlist =
-  astrologerResponse?.getAstrologerListBySearch?.data?.filter(
-    (item) => item.isOnline
-  ) || [];
+
+  const astrologerlist =
+    astrologerResponse?.getAstrologerListBySearch?.data?.filter(
+      (item) => item.isOnline
+    ) || [];
 
   useEffect(() => {
     if (!socket) {
@@ -106,7 +109,7 @@ const astrologerlist =
 
   const astrologeroffline = () => {
     toast.error(
-      "Astrologer selected by you is offline now so please choose another astrologer.",
+      "Astrologer selected by you is offline now so please choose another astrologer."
     );
   };
 
@@ -118,6 +121,7 @@ const astrologerlist =
     console.error("Astrologer API Error:", astrologerError);
     return null;
   }
+
   const handleClick = ({ id, mode, price, astro }) => {
     if (!userData) {
       toast.error("User data not loaded yet");
@@ -135,7 +139,6 @@ const astrologerlist =
     };
 
     if (userData.user_status === 0) {
-
       return;
     }
 
@@ -146,7 +149,6 @@ const astrologerlist =
         setQuick(true);
         setAstroId(id);
       } else {
-        
       }
 
       return;
@@ -154,6 +156,7 @@ const astrologerlist =
 
     goToRequest();
   };
+
   const getAstroStatus = (astro, mode) => {
     const isServiceActive =
       mode === "chat" ? astro?.isChatActive : astro?.isCallActive;
@@ -186,18 +189,24 @@ const astrologerlist =
       disabled: false,
     };
   };
+
   return (
     <section className="flex-col items-center self-center w-full sm:max-w-7xl">
       <div className="flex flex-col items-center justify-center rounded-full px-4 sm:py-4 py-0 sm:max-w-7xl">
-        <h1
+
+        {/* Homepage section heading */}
+        <h2
           dangerouslySetInnerHTML={{
             __html:
-              t?.consult?.heading || "Consult with our Top Premium Astrologers",
+              t?.consult?.heading ||
+              "Consult with our Top Premium Astrologers",
           }}
-          className=" text-[#2f1254] text-[15px] sm:text-xl lg:text-2xl  py-3 text-center font-semibold"
-        ></h1>
+          className="text-[#2f1254] text-[15px] sm:text-xl lg:text-2xl py-3 text-center font-semibold"
+        ></h2>
+
         <div className="setup-wrap w-full">
           <div className="relative rounded-xl md:rounded-full z-10 grid items-start justify-center w-full grid-cols-4 gap-1 py-2 mt-3 shadow-lg user-sign-up sm:grid-cols-4 lg:grid-cols-4 sm:gap-6">
+
             <div className="flex flex-col items-center justify-center gap-2 p-1 text-center service-card-sign rounded-xl sm:p-3">
               <svg
                 fill="#000000"
@@ -213,6 +222,7 @@ const astrologerlist =
                   d="M21,20a2,2,0,0,1-2,2H5a2,2,0,0,1-2-2,6,6,0,0,1,6-6h6A6,6,0,0,1,21,20Zm-9-8A5,5,0,1,0,7,7,5,5,0,0,0,12,12Z"
                 ></path>
               </svg>
+
               <p
                 dangerouslySetInnerHTML={{
                   __html: t?.consult?.tag1 || "Sign Up with Dhwani Astro",
@@ -230,14 +240,16 @@ const astrologerlist =
                 className="p-1.5 bg-fuchsia-300 rounded-full"
               >
                 <path
-                  d="M11 10.5H12.5V9M11 4.5H12.5V6M4 4.5H2.5V6M2.5 9V10.5H4M7.5 9.5C6.39543 9.5 5.5 8.60457 5.5 7.5C5.5 6.39543 6.39543 5.5 7.5 5.5C8.60457 5.5 9.5 6.39543 9.5 7.5C9.5 8.60457 8.60457 9.5 7.5 9.5ZM1.5 2.5H13.5C14.0523 2.5 14.5 2.94772 14.5 3.5V11.5C14.5 12.0523 14.0523 12.5 13.5 12.5H1.5C0.947716 12.5 0.5 12.0523 0.5 11.5V3.5C0.5 2.94772 0.947715 2.5 1.5 2.5Z"
+                  d="M11 10.5H12.5V9M11 4.5H12.5V6M4 4.5H2.5V6M2.5 9V10.5H4M7.5 9.5C6.39543 9.5 5.5 8.60457 5.5 7.5C5.5 6.39543 6.39557 5.5 7.5 5.5C8.60457 5.5 9.5 6.39543 9.5 7.5C9.5 8.60457 8.60457 9.5 7.5 9.5ZM1.5 2.5H13.5C14.0523 2.5 14.5 2.94772 14.5 3.5V11.5C14.5 12.0523 14.0523 12.5 13.5 12.5H1.5C0.947716 12.5 0.5 12.0523 0.5 11.5V3.5C0.5 2.94772 0.947716 2.5 1.5 2.5Z"
                   stroke="#000000"
                 />
               </svg>
+
               <p
                 dangerouslySetInnerHTML={{
                   __html:
-                    t?.consult?.tag2 || "Put Money in Dhwani Astro Wallet",
+                    t?.consult?.tag2 ||
+                    "Put Money in Dhwani Astro Wallet",
                 }}
                 className="text-[9px] sm:text-xs text-[#2f1254] sm:font-semibold"
               ></p>
@@ -253,8 +265,9 @@ const astrologerlist =
                 baseProfile="tiny"
                 className="p-1.5 bg-purple-300 rounded-full"
               >
-                <path d="M12 14c1.381 0 2.631-.56 3.536-1.465.904-.904 1.464-2.154 1.464-3.535s-.56-2.631-1.464-3.535c-.905-.905-2.155-1.465-3.536-1.465s-2.631.56-3.536 1.465c-.904.904-1.464 2.154-1.464 3.535s.56 2.631 1.464 3.535c.905.905 2.155 1.465 3.536 1.465zM20 15c.69 0 1.315-.279 1.768-.731.453-.452.732-1.077.732-1.769 0-.69-.279-1.315-.732-1.768-.453-.453-1.078-.732-1.768-.732-.691 0-1.316.279-1.769.732-.452.453-.731 1.078-.731 1.768 0 .691.279 1.316.731 1.769s1.078.731 1.769.731zM20 15.59c-1.331 0-2.332.406-2.917.968-1.115-.917-2.878-1.558-5.083-1.558-2.266 0-3.995.648-5.092 1.564-.596-.565-1.608-.974-2.908-.974-2.188 0-3.5 1.09-3.5 2.182 0 .545 1.312 1.092 3.5 1.092.604 0 1.146-.051 1.623-.133l-.04.27c0 1 2.406 2 6.417 2 3.762 0 6.417-1 6.417-2l-.02-.255c.463.073.995.118 1.603.118 2.051 0 3.5-.547 3.5-1.092 0-1.092-1.373-2.182-3.5-2.182zM4 15c.69 0 1.315-.279 1.768-.732.453-.453.732-1.078.732-1.768 0-.689-.279-1.314-.732-1.768-.453-.452-1.078-.732-1.768-.732-.691 0-1.316.28-1.769.732-.452.454-.731 1.079-.731 1.768 0 .69.279 1.315.731 1.768.453.453 1.078.732 1.769.732z" />
+                <path d="M12 14c1.381 0 2.631-.56 3.536-1.465.904-.904 1.464-2.154 1.464-3.535s-.56-2.631-1.464-3.535c-.905-.905-2.155-1.465-3.536-1.465s-2.631.56-3.536 1.465c-.904.904-1.464 2.154-1.464 3.535s.56 2.631 1.464 3.535c.905.905 2.155 1.465 3.536 1.465zM20 15c.69 0 1.315-.279 1.768-.731.453-.452.732-1.077.732-1.769 0-.69-.279-1.315-.732-1.768-.453-.453-1.078-.732-1.768-.732-.691 0-1.316.279-1.769.732-.452.453-.731 1.078-.731 1.768 0 .69.279 1.315.731 1.769s1.078.731 1.769.731zM20 15.59c-1.331 0-2.332.406-2.917.968-1.115-.917-2.878-1.558-5.083-1.558-2.266 0-3.995.648-5.092 1.564-.596-.565-1.608-.974-2.908-.974-2.188 0-3.5 1.09-3.5 2.182 0 .545 1.312 1.092 3.5 1.092 3.762 0 6.417-1 6.417-2l-.02-.255c.463.073.995.118 1.603.118 2.051 0 3.5-.547 3.5-1.092 0-1.092-1.373-2.182-3.5-2.182zM4 15c.69 0 1.315-.279 1.768-.732.453-.453.732-1.078.732-1.768 0-.689-.279-1.314-.732-1.768-.453-.452-1.078-.732-1.769-.732-.69 0-1.315.28-1.769.732-.452.454-.731 1.079-.731 1.768 0 .69.279 1.315.731 1.768.453.453 1.078.732 1.769.732z" />
               </svg>
+
               <p
                 dangerouslySetInnerHTML={{
                   __html: t?.consult?.tag3 || "Click on Call or Chat",
@@ -274,13 +287,15 @@ const astrologerlist =
                 <path
                   fillRule="evenodd"
                   clipRule="evenodd"
-                  d="M4.111 2.18a7 7 0 1 1 7.778 11.64A7 7 0 0 1 4.11 2.18zm.556 10.809a6 6 0 1 0 6.666-9.978 6 6 0 0 0-6.666 9.978zM6.5 7a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm5 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zM8 11a3 3 0 0 1-2.65-1.58l-.87.48a4 4 0 0 0 7.12-.16l-.9-.43A3 3 0 0 1 8 11z"
+                  d="M4.111 2.18a7 7 0 1 1 7.778 11.64A7 7 0 0 1 4.11 2.18zm.556 10.809a6 6 0 1 0 6.666-9.978 6 6 0 0 0-6.666 9.978zM6.5 7a1 1 0 1 1-2 0 1 1 0 0 0 0 0zm5 0a1 1 0 1 1-2 0 1 1 0 0 0 0 0zm-3.5 4a3 3 0 0 1-2.65-1.58l-.87.48a4 4 0 0 0 7.12-.16l-.9-.43A3 3 0 0 1 8 11z"
                 />
               </svg>
+
               <p
                 dangerouslySetInnerHTML={{
                   __html:
-                    t?.consult?.tag4 || "Rate & Review after consultation",
+                    t?.consult?.tag4 ||
+                    "Rate & Review after consultation",
                 }}
                 className="text-[9px] sm:text-xs text-[#2f1254] sm:font-semibold"
               ></p>
@@ -290,7 +305,6 @@ const astrologerlist =
       </div>
 
       <div className="relative p-4 astrocard-swipe sm:max-w-7xl">
-        {/* Custom Navigation Buttons */}
         <div className="absolute top-1/2 left-0 sm:-left-1px lg:left-[-50px] transform -translate-y-1/2 z-10">
           <button
             aria-label="Previous Astrologer"
@@ -299,7 +313,8 @@ const astrologerlist =
             ‹
           </button>
         </div>
-        <div className="absolute top-1/2 right-0  sm:-right-1px lg:right-[-50px] transform -translate-y-1/2 z-10">
+
+        <div className="absolute top-1/2 right-0 sm:-right-1px lg:right-[-50px] transform -translate-y-1/2 z-10">
           <button
             aria-label="Next Astrologer"
             className="swiper-button-next-astro"
@@ -307,6 +322,7 @@ const astrologerlist =
             ›
           </button>
         </div>
+
         <Swiper
           modules={[Navigation, Pagination, Autoplay]}
           spaceBetween={20}
@@ -315,7 +331,6 @@ const astrologerlist =
             nextEl: ".swiper-button-next-astro",
             prevEl: ".swiper-button-prev-astro",
           }}
-          // pagination={{ clickable: true }}
           resizeObserver={false}
           observer={false}
           observeParents={false}
@@ -354,12 +369,14 @@ const astrologerlist =
               <div>
                 <div
                   className="relative w-full p-1 overflow-hidden bg-center bg-cover rounded-lg shadow-lg md:h-77 h-68 lg:h-80 sm:h-88 sm:p-1 back-astro-image"
-                  style={{ backgroundImage: "url('/ds-img/mnew.jpg')" }}
+                  style={{
+                    backgroundImage: "url('/ds-img/mnew.jpg')",
+                  }}
                 >
                   <div className="absolute inset-0 bg-[#00000030] bg-opacity-0"></div>
 
-                  <div className="relative h-full p-2 flex rounded-lg flex-col backdrop-blur-none  items-center text-white bg-linear-to-r  from-[#f4eaffc9] via-[#e1e7fda8] to-[#f3e8ffb8]">
-                    <div className="flex flex-col items-start justify-start gap-2 astro-image-price-box ">
+                  <div className="relative h-full p-2 flex rounded-lg flex-col backdrop-blur-none items-center text-white bg-linear-to-r from-[#f4eaffc9] via-[#e1e7fda8] to-[#f3e8ffb8]">
+                    <div className="flex flex-col items-start justify-start gap-2 astro-image-price-box">
                       <div className="flex items-center justify-between gap-1 astro-image-name sm:flex-row place-self-center sm:gap-2">
                         <Image
                           src={
@@ -373,20 +390,26 @@ const astrologerlist =
                           priority={index === 0}
                           loading={index === 0 ? "eager" : "lazy"}
                           alt={
-                            astro?.displayName || astro?.name || "Astrologer"
+                            astro?.displayName ||
+                            astro?.name ||
+                            "Astrologer"
                           }
                           onClick={() =>
-                            router.push(`/astrologerprofile/${astro?.id}`)
+                            router.push(
+                              `/astrologerprofile/${astro?.id}`
+                            )
                           }
                         />
                       </div>
 
                       <div className="flex flex-col items-center justify-center gap-1 p-1 rounded-lg astrologer-price-skill md:p-2 bg-linear-to-r from-violet-200 to-purple-200">
-                        <div className="flex  flex-col items-center gap-1 astro-name-exp">
+                        <div className="flex flex-col items-center gap-1 astro-name-exp">
                           <h2
-                            className="text-sm font-bold text-black  sm:text-base"
+                            className="text-sm font-bold text-black sm:text-base"
                             onClick={() =>
-                              router.push(`/astrologerprofile/${astro?.id}`)
+                              router.push(
+                                `/astrologerprofile/${astro?.id}`
+                              )
                             }
                           >
                             {astro?.displayName || astro?.name}
@@ -395,11 +418,17 @@ const astrologerlist =
                           <p className="sm:w-57.5 w-35 text-[10px] md:text-xs text-black text-center truncate">
                             {astro?.skills?.join(", ")}
                           </p>
+
                           <div className="flex sm:w-57.5 w-35 items-center justify-center gap-2 lang-bar">
-                            <svg width={10} height={10} viewBox="0 -64 640 640">
+                            <svg
+                              width={10}
+                              height={10}
+                              viewBox="0 -64 640 640"
+                            >
                               <path d="M152.1 236.2c-3.5-12.1-7.8-33.2-7.8-33.2h-.5s-4.3 21.1-7.8 33.2l-11.1 37.5H163zM616 96H336v320h280c13.3 0 24-10.7 24-24V120c0-13.3-10.7-24-24-24zm-24 120c0 6.6-5.4 12-12 12h-11.4c-6.9 23.6-21.7 47.4-42.7 69.9 8.4 6.4 17.1 12.5 26.1 18 5.5 3.4 7.3 10.5 4.1 16.2l-7.9 13.9c-3.4 5.9-10.9 7.8-16.7 4.3-12.6-7.8-24.5-16.1-35.4-24.9-10.9 8.7-22.7 17.1-35.4 24.9-5.8 3.5-13.3 1.6-16.7-4.3l-7.9-13.9c-3.2-5.6-1.4-12.8 4.2-16.2 9.3-5.7 18-11.7 26.1-18-7.9-8.4-14.9-17-21-25.7-4-5.7-2.2-13.6 3.7-17.1l6.5-3.9 7.3-4.3c5.4-3.2 12.4-1.7 16 3.4 5 7 10.8 14 17.4 20.9 13.5-14.2 23.8-28.9 30-43.2H412c-6.6 0-12-5.4-12-12v-16c0-6.6 5.4-12 12-12h64v-16c0-6.6 5.4-12 12-12h16c6.6 0 12 5.4 12 12v16h64c6.6 0 12 5.4 12 12zM0 120v272c0 13.3 10.7 24 24 24h280V96H24c-13.3 0-24 10.7-24 24zm58.9 216.1L116.4 167c1.7-4.9 6.2-8.1 11.4-8.1h32.5c5.1 0 9.7 3.3 11.4 8.1l57.5 169.1c2.6 7.8-3.1 15.9-11.4 15.9h-22.9a12 12 0 0 1-11.5-8.6l-9.4-31.9h-60.2l-9.1 31.8c-1.5 5.1-6.2 8.7-11.5 8.7H70.3c-8.2 0-14-8.1-11.4-15.9z" />
                             </svg>
-                            <p className=" text-[10px] md:text-xs text-black  whitespace-nowrap overflow-hidden text-ellipsis">
+
+                            <p className="text-[10px] md:text-xs text-black whitespace-nowrap overflow-hidden text-ellipsis">
                               {astro?.languages?.join(", ")}
                             </p>
                           </div>
@@ -408,8 +437,10 @@ const astrologerlist =
                             <p className="text-[10px] md:text-xs text-yellow-300 bg-[#00000880] rounded-lg sm:py-1 px-2 w-fit">
                               Exp: {astro?.experience} Yrs
                             </p>
+
                             <p className="text-[10px] md:text-xs bg-[#00000880] text-yellow-300 rounded-lg sm:py-1 px-2 w-fit flex items-center gap-2">
-                              {astro?.rating.toFixed(1)}
+                              {astro?.rating?.toFixed?.(1) || "0.0"}
+
                               <svg
                                 width={10}
                                 height={10}
@@ -425,24 +456,16 @@ const astrologerlist =
                                 ></path>
                               </svg>
                             </p>
-                            {/* <span className="text-[10px] md:text-xs text-yellow-300 flex gap-1 bg-[#00000880] p-1 rounded-lg">
-                                                            {ascard.ordr} <h6>Orders</h6>
-                                                        </span> */}
                           </span>
                         </div>
 
-                        <div className="flex items-center justify-center w-full  astrologer-price-box">
-                          <div className="sm:mt-2 text-[10px] sm:text-xs  font-semibold flex gap-1 items-center justify-center">
-                            {/* <span className="text-black">
-                              Price : ₹ {astro?.disc_chat_charge}/min
-                            </span>
-                            <span className="text-red-400 text-[10px]  sm:text-xs line-through">
-                              ₹ {astro?.astro_chat_charges}/min
-                            </span> */}
-                            {/* <AstrologerPrice mode="chat" astro={astro} /> */}
+                        <div className="flex items-center justify-center w-full astrologer-price-box">
+                          <div className="sm:mt-2 text-[10px] sm:text-xs font-semibold flex gap-1 items-center justify-center">
                             {(() => {
                               const chatPrice = astro?.pricing?.find(
-                                (item) => item.type === "CHAT" && item.isActive,
+                                (item) =>
+                                  item.type === "CHAT" &&
+                                  item.isActive
                               );
 
                               return (
@@ -469,13 +492,15 @@ const astrologerlist =
                         </div>
                       </div>
                     </div>
+
                     <div className="flex justify-around w-full mt-1 space-x-4 md:mt-1">
                       {/* CALL BUTTON */}
                       {(() => {
                         const callStatus = getAstroStatus(astro, "call");
 
                         const callPrice = astro?.pricing?.find(
-                          (item) => item.type === "CALL" && item.isActive,
+                          (item) =>
+                            item.type === "CALL" && item.isActive
                         );
 
                         return (
@@ -530,7 +555,8 @@ const astrologerlist =
                         const chatStatus = getAstroStatus(astro, "chat");
 
                         const chatPrice = astro?.pricing?.find(
-                          (item) => item.type === "CHAT" && item.isActive,
+                          (item) =>
+                            item.type === "CHAT" && item.isActive
                         );
 
                         return (
@@ -564,7 +590,7 @@ const astrologerlist =
                             >
                               <path
                                 fill="#fff"
-                                d="M14 14.2c0 0 0 0 0 0 0-0.6 2-1.8 2-3.1 0-1.5-1.4-2.7-3.1-3.2 0.7-0.8 1.1-1.7 1.1-2.8 0-2.8-2.9-5.1-6.6-5.1-3.5 0-7.4 2.1-7.4 5.1 0 2.1 1.6 3.6 2.3 4.2-0.1 1.2-0.6 1.7-0.6 1.7l-1.2 1h1.5c1.6 0 2.9-0.5 3.7-1.1 0 0.1 0 0.1 0 0.2 0 2 2.2 3.6 5 3.6 0.2 0 0.6 0 0.6 0 0.4 0.5 1.7 1.4 3.4 1.4 0.1-0.1-0.7-0.5-0.7-1.9zM7.4 1c3.1 0 5.6 1.9 5.6 4.1s-2.6 4.1-5.8 4.1c-0.2 0-0.6 0-0.8 0h-0.3l-.1.2c-.3.4-1.5 1.2-3.1 1.5.1-.4.1-1 .1-1.8v-.3c-1-.8-2.1-2.2-2.1-3.6 0-2.2 3.2-4.2 6.5-4.2z"
+                                d="M14 14.2c0 0 0 0 0 0 0-0.6 2-1.8 2-3.1 0-1.5-1.4-2.7-3.1-3.2 0.7-0.8 1.1-1.7 1.1-2.8 0-2.8-2.9-5.1-6.6-5.1-3.5 0-7.4 2.1-7.4 5.1 0 2.1 1.6 3.6 2.3 4.2-0.1 1.2-0.6 1.7-0.6 1.7l-1.2 1h1.5c1.6 0 2.9-0.5 3.7-1.1 0 0.1 0.6 0 0.6 0.2 0 2 2.2 3.6 5 3.6 0.2 0 0.6 0 0.6 0 0.4 0.5 1.7 1.4 3.4 1.4 0.1-0.1-0.7-0.5-0.7-1.9zM7.4 1c3.1 0 5.6 1.9 5.6 4.1s-2.6 4.1-5.8 4.1c-0.2 0-0.6 0-0.8 0h-0.3l-.1.2c-.3.4-1.5 1.2-3.1 1.5.1-.4.1-1 .1-1.8v-.3c-1-.8-2.1-2.2-2.1-3.6 0-2.2 3.2-4.2 6.5-4.2z"
                               />
                             </svg>
                           </CustomButton>
@@ -578,8 +604,7 @@ const astrologerlist =
           ))}
         </Swiper>
       </div>
-        {/* <Recastro astrologers={astrologerlist} /> */}
-      {/* <AlertLoading show={alert} title="Please Wait.." /> */}
+
       <RecentRequestPopup
         show={showRecentPopup}
         onClose={() => setShowRecentPopup(false)}

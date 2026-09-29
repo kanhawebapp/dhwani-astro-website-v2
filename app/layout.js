@@ -30,17 +30,22 @@ const sonsie = Sonsie_One({
   preload: false,
 });
 
+/**
+ * Global / Default Metadata
+ *
+ * Page-specific metadata should be defined inside each page.js
+ * or through generateMetadata() for dynamic pages.
+ */
 export const metadata = {
   metadataBase: new URL("https://dhwaniastro.com"),
 
   title: {
-    default:
-      "Best Astrologer Near Me | Online Jyotish Consultation by Dhwani Astro",
+    default: "Dhwani Astro | Online Astrology Consultation",
     template: "%s | Dhwani Astro",
   },
 
   description:
-    "Looking for an online Jyotish consultation in Delhi? Connect with experienced astrologers on Dhwani Astro for personalized astrology consultations.",
+    "Connect with experienced astrologers on Dhwani Astro for personalized online astrology and Jyotish consultations.",
 
   keywords: [
     "astrologer",
@@ -64,10 +69,6 @@ export const metadata = {
 
   publisher: "Dhwani Astro",
 
-  alternates: {
-    canonical: "https://dhwaniastro.com",
-  },
-
   icons: {
     icon: [
       {
@@ -84,46 +85,16 @@ export const metadata = {
     ],
   },
 
-  openGraph: {
-    type: "website",
-    locale: "en_IN",
-    url: "https://dhwaniastro.com",
-    siteName: "Dhwani Astro",
-
-    title:
-      "Best Astrologer Near Me | Online Jyotish Consultation by Dhwani Astro",
-
-    description:
-      "Connect with experienced astrologers online for personalized Jyotish consultations with Dhwani Astro.",
-
-    images: [
-      {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "Dhwani Astro - Online Astrology Consultation",
-      },
-    ],
-  },
-
-  twitter: {
-    card: "summary_large_image",
-
-    title:
-      "Best Astrologer Near Me | Online Jyotish Consultation by Dhwani Astro",
-
-    description:
-      "Online Jyotish consultation with experienced astrologers on Dhwani Astro.",
-
-    images: ["/og-image.jpg"],
-  },
-
   robots: {
     index: true,
     follow: true,
+
     googleBot: {
       index: true,
       follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
     },
   },
 };

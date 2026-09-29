@@ -7,7 +7,7 @@ export default function AstrostoreSection() {
     {
       name: "499 Store",
       img: "/ds-img/st1.webp",
-      href: "https://shop.dhwaniastro.com/collections/499-store" ,
+      href: "https://shop.dhwaniastro.com/collections/499-store",
     },
     {
       name: "Rose Quartz",
@@ -47,10 +47,16 @@ export default function AstrostoreSection() {
   ];
 
   return (
-    <section className="products_service_new mt-2 sm:max-w-7xl mx-auto w-full p-4">
-      <h1 className="text-[#2f1254] text-[15px] sm:text-xl lg:text-2xl  py-3 text-center font-semibold">
-        • About Dhwani Shop •
-      </h1>
+    <section
+      className="products_service_new mt-2 sm:max-w-7xl mx-auto w-full p-4"
+      aria-labelledby="dhwani-shop-heading"
+    >
+      <h2
+        id="dhwani-shop-heading"
+        className="text-[#2f1254] text-[15px] sm:text-xl lg:text-2xl py-3 text-center font-semibold"
+      >
+        Astrology Products & Spiritual Shop
+      </h2>
 
       <AstrostoreSlider items={astrostorepro} />
     </section>

@@ -1,42 +1,50 @@
-"use client";
+export const metadata = {
+  title: "Astrology Blogs",
+  description:
+    "Read astrology blogs on horoscope, Kundli, numerology, relationships, astrology tips, Vedic astrology, and spiritual guidance from Dhwani Astro.",
 
-import { useQuery } from "@apollo/client/react";
-import { GET_BLOG_CATEGORIES, GET_BLOGS } from "../graphql/gqlQuery";
+  alternates: {
+    canonical: "/blogs",
+  },
 
-import BlogSidebar from "./BlogSidebar";
-import { BlogProvider } from "../context/blogContext";
-import Callchatsec from "@/components/Smcompo/Callchatsec";
+  openGraph: {
+    type: "website",
+    url: "https://dhwaniastro.com/blogs",
+    siteName: "Dhwani Astro",
+    title: "Astrology Blogs | Dhwani Astro",
+    description:
+      "Read astrology blogs on horoscope, Kundli, numerology, relationships, astrology tips, Vedic astrology, and spiritual guidance from Dhwani Astro.",
+    images: [
+      {
+        url: "/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Dhwani Astro Astrology Blogs",
+      },
+    ],
+  },
 
-export default function BlogLayout({ children }) {
-  const { data: categoryData } = useQuery(GET_BLOG_CATEGORIES);
+  twitter: {
+    card: "summary_large_image",
+    title: "Astrology Blogs | Dhwani Astro",
+    description:
+      "Read astrology blogs on horoscope, Kundli, numerology, relationships, astrology tips, Vedic astrology, and spiritual guidance from Dhwani Astro.",
+    images: ["/og-image.jpg"],
+  },
 
-  const { data: blogsData,  loading: blogsLoading } = useQuery(GET_BLOGS);
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
+};
 
-  const blogs = blogsData?.blogs || [];
-
-  const categories = categoryData?.blogCategories || [];
-
-  const recentBlogs = blogs.slice(0, 5);
-
-  return (
-    <div className="sm:px-10 px-3 shadow-xl  py-2">
-    <BlogProvider
-      value={{
-        blogs,
-        categories,
-        recentBlogs,
-        blogsLoading
-      }}
-    >
-      <div className="container mx-auto sm:py-10">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          <div className="lg:col-span-3">{children}</div>
-
-          <BlogSidebar categories={categories} recentBlogs={recentBlogs} />
-        </div>
-        <Callchatsec/>
-      </div>
-    </BlogProvider>
-    </div>
-  );
+export default function BlogsLayout({ children }) {
+  return children;
 }

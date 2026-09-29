@@ -3,17 +3,16 @@
 import { useState, useEffect, useContext } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useDispatch } from "react-redux";
 import { useRouter } from "next/navigation";
-//import { persistor } from "../app/redux/store";
 import toast from "react-hot-toast";
-import { useQuery, useMutation } from "@apollo/client/react";
+import { useMutation } from "@apollo/client/react";
 import { gql } from "@apollo/client";
+
 import client from "@/utils/apolloClient";
 import LanguageSwitcher from "../components/Custom/LangSwitcher";
 import { useLanguage } from "../app/context/LangContext";
 import { AuthContext } from "@/app/context/authContext";
-import CustomButton from "./Custom/CustomButton";
+
 const LOGOUT_MUTATION = gql`
   mutation Logout {
     logout
@@ -21,19 +20,20 @@ const LOGOUT_MUTATION = gql`
 `;
 
 export default function Header({ openSignInModal }) {
-  const { user, setUser, isLoggedIn, setIsLoggedIn } = useContext(AuthContext);
+  const { user, setUser, isLoggedIn } = useContext(AuthContext);
   const { messages: t } = useLanguage();
 
   const router = useRouter();
-  const dispatch = useDispatch();
+
   const [isUserOpen, setIsUserOpen] = useState(false);
 
   const [logoutMutation, { loading: logoutLoading }] =
     useMutation(LOGOUT_MUTATION);
+
   const LogOut = async () => {
     const storedUser = localStorage.getItem("user");
 
-    // Agar user hi nahi hai to seedha logout state clear
+    // If user is not stored locally, clear state and redirect
     if (!storedUser) {
       setUser(null);
       router.replace("/");
@@ -49,7 +49,6 @@ export default function Header({ openSignInModal }) {
         toast.error("Logout failed");
       }
     } catch (err) {
-      // Agar cookie expire ho gayi hai to backend Unauthorized dega
       if (
         err?.message?.includes("Unauthorized") ||
         err?.graphQLErrors?.[0]?.message === "Unauthorized"
@@ -63,151 +62,369 @@ export default function Header({ openSignInModal }) {
       setUser(null);
 
       await client.clearStore();
-      //await persistor.purge();
 
       router.replace("/");
     }
   };
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       const dropdown = document.querySelector(".user-container");
-      if (dropdown && !dropdown.contains(event.target)) setIsUserOpen(false);
+
+      if (dropdown && !dropdown.contains(event.target)) {
+        setIsUserOpen(false);
+      }
     };
+
     document.addEventListener("click", handleClickOutside);
-    return () => document.removeEventListener("click", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("click", handleClickOutside);
+    };
   }, []);
 
   return (
-    <header className="z-50 flex items-center justify-between w-full p-1 px-2 shadow-lg head-top bg-gradient-to-r from-purple-900 via-purple-800 to-purple-900 md:px-18">
+    <header
+      className="
+        z-50
+        flex
+        items-center
+        justify-between
+        w-full
+        p-1
+        px-2
+        shadow-lg
+        head-top
+        bg-gradient-to-r
+        from-purple-900
+        via-purple-800
+        to-purple-900
+        md:px-18
+      "
+    >
+      {/* Logo */}
       <div className="w-1/3 ml-8 dslogo sm:w-1/2 sm:ml-0">
-        <Link href="/">
+        <Link
+          href="/"
+          aria-label="Dhwani Astro - Online Astrology Consultation"
+        >
           <Image
             src="/ds-img/logo.webp"
             width={160}
             height={40}
-            alt="Logo"
-            className="w-25  sm:w-37"
-            priority
+            alt="Dhwani Astro - Online Astrology Consultation"
+            className="w-25 sm:w-37"
+            sizes="(max-width: 640px) 100px, 160px"
           />
         </Link>
       </div>
 
-      <div className="items-center    justify-end sm:gap-4 flex gap-2 sm:gap-2 ">
+      {/* Main Navigation */}
+      <nav
+        aria-label="Main navigation"
+        className="flex items-center justify-end gap-2 sm:gap-4"
+      >
+        {/* Language */}
         <LanguageSwitcher />
 
+        {/* Blog */}
         <Link
           href="/blogs"
-          className="flex items-center text-[9px] sm:text-[10px] px-2 blog-btn sm:px-3 sm:py-1 bg-[#f5f5a8] cursor-pointer sm:text-sm text-black rounded-full transition-all hover:bg-[#f5e78a]"
+          className="
+            flex
+            items-center
+            text-[9px]
+            sm:text-[10px]
+            px-2
+            sm:px-3
+            sm:py-1
+            sm:text-sm
+            bg-[#f5f5a8]
+            text-black
+            rounded-full
+            cursor-pointer
+            transition-all
+            hover:bg-[#f5e78a]
+          "
         >
           Blog
         </Link>
 
+        {/* Login */}
         {!isLoggedIn && (
           <button
+            type="button"
             onClick={openSignInModal}
-            className="px-2 py-1 cursor-pointer text-[10px] sm:text-sm sm:font-medium rounded-full bg-[#b92c3a] text-[#FFD70a]"
+            aria-label="Sign in to Dhwani Astro"
+            className="
+              px-2
+              py-1
+              cursor-pointer
+              text-[10px]
+              sm:text-sm
+              sm:font-medium
+              rounded-full
+              bg-[#b92c3a]
+              text-[#FFD70a]
+            "
           >
             {t?.header?.signIn || "Sign In"}
           </button>
         )}
+
+        {/* Logged-in User */}
         {isLoggedIn && (
           <div
             className="relative user-container"
             onMouseEnter={() => setIsUserOpen(true)}
             onMouseLeave={() => setIsUserOpen(false)}
           >
-            <button className="flex pe-1 items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIsUserOpen((prev) => !prev)}
+              aria-label="Open user account menu"
+              aria-expanded={isUserOpen}
+              aria-haspopup="menu"
+              className="flex items-center gap-2 pe-1"
+            >
               <Image
                 className="w-7 h-auto rounded-full sm:w-10"
                 src={user?.profileImage || "/ds-img/user2.webp"}
-                alt="Profile"
+                alt={
+                  user?.name
+                    ? `${user.name} profile`
+                    : "Dhwani Astro user profile"
+                }
                 width={40}
                 height={40}
+                sizes="40px"
               />
-
-              {/* <span className="text-white">{user?.name}</span> */}
             </button>
 
             {isUserOpen && (
-              <div className="absolute -right-2 sm:-right-15 top-full p-2 bg-purple-800 w-40  sm:w-55 rounded-2xl  shadow-2xl border border-gray-600 z-50 overflow-hidden">
-                <div className="flex items-center gap-3 sm:px-3 sm:py-2 shadow-2xl bg-purple-500 rounded-full ">
-               <Image
-                className="w-7 h-auto rounded-full sm:w-10"
-                src={user?.profileImage || "/ds-img/user2.webp"}
-                alt="Profile"
-                width={40}
-                height={40}
-              />
+              <div
+                className="
+                  absolute
+                  -right-2
+                  sm:-right-15
+                  top-full
+                  p-2
+                  bg-purple-800
+                  w-40
+                  sm:w-55
+                  rounded-2xl
+                  shadow-2xl
+                  border
+                  border-gray-600
+                  z-50
+                  overflow-hidden
+                "
+                role="menu"
+                aria-label="User account menu"
+              >
+                {/* User Information */}
+                <div
+                  className="
+                    flex
+                    items-center
+                    gap-3
+                    sm:px-3
+                    sm:py-2
+                    shadow-2xl
+                    bg-purple-500
+                    rounded-full
+                  "
+                >
+                  <Image
+                    className="w-7 h-auto rounded-full sm:w-10"
+                    src={user?.profileImage || "/ds-img/user2.webp"}
+                    alt={
+                      user?.name
+                        ? `${user.name} profile`
+                        : "Dhwani Astro user profile"
+                    }
+                    width={40}
+                    height={40}
+                    sizes="40px"
+                  />
 
                   <div>
-                    <h3 className="sm:font-semibold text-xs sm:text-sm  text-white">
+                    <h3 className="sm:font-semibold text-xs sm:text-sm text-white">
                       {user?.name || "User"}
                     </h3>
                   </div>
                 </div>
 
-                {/* MENU */}
+                {/* Dashboard Menu */}
                 <div className="py-2 space-y-2">
-                  <div className="flex bg-violet-300 rounded-xl sm:px-2 sm:py-2 gap-1 flex-col sm:gap-2">
+                  <div
+                    className="
+                      flex
+                      bg-violet-300
+                      rounded-xl
+                      sm:px-2
+                      sm:py-2
+                      gap-1
+                      flex-col
+                      sm:gap-2
+                    "
+                  >
                     <Link
-                      onClick={() => setIsUserOpen(false)}
                       href="/dashboard/profile"
-                      className="flex items-center text-xs sm:text-sm sm:font-medium gap-3 px-4 py-1 text-gray-700 hover:bg-gray-100 rounded-full"
+                      onClick={() => setIsUserOpen(false)}
+                      role="menuitem"
+                      className="
+                        flex
+                        items-center
+                        text-xs
+                        sm:text-sm
+                        sm:font-medium
+                        gap-3
+                        px-4
+                        py-1
+                        text-gray-700
+                        hover:bg-gray-100
+                        rounded-full
+                      "
                     >
                       👤 Profile
                     </Link>
-                    {/* 
-                    <Link
-                      href="/dashboard/account"
-                      className="flex items-center text-xs sm:text-sm sm:font-medium gap-3 px-4 py-1 text-gray-700 hover:bg-gray-100 rounded-full"
-                    >
-                      🪪 Account
-                    </Link> */}
 
                     <Link
-                      onClick={() => setIsUserOpen(false)}
                       href="/dashboard/chat-history"
-                      className="flex items-center  text-xs sm:text-sm sm:font-medium gap-3 px-4 py-1 text-gray-700 hover:bg-gray-100 rounded-full"
+                      onClick={() => setIsUserOpen(false)}
+                      role="menuitem"
+                      className="
+                        flex
+                        items-center
+                        text-xs
+                        sm:text-sm
+                        sm:font-medium
+                        gap-3
+                        px-4
+                        py-1
+                        text-gray-700
+                        hover:bg-gray-100
+                        rounded-full
+                      "
                     >
                       💬 Chat History
                     </Link>
 
                     <Link
-                      onClick={() => setIsUserOpen(false)}
                       href="/dashboard/call-history"
-                      className="flex items-center text-xs sm:text-sm sm:font-medium gap-3 px-4 py-1 text-gray-700 hover:bg-gray-100 rounded-full"
+                      onClick={() => setIsUserOpen(false)}
+                      role="menuitem"
+                      className="
+                        flex
+                        items-center
+                        text-xs
+                        sm:text-sm
+                        sm:font-medium
+                        gap-3
+                        px-4
+                        py-1
+                        text-gray-700
+                        hover:bg-gray-100
+                        rounded-full
+                      "
                     >
                       📞 Call History
                     </Link>
+
                     <Link
-                      onClick={() => setIsUserOpen(false)}
                       href="/dashboard/myfollowing"
-                      className="flex items-center text-xs sm:text-sm sm:font-medium gap-3 px-4 py-1 text-gray-700 hover:bg-gray-100 rounded-full"
+                      onClick={() => setIsUserOpen(false)}
+                      role="menuitem"
+                      className="
+                        flex
+                        items-center
+                        text-xs
+                        sm:text-sm
+                        sm:font-medium
+                        gap-3
+                        px-4
+                        py-1
+                        text-gray-700
+                        hover:bg-gray-100
+                        rounded-full
+                      "
                     >
                       ✨ My Following
                     </Link>
 
                     <Link
-                      onClick={() => setIsUserOpen(false)}
                       href="/dashboard/transaction"
-                      className="flex items-center text-xs sm:text-sm sm:font-medium gap-3 px-4 py-1 text-gray-700 hover:bg-gray-100 rounded-full"
+                      onClick={() => setIsUserOpen(false)}
+                      role="menuitem"
+                      className="
+                        flex
+                        items-center
+                        text-xs
+                        sm:text-sm
+                        sm:font-medium
+                        gap-3
+                        px-4
+                        py-1
+                        text-gray-700
+                        hover:bg-gray-100
+                        rounded-full
+                      "
                     >
                       🛒 Transaction
                     </Link>
 
                     <Link
-                      onClick={() => setIsUserOpen(false)}
                       href="/dashboard/my-services"
-                      className="flex items-center text-xs sm:text-sm sm:font-medium gap-3 px-4 py-1 text-gray-700 hover:bg-gray-100 rounded-full"
+                      onClick={() => setIsUserOpen(false)}
+                      role="menuitem"
+                      className="
+                        flex
+                        items-center
+                        text-xs
+                        sm:text-sm
+                        sm:font-medium
+                        gap-3
+                        px-4
+                        py-1
+                        text-gray-700
+                        hover:bg-gray-100
+                        rounded-full
+                      "
                     >
                       ✨ My Services
                     </Link>
                   </div>
 
+                  {/* Logout */}
                   <button
+                    type="button"
                     onClick={LogOut}
                     disabled={logoutLoading}
-                    className=" px-6 py-1 w-fit cursor-pointer justify-self-center text-xs sm:text-sm hover:scale-104 bg-red-500 text-center flex justify-center rounded-full  text-white hover:bg-red-400"
+                    aria-label={
+                      logoutLoading
+                        ? "Signing out"
+                        : "Sign out from Dhwani Astro"
+                    }
+                    className="
+                      px-6
+                      py-1
+                      w-fit
+                      cursor-pointer
+                      justify-self-center
+                      text-xs
+                      sm:text-sm
+                      hover:scale-105
+                      bg-red-500
+                      text-center
+                      flex
+                      justify-center
+                      rounded-full
+                      text-white
+                      hover:bg-red-400
+                      disabled:opacity-50
+                      disabled:cursor-not-allowed
+                    "
                   >
                     {logoutLoading
                       ? "Signing Out..."
@@ -218,7 +435,7 @@ export default function Header({ openSignInModal }) {
             )}
           </div>
         )}
-      </div>
+      </nav>
     </header>
   );
 }

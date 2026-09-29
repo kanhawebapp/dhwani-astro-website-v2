@@ -10,6 +10,7 @@ import {
   GET_ASTROLOGERS_USER,
 } from "@/app/graphql/gqlQuery";
 import { NetworkStatus } from "@apollo/client";
+
 export default function Page() {
   const params = useParams();
   const mode = params?.mode;
@@ -20,34 +21,41 @@ export default function Page() {
     ? GET_ASTROLOGERS_USER
     : GET_ASTROLOGERS_GUEST;
 
-const {
-  data,
-  loading,
-  error,
-  fetchMore,
-  refetch,
-  networkStatus,
-} = useQuery(selectedQuery, {
-  skip: authLoading,
-  variables: {
-    searchInput: {
-      limit: 12,
-      page: 1,
-      sortField: "RATING",
-      sortOrder: "DESC",
-      type: mode?.toUpperCase() || "CHAT",
+  const {
+    data,
+    loading,
+    error,
+    fetchMore,
+    refetch,
+    networkStatus,
+  } = useQuery(selectedQuery, {
+    skip: authLoading,
+    variables: {
+      searchInput: {
+        limit: 12,
+        page: 1,
+        sortField: "RATING",
+        sortOrder: "DESC",
+        type: mode?.toUpperCase() || "CHAT",
+      },
     },
-  },
-  fetchPolicy: "network-only",
-  notifyOnNetworkStatusChange: true,
-});
+    fetchPolicy: "network-only",
+    notifyOnNetworkStatusChange: true,
+  });
 
-if ((loading && networkStatus === NetworkStatus.loading) || authLoading) {
-  return <Astroskelton />;
-}
+  if (
+    (loading && networkStatus === NetworkStatus.loading) ||
+    authLoading
+  ) {
+    return <Astroskelton />;
+  }
 
   if (error) {
-    return <p className="text-red-500">Error: {error.message}</p>;
+    return (
+      <p className="text-red-500">
+        Error: {error.message}
+      </p>
+    );
   }
 
   const astrologerData = isLoggedIn

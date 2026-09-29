@@ -1,22 +1,19 @@
 "use client";
+
 import { useMemo, useState } from "react";
 import Healdetail from "./Healdetail";
 import toast from "react-hot-toast";
 import CustomButton from "@/components/Custom/CustomButton";
 import Forminp from "@/components/Homepagecomp/Consultations/Concompo/Forminp";
-import { useDispatch } from "react-redux";
-//import { setBookingInput } from "@/app/redux/reducer/Booking/BookingReducer";
 import { validateEmail, validatePhone } from "@/app/helper/validation";
-// import Freereport from "@/components/Smcompo/Freereport";
-import Searchtop from "@/components/Smcompo/Searchtop";
 import { GET_SERVICE } from "@/app/graphql/gqlQuery";
 import { useQuery } from "@apollo/client/react";
 import Image from "next/image";
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+
+const BASE_URL =
+  process.env.NEXT_PUBLIC_BASE_URL || "https://dhwaniastro.com";
 
 const Heal = ({ categorySlug, serviceSlug }) => {
-  const dispatch = useDispatch();
-
   const [pkgId, setPkgId] = useState(null);
   const [formInput, setFormInput] = useState(false);
 
@@ -36,27 +33,64 @@ const Heal = ({ categorySlug, serviceSlug }) => {
       slug: serviceSlug,
     },
   });
+
   const service = data?.getService;
 
   const startingPrice = useMemo(() => {
     if (!service) return 0;
 
     if (service.astrologerMappings?.length) {
-      return Math.min(
-        ...service.astrologerMappings.map((a) => Number(a.price)),
-      );
+      const prices = service.astrologerMappings
+        .map((astrologer) => Number(astrologer.price))
+        .filter((price) => Number.isFinite(price));
+
+      if (prices.length > 0) {
+        return Math.min(...prices);
+      }
     }
 
-    return service.price;
+    return Number(service.price) || 0;
   }, [service]);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div
+        className="flex min-h-[300px] items-center justify-center"
+        aria-busy="true"
+        aria-live="polite"
+      >
+        Loading...
+      </div>
+    );
   }
 
   if (error) {
-    return <div>{error.message}</div>;
+    return (
+      <div
+        className="flex min-h-[300px] items-center justify-center px-4 text-center text-red-600"
+        role="alert"
+      >
+        Unable to load this astrology service. Please try again later.
+      </div>
+    );
   }
+
+  if (!service) {
+    return (
+      <div
+        className="flex min-h-[300px] items-center justify-center px-4 text-center"
+        role="status"
+      >
+        Astrology service not found.
+      </div>
+    );
+  }
+
+  const serviceName = service?.name || "Astrology Service";
+
+  const serviceImage = service?.image
+    ? `${BASE_URL}${service.image}`
+    : "/placeholder.webp";
 
   const handleBooking = () => {
     setFormInput(true);
@@ -70,25 +104,27 @@ const Heal = ({ categorySlug, serviceSlug }) => {
 
   const goToPay = () => {
     if (
-      formDat["name"] === "" ||
-      formDat["dob"] === "" ||
-      formDat["tob"] === ""
+      formDat.name === "" ||
+      formDat.dob === "" ||
+      formDat.tob === ""
     ) {
-      toast.error("Please fill out Name, Date of Birth, and Time of Birth.");
-    } else if (!validatePhone(formDat["num"])) {
+      toast.error(
+        "Please fill out Name, Date of Birth, and Time of Birth.",
+      );
+    } else if (!validatePhone(formDat.num)) {
       toast.error("Please enter a valid phone number.");
-    } else if (!validateEmail(formDat["mail"])) {
+    } else if (!validateEmail(formDat.mail)) {
       toast.error("Please enter a valid email address.");
     } else {
       // dispatch(
       //   setBookingInput({
-      //     name: formDat["name"],
-      //     dob: formDat["dob"],
-      //     tob: formDat["tob"],
-      //     mail: formDat["mail"],
-      //     number: formDat["num"],
-      //     gender: formDat["gender"],
-      //     txt: formDat["txt"],
+      //     name: formDat.name,
+      //     dob: formDat.dob,
+      //     tob: formDat.tob,
+      //     mail: formDat.mail,
+      //     number: formDat.num,
+      //     gender: formDat.gender,
+      //     txt: formDat.txt,
       //     bookingid: 3,
       //   }),
       // );
@@ -96,38 +132,49 @@ const Heal = ({ categorySlug, serviceSlug }) => {
   };
 
   return (
-    <div className="flex w-full flex-col items-center gap-10 justify-center px-2 sm:px-4  py-5 md:py-5">
-      {/* <Searchtop /> */}
-
-      <div className="bg-white shadow-2xl rounded-3xl overflow-hidden max-w-7xl w-[93%] sm:w-[85%]  flex flex-col sm:flex-row items-start">
-        <div className="md:w-1/2  flex items-center  flex-col justify-center p-4">
+    <main
+      className="flex w-full flex-col items-center justify-center gap-10 px-2 py-5 sm:px-4 md:py-5"
+      aria-label={`${serviceName} astrology service`}
+    >
+      <article
+        className="flex w-[93%] max-w-7xl flex-col items-start overflow-hidden rounded-3xl bg-white shadow-2xl sm:w-[85%] sm:flex-row"
+        itemScope
+        itemType="https://schema.org/Service"
+      >
+        <div className="flex flex-col items-center justify-center p-4 md:w-1/2">
           <Image
-            className="object-cover bg-center w-full h-73"
-            src={
-              service?.image
-                ? `${BASE_URL}${service.image}`
-                : "/placeholder.webp"
-            }
-            alt={service?.name}
-            width={40}
-            height={40}
+            className="h-73 w-full bg-center object-cover"
+            src={serviceImage}
+            alt={`${serviceName} - Dhwani Astro`}
+            width={800}
+            height={500}
+            priority
+            itemProp="image"
           />
+
           {formInput && (
-            <div className="name-price w-full flex flex-col bg-purple-200 border items-center justify-center border-purple-200 shadow-lg rounded-full px-5 py-2 sm:py-3 mt-6">
-              <h1 className="mb-0 text-xl font-bold text-purple-700 sm:text-2xl">
-                {service?.name}
-              </h1>
-              <div className="flex items-center mt-0 space-x-2">
-                <span className="text-xs sm:text-base font-semibold text-purple-600 ">
+            <div className="name-price mt-6 flex w-full flex-col items-center justify-center rounded-full border border-purple-200 bg-purple-200 px-5 py-2 shadow-lg sm:py-3">
+              <div
+                className="mb-0 text-center text-xl font-bold text-purple-700 sm:text-2xl"
+                itemProp="name"
+              >
+                {serviceName}
+              </div>
+
+              <div className="mt-0 flex items-center space-x-2">
+                <span className="text-xs font-semibold text-purple-600 sm:text-base">
                   Starting From: ₹ {startingPrice}
                 </span>
-                <span className="text-xs text-gray-500">(Per Session)</span>
+
+                <span className="text-xs text-gray-500">
+                  (Per Session)
+                </span>
               </div>
             </div>
           )}
         </div>
 
-        <div className="md:w-1/2 w-full py-4 px-3  sm:pr-8 flex flex-col justify-between">
+        <div className="flex w-full flex-col justify-between px-3 py-4 sm:pr-8 md:w-1/2">
           {formInput ? (
             <Forminp
               formDat={formDat}
@@ -145,20 +192,19 @@ const Heal = ({ categorySlug, serviceSlug }) => {
             />
           )}
 
-          {data && !formInput && (
+          {!formInput && (
             <CustomButton
-              aria-label="Book Healing Session"
-              variant={"gcircle"}
-              className="mt-5 bg-green-500 rounded-full shadow-xl hover:scale-105 px-2 text-xs sm:text-md py-1 sm:py-2 hover:bg-green-600 duration-300 place-self-center w-[40%] sm:w-[50%]"
+              aria-label={`Book ${serviceName} session`}
+              variant="gcircle"
+              className="mt-5 w-[40%] place-self-center rounded-full bg-green-500 px-2 py-1 text-xs shadow-xl duration-300 hover:scale-105 hover:bg-green-600 sm:w-[50%] sm:py-2 sm:text-md"
               onClick={handleBooking}
             >
               Book Now
             </CustomButton>
           )}
         </div>
-      </div>
-      {/* <Freereport /> */}
-    </div>
+      </article>
+    </main>
   );
 };
 

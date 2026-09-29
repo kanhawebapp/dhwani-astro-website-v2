@@ -27,7 +27,7 @@ export default function FAQue() {
 
   return (
     <div className="md:max-w-7xl w-full  mx-auto bg-white p-1 sm:p-6 px-4 py-3">
-      <h1
+      <h2
         dangerouslySetInnerHTML={{
           __html: t?.faq?.head || "Frequently Asked Questions",
         }}

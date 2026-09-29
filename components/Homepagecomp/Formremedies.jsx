@@ -11,7 +11,7 @@ import Sidebanner from "../Smcompo/Sidebanner";
 // import Recastro from "../Smcompo/Recastro";
 import FAQue from "../FAQue";
 import Callchatsec from "../Smcompo/Callchatsec";
-import { LocationSelector } from "@/app/common";
+import LocationSelector from "@/app/common/LocationSelector";
 import { useLanguage } from "@/app/context/LangContext";
 import { createKundliAction } from "@/app/actions/createKundliAction";
 import Select from "react-select";

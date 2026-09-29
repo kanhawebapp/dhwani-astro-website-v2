@@ -50,7 +50,7 @@ export default function Blogsection() {
   return (
     <section className="flex flex-col gap-4 w-full items-center self-center sm:max-w-7xl sm:my-4 p-3 ">
       <div className="py-3 flex flex-col gap-2">
-        <h1
+        <h2
           dangerouslySetInnerHTML={{ __html: t?.hblog?.head || "Latest Blogs" }}
           className="relative head-wrap text-[#2f1254] text-md sm:text-xl lg:text-2xl text-center font-semibold"
         />

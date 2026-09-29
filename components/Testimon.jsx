@@ -50,12 +50,12 @@ export default function Testimon() {
   return (
     <section className="flex w-full flex-col items-center self-center sm:max-w-7xl pt-2  px-3">
       <div className="sm:py-3 py-1">
-        <h1
-          dangerouslySetInnerHTML={{
-            __html: t?.testimonial?.head || "Frequently Asked Questions",
-          }}
-          className="relative head-wrap text-[#2f1254] text-md sm:text-xl lg:text-2xl text-center font-semibold"
-        />
+        <h2
+  dangerouslySetInnerHTML={{
+    __html: t?.testimonial?.head || "Testimonials",
+  }}
+  className="relative head-wrap text-[#2f1254] text-md sm:text-xl lg:text-2xl text-center font-semibold"
+/>
       </div>
       <div className="slider-astrocard-home  w-full relative">
         <div className="absolute top-1/2 sm:-left-0px -left-2 lg:left-[-50px] transform -translate-y-1/2 z-10">

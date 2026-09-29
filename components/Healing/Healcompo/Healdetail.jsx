@@ -1,59 +1,53 @@
 "use client";
-import React, { useState } from 'react';
 
-import { PACKAGES } from "@/components/Homepagecomp/Consultations/Concompo/package";
+import React from "react";
 
-export default function Healdetail({ data,sp }) {
-    const scrollToTop = () => {
-        window.scrollTo({ top: 0, behavior: "smooth" });
-    };
-    return (
+export default function Healdetail({ data, sp }) {
+  const serviceName = data?.name || "Astrology Service";
 
-        <div className="flex flex-col gap-2">
-            <h1 className="mb-0 text-xl text-center font-bold text-purple-700 sm:text-3xl">{data?.name}</h1>
-            <div className="flex items-center mt-0 space-x-2">
-                <span className="text-sm font-semibold text-purple-600 sm:text-xl">  Starting From: ₹ {sp ?? 0}</span>
-                <span className="text-xs text-gray-500">(Per Session)</span>
-            </div>
-            <p className="mb-1 text-xs sm:text-base text-gray-600 ">
-                {data?.description}
-            </p>
-                <p className="mb-1 text-xs sm:text-base text-gray-600 sm:text-base">
-                {data?.longText}
-            </p>
+  return (
+    <div
+      className="flex flex-col gap-2"
+      itemScope
+      itemType="https://schema.org/Service"
+    >
+      <h1
+        className="mb-0 text-center text-xl font-bold text-purple-700 sm:text-3xl"
+        itemProp="name"
+      >
+        {serviceName}
+      </h1>
 
-            {/* <div className="flex flex-col items-start gap-1 space-x-4 text-gray-600 ">
-                <h4 className="font-semibold">{data.benefitsTitle} :-</h4>
-                <ul className="text-sm list-disc list-inside">
-                    <li>{data.hli1}</li>
-                    <li>{data.hli2}</li>
-                    <li>{data.hli3}</li>
-                    <li>{data.hli4}</li>
-                    <li>{data.hli5}</li>
-                </ul>
-                <span className="text-sm font-semibold">The healing session is of 20 minutes.</span>
-            </div> */}
+      <div className="mt-0 flex items-center space-x-2">
+        <span
+          className="text-sm font-semibold text-purple-600 sm:text-xl"
+          aria-label={`Starting price ₹${sp ?? 0} per session`}
+        >
+          Starting From: ₹ {sp ?? 0}
+        </span>
 
-            {/* <div className="flex flex-col gap-2 mt-4 text-black">
-                <h5 className="md:text-sm text-[15px] font-semibold">Please select session:</h5>
-                <div className="grid grid-cols-3 gap-4">
-                    {PACKAGES.map((p) => (
-                        <div
-                            key={p.id}
-                            onClick={() => setPkgId(p.id)}
-                            className={`cursor-pointer rounded-2xl border p-2 sm:p-3 text-center shadow transition ${pkgId === p.id
-                                ? 'bg-purple-600 text-white border-purple-600'
-                                : 'bg-purple-100 border-gray-300 text-gray-800'}`}>
-                            <h3 className="text-xs font-semibold sm:text-sm">{p.name}</h3>
-                            {p.discount > 0 && (
-                                <span className="text-xs">Save {Math.round(p.discount * 100)}%</span>
-                            )}
-                        </div>
-                    ))}
-                </div>
-            </div> */}
+        <span className="text-xs text-gray-500">
+          (Per Session)
+        </span>
+      </div>
 
+      {data?.description && (
+        <p
+          className="mb-1 text-xs text-gray-600 sm:text-base"
+          itemProp="description"
+        >
+          {data.description}
+        </p>
+      )}
 
+      {data?.longText && (
+        <div
+          className="mb-1 text-xs text-gray-600 sm:text-base"
+          itemProp="description"
+        >
+          {data.longText}
         </div>
-    )
+      )}
+    </div>
+  );
 }

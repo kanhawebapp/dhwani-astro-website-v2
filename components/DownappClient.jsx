@@ -11,7 +11,7 @@ export default function DownappClient({ messages }) {
 
   return (
     <div className="mobile-app flex flex-col items-center justify-center relative">
-      <h1
+      <h2
         className="text-[#2f1254] head-wrap text-md sm:text-xl lg:text-2xl text-center font-semibold"
         dangerouslySetInnerHTML={{
           __html: messages?.download?.heading || "• Download Dhwani App •",
@@ -43,7 +43,7 @@ export default function DownappClient({ messages }) {
         </div>
 
         <div className="down-app-scan   rounded-lg p-1 md:p-5  flex flex-col gap-1 items-center justify-between">
-          <h1
+          <h3
             dangerouslySetInnerHTML={{
               __html: t?.download?.tagline || "about download",
             }}
