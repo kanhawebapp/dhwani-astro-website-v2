@@ -13,6 +13,9 @@ import TestimonLazy from "./Custom/Testimon.lazy";
 import AboutUsLazy from "./Custom/AboutUs.lazy";
 import DownappSection from "./Custom/DownappSection";
 import Problembase from "./Problembase";
+import Pujahome from "./Pujahome";
+import Pujacards from "./Homepagecomp/Probchallenge/Renderpage/Probcompo/Pujacards";
+import PujasuggestClient from "@/app/freeservices/kundali/getKundaliPage/suggestions/puja/Pujasuggest";
 
 export default function  Mainhomecom() {
   return (
@@ -26,6 +29,9 @@ export default function  Mainhomecom() {
       {/* CLIENT lazy islands */}
       {/* <ProblembaseLazy /> */}
       {/* <Problembase /> */}
+      {/* <Pujahome /> */}
+      {/* <Pujacards /> */}
+      {/* <PujasuggestClient /> */}
       <RemecalcLazy />
       <AstrostoreLazy />
       <DownappSection />

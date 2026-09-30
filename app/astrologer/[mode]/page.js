@@ -27,7 +27,7 @@ const {
   fetchMore,
   refetch,
   networkStatus,
-} = useQuery(selectedQuery, {
+ } = useQuery(selectedQuery, {
   skip: authLoading,
   variables: {
     searchInput: {

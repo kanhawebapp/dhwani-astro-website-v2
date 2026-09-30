@@ -18,13 +18,18 @@ import { useLanguage } from "../app/context/LangContext";
 import useScrollZoom from "@/Hooks/scrollZoom";
 
 import { useQuery } from "@apollo/client/react";
-import { GET_ASTROLOGERS_GUEST } from "@/app/graphql/gqlQuery";
+import { GET_ASTROLOGERS_GUEST, GET_ASTROLOGERS_USER } from "@/app/graphql/gqlQuery";
 import RecentRequestPopup from "./Custom/RecentRequestPopUp";
+import { useAuth } from "@/app/context/authContext";
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
 export default function Astronewcard() {
   const busySet = new Set();
   const [showRecentPopup, setShowRecentPopup] = useState(false);
+  const { isLoggedIn, authLoading } = useAuth();
+  const selectedQuery = isLoggedIn
+      ? GET_ASTROLOGERS_USER
+      : GET_ASTROLOGERS_GUEST;
 
   const [selectedAstroData, setSelectedAstroData] = useState(null);
 
@@ -50,28 +55,56 @@ export default function Astronewcard() {
   });
   useScrollZoom(".setup-wrap");
 
+  // const {
+  //   data: astrologerResponse,
+  //   loading: astrologerLoading,
+  //   error: astrologerError,
+  // } = useQuery(GET_ASTROLOGERS_GUEST, {
+  //   variables: {
+  //     searchInput: {
+  //       limit: 10,
+  //       page: 1,
+  //       sortField: "RATING",
+  //       sortOrder: "DESC",
+  //       type: "CHAT",
+  //     },
+  //   },
+  //   fetchPolicy: "network-only",
+  // });
+
   const {
-    data: astrologerResponse,
-    loading: astrologerLoading,
-    error: astrologerError,
-  } = useQuery(GET_ASTROLOGERS_GUEST, {
-    variables: {
-      searchInput: {
-        limit: 10,
-        page: 1,
-        sortField: "RATING",
-        sortOrder: "DESC",
-        type: "CHAT",
-      },
+  data,
+  loading,
+  error,
+  fetchMore,
+  refetch,
+  networkStatus,
+ } = useQuery(selectedQuery, {
+  skip: authLoading,
+  variables: {
+    searchInput: {
+      limit: 12,
+      page: 1,
+      sortField: "RATING",
+      sortOrder: "DESC",
+      // type: mode?.toUpperCase() || "CHAT",
     },
-    fetchPolicy: "network-only",
-  });
+  },
+  fetchPolicy: "network-only",
+  notifyOnNetworkStatusChange: true,
+});
+
+
 
   const { socket } = useContext(SocketContext);
-const astrologerlist =
-  astrologerResponse?.getAstrologerListBySearch?.data?.filter(
-    (item) => item.isOnline
-  ) || [];
+  
+const astrologerData = isLoggedIn
+  ? data?.getAstrologerListForUser
+  : data?.getAstrologerListBySearch;
+
+const astrologerlist = isLoggedIn
+  ? astrologerData?.data?.filter((item) => item.isOnline) || []
+  : astrologerData?.data || [];
 
   useEffect(() => {
     if (!socket) {
@@ -110,11 +143,11 @@ const astrologerlist =
     );
   };
 
-  if (astrologerLoading) {
+  if (loading) {
     // return <AlertLoading show={true} title="Please Wait.." />;
   }
 
-  if (astrologerError) {
+  if (error) {
     console.error("Astrologer API Error:", astrologerError);
     return null;
   }
@@ -135,7 +168,6 @@ const astrologerlist =
     };
 
     if (userData.user_status === 0) {
-
       return;
     }
 
@@ -146,7 +178,6 @@ const astrologerlist =
         setQuick(true);
         setAstroId(id);
       } else {
-        
       }
 
       return;
@@ -578,7 +609,7 @@ const astrologerlist =
           ))}
         </Swiper>
       </div>
-        {/* <Recastro astrologers={astrologerlist} /> */}
+      {/* <Recastro astrologers={astrologerlist} /> */}
       {/* <AlertLoading show={alert} title="Please Wait.." /> */}
       <RecentRequestPopup
         show={showRecentPopup}
