@@ -803,7 +803,7 @@ export default function CallPage(
                   ? `${BASE_URL}${astroImage}`
                   : "/man.png"
               }
-              alt={astroData?.astrologer?.name}
+              alt={astroData?.astrologer?.name || "Astrologer"} 
             
               className="rounded-full object-cover"
             />
