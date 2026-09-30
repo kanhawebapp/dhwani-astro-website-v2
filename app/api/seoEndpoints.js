@@ -8,6 +8,7 @@ export const SEO_ENDPOINTS = {
   CHAUGHADIYA: "chaughadiya_muhurta",
 
   HOROSCOPE_TODAY: "sun_sign_prediction/daily",
+  HOROSCOPE:"sun_sign_prediction/daily",
 
   HOROSCOPE_NEXT: "sun_sign_prediction/daily/next",
 

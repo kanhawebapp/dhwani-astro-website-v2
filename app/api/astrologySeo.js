@@ -1,4 +1,4 @@
-const BASE_URL = process.env.ASTROLOGY_API_BASE_URL ;
+const BASE_URL = process.env.NEXT_PUBLIC_ASTROLOGY_API_BASE_URL ;
 
 export async function astrologySeo(endpoint, body) {
 const USER_ID = process.env.NEXT_PUBLIC_ASTROLOGY_USER_ID ;

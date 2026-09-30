@@ -181,40 +181,32 @@ const horoscopePageSchema = {
 export default async function Page() {
   const zodiac = "Aries";
 
+
   const body = {
     timezone: 5.5,
   };
 
-  let horoscopeData = null;
 
-  try {
-    const response = await safeAstrologySeo(
-      SEO_ENDPOINTS.HOROSCOPE,
-      body,
-    );
-
-    horoscopeData =
-      response?.data?.horoscope ||
-      response?.horoscope ||
-      response?.data ||
-      null;
-  } catch (error) {
-    console.error(
-      "Error fetching initial Horoscope data:",
-      error?.message || error,
-    );
-  }
+ 
+   const [today, tomorrow, yesterday] = await Promise.all([
+    astrologySeo(`${SEO_ENDPOINTS.HOROSCOPE_TODAY}/aries`, body),
+    astrologySeo(`${SEO_ENDPOINTS.HOROSCOPE_NEXT}/aries`, body),
+    astrologySeo(`${SEO_ENDPOINTS.HOROSCOPE_PREVIOUS}/aries`, body),
+  ]);
+   
 
   return (
     <>
       <JsonLd data={horoscopePageSchema} />
       <JsonLd data={breadcrumbSchema} />
 
-      <HoroscopePage
-        zodiac={zodiac}
-        horoscopezod={horoscopezod}
-        initialHoroscope={horoscopeData}
-      />
+        <HoroscopePage
+      horoscopezod={horoscopezod}
+      zodiac={zodiac}
+      today={today}
+      tomorrow={tomorrow}
+      yesterday={yesterday}
+    />
     </>
   );
 }

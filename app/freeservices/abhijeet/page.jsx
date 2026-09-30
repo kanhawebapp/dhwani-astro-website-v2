@@ -84,7 +84,11 @@ export default function AbhijitPage({
     setLoading(true);
 
     try {
+      console.log("astrologySeoastrologySeoastrologySeoastrologySeoastrologySeoastrologySeoastrologySeooooooooooooooo",SEO_ENDPOINTS.ADV_PANCHANG);
       const res = await astrologySeo(SEO_ENDPOINTS.ADV_PANCHANG, params);
+
+      console.log("7777777777777777777eooooooooooooooo");
+
 
       const normalized =
         res?.abhijit_muhurta ??
