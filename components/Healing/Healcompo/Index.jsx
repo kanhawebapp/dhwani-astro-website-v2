@@ -1,32 +1,34 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Healdetail from "./Healdetail";
+import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import { useMutation, useQuery } from "@apollo/client/react";
+
+import Healdetail from "./Healdetail";
 import CustomButton from "@/components/Custom/CustomButton";
-import Forminp from "@/components/Homepagecomp/Consultations/Concompo/Forminp";
-import { validateEmail, validatePhone } from "@/app/helper/validation";
 import { GET_SERVICE } from "@/app/graphql/gqlQuery";
-import { useQuery } from "@apollo/client/react";
+import {
+  CREATE_SERVICE_BOOKING,
+  UPDATE_BOOKING_ASTROLOGER,
+} from "@/app/graphql/gqlQuery";
+
 import Image from "next/image";
+import Selectastro from "../Selectastro";
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_BASE_URL || "https://dhwaniastro.com";
 
 const Heal = ({ categorySlug, serviceSlug }) => {
-  const [pkgId, setPkgId] = useState(null);
-  const [formInput, setFormInput] = useState(false);
+  const router = useRouter();
 
-  const [formDat, setformDat] = useState({
-    name: "",
-    dob: "",
-    tob: "",
-    pob: "",
-    mail: "",
-    num: "",
-    gender: "",
-    txt: "",
-  });
+  const [pkgId, setPkgId] = useState(null);
+  const [showAstroModal, setShowAstroModal] = useState(false);
+  const [bookingId, setBookingId] = useState(null);
+
+  // =========================
+  // GET SERVICE
+  // =========================
 
   const { data, loading, error } = useQuery(GET_SERVICE, {
     variables: {
@@ -35,6 +37,25 @@ const Heal = ({ categorySlug, serviceSlug }) => {
   });
 
   const service = data?.getService;
+
+  // =========================
+  // CREATE BOOKING
+  // =========================
+
+  const [createBooking, { loading: bookingLoading }] = useMutation(
+    CREATE_SERVICE_BOOKING
+  );
+
+  // =========================
+  // UPDATE BOOKING ASTROLOGER
+  // =========================
+
+  const [updateBookingAstrologer, { loading: updatingAstrologer }] =
+    useMutation(UPDATE_BOOKING_ASTROLOGER);
+
+  // =========================
+  // STARTING PRICE
+  // =========================
 
   const startingPrice = useMemo(() => {
     if (!service) return 0;
@@ -52,6 +73,10 @@ const Heal = ({ categorySlug, serviceSlug }) => {
     return Number(service.price) || 0;
   }, [service]);
 
+  // =========================
+  // LOADING
+  // =========================
+
   if (loading) {
     return (
       <div
@@ -64,6 +89,10 @@ const Heal = ({ categorySlug, serviceSlug }) => {
     );
   }
 
+  // =========================
+  // ERROR
+  // =========================
+
   if (error) {
     return (
       <div
@@ -74,6 +103,10 @@ const Heal = ({ categorySlug, serviceSlug }) => {
       </div>
     );
   }
+
+  // =========================
+  // SERVICE NOT FOUND
+  // =========================
 
   if (!service) {
     return (
@@ -92,42 +125,104 @@ const Heal = ({ categorySlug, serviceSlug }) => {
     ? `${BASE_URL}${service.image}`
     : "/placeholder.webp";
 
-  const handleBooking = () => {
-    setFormInput(true);
-    setSData(false);
-  };
+  // =====================================================
+  // BOOK NOW
+  // CREATE BOOKING FIRST
+  // THEN OPEN ASTROLOGER SELECTION
+  // =====================================================
 
-  const handleForm = () => {
-    setFormInput(false);
-    setSData(true);
-  };
+  const handleBooking = async () => {
+    if (!service?.id) {
+      toast.error("Service information is missing.");
+      return;
+    }
 
-  const goToPay = () => {
-    if (
-      formDat.name === "" ||
-      formDat.dob === "" ||
-      formDat.tob === ""
-    ) {
+    try {
+      const { data } = await createBooking({
+        variables: {
+          input: {
+            serviceId: service.id,
+
+            // Form removed.
+            // Send defaults only if these fields are optional
+            // in your backend schema.
+            name: "xxxx",
+            email: "xxxx",
+            phone: "9999999999",
+            dob: "999",
+            tob: "9999",
+            pob: "9999",
+            gender: "male",
+            concern: "male",
+          },
+        },
+      });
+
+      const booking = data?.createServiceBooking;
+
+      if (!booking?.id) {
+        toast.error("Unable to create booking.");
+        return;
+      }
+
+      // Save booking ID because update API needs it
+      setBookingId(booking.id);
+
+      // Now show astrologer selection
+      setShowAstroModal(true);
+    } catch (err) {
+      console.error("Create booking error:", err);
+
       toast.error(
-        "Please fill out Name, Date of Birth, and Time of Birth.",
+        err?.message || "Unable to create booking. Please try again."
       );
-    } else if (!validatePhone(formDat.num)) {
-      toast.error("Please enter a valid phone number.");
-    } else if (!validateEmail(formDat.mail)) {
-      toast.error("Please enter a valid email address.");
-    } else {
-      // dispatch(
-      //   setBookingInput({
-      //     name: formDat.name,
-      //     dob: formDat.dob,
-      //     tob: formDat.tob,
-      //     mail: formDat.mail,
-      //     number: formDat.num,
-      //     gender: formDat.gender,
-      //     txt: formDat.txt,
-      //     bookingid: 3,
-      //   }),
-      // );
+    }
+  };
+
+  // =====================================================
+  // ASTROLOGER SELECT
+  // UPDATE BOOKING
+  // THEN REDIRECT TO PAYMENT
+  // =====================================================
+
+  const handleAstrologerSelect = async (mapping) => {
+    const astrologerId = mapping?.astrologer?.id;
+
+    if (!bookingId) {
+      toast.error("Booking ID is missing.");
+      return;
+    }
+
+    if (!astrologerId) {
+      toast.error("Astrologer information is missing.");
+      return;
+    }
+
+    try {
+      const { data } = await updateBookingAstrologer({
+        variables: {
+          bookingId: bookingId,
+          astrologerId: astrologerId,
+        },
+      });
+
+      const booking = data?.updateBookingAstrologer;
+
+      if (!booking?.id) {
+        toast.error("Unable to assign astrologer.");
+        return;
+      }
+
+      setShowAstroModal(false);
+
+      // Go to payment
+      router.push(`/buy-services/payment-options/${booking.id}`);
+    } catch (err) {
+      console.error("Update astrologer error:", err);
+
+      toast.error(
+        err?.message || "Unable to select astrologer. Please try again."
+      );
     }
   };
 
@@ -141,6 +236,7 @@ const Heal = ({ categorySlug, serviceSlug }) => {
         itemScope
         itemType="https://schema.org/Service"
       >
+        {/* IMAGE */}
         <div className="flex flex-col items-center justify-center p-4 md:w-1/2">
           <Image
             className="h-73 w-full bg-center object-cover"
@@ -151,59 +247,37 @@ const Heal = ({ categorySlug, serviceSlug }) => {
             priority
             itemProp="image"
           />
-
-          {formInput && (
-            <div className="name-price mt-6 flex w-full flex-col items-center justify-center rounded-full border border-purple-200 bg-purple-200 px-5 py-2 shadow-lg sm:py-3">
-              <div
-                className="mb-0 text-center text-xl font-bold text-purple-700 sm:text-2xl"
-                itemProp="name"
-              >
-                {serviceName}
-              </div>
-
-              <div className="mt-0 flex items-center space-x-2">
-                <span className="text-xs font-semibold text-purple-600 sm:text-base">
-                  Starting From: ₹ {startingPrice}
-                </span>
-
-                <span className="text-xs text-gray-500">
-                  (Per Session)
-                </span>
-              </div>
-            </div>
-          )}
         </div>
 
+        {/* DETAILS */}
         <div className="flex w-full flex-col justify-between px-3 py-4 sm:pr-8 md:w-1/2">
-          {formInput ? (
-            <Forminp
-              formDat={formDat}
-              setformDat={setformDat}
-              onClose={handleForm}
-              pagedata={service}
-              page_name={service?.slug}
-            />
-          ) : (
-            <Healdetail
-              sp={startingPrice}
-              data={service}
-              pkgId={pkgId}
-              setPkgId={setPkgId}
-            />
-          )}
+          <Healdetail
+            sp={startingPrice}
+            data={service}
+            pkgId={pkgId}
+            setPkgId={setPkgId}
+          />
 
-          {!formInput && (
-            <CustomButton
-              aria-label={`Book ${serviceName} session`}
-              variant="gcircle"
-              className="mt-5 w-[40%] place-self-center rounded-full bg-green-500 px-2 py-1 text-xs shadow-xl duration-300 hover:scale-105 hover:bg-green-600 sm:w-[50%] sm:py-2 sm:text-md"
-              onClick={handleBooking}
-            >
-              Book Now
-            </CustomButton>
-          )}
+          <CustomButton
+            aria-label={`Book ${serviceName} session`}
+            variant="gcircle"
+            className="mt-5 w-[40%] place-self-center rounded-full bg-green-500 px-2 py-1 text-xs shadow-xl duration-300 hover:scale-105 hover:bg-green-600 sm:w-[50%] sm:py-2 sm:text-md"
+            onClick={handleBooking}
+            disabled={bookingLoading}
+          >
+            {bookingLoading ? "Creating..." : "Book Now"}
+          </CustomButton>
         </div>
       </article>
+
+      {/* ASTROLOGER SELECTION */}
+      <Selectastro
+        open={showAstroModal}
+        astrologers={service?.astrologerMappings || []}
+        loading={updatingAstrologer}
+        onSelect={handleAstrologerSelect}
+        onClose={() => setShowAstroModal(false)}
+      />
     </main>
   );
 };
