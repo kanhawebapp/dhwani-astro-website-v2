@@ -70,7 +70,7 @@ const SearchLocation = ({ placeholder, onSelect }) => {
   return (
     <div className="relative">
       <CustomInput
-        label={t?.kform?.place || "Birth Place"}
+        // label={t?.kform?.place || "Birth Place"}
         value={searchTerm}
         placeholder={placeholder}
         className="w-full text-black  border rounded-2xl bg-white/90   px-3 py-1 placeholder:text-xs sm:py-3 focus:ring-purple-100 focus:ring-1 focus:outline-0 border-gray-300"
