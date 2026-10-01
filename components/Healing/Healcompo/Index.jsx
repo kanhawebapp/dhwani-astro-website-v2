@@ -145,15 +145,15 @@ const Heal = ({ categorySlug, serviceSlug }) => {
 
             // Form removed.
             // Send defaults only if these fields are optional
-            // in your backend schema.
-            name: "xxxx",
-            email: "xxxx",
+            // this is garbage data
+            name: "test",
+            email: "test@gmail.com",
             phone: "9999999999",
-            dob: "999",
-            tob: "9999",
-            pob: "9999",
+            dob: "13223",
+            tob: "2323",
+            pob: "123123",
             gender: "male",
-            concern: "male",
+            concern: "test concern",
           },
         },
       });
