@@ -7,11 +7,13 @@ import { useDispatch, useSelector } from "react-redux";
 import { setMatchData } from "../../app/redux/services/daUserFormSlice";
 import Image from "next/image";
 import { useLanguage } from "@/app/context/LangContext";
-export default function Formdcalc({ slug }) {
+import { ASTRO_CONTENT } from "./remedy-content";
+import KundaliMilanContent from "./KundaliMilanContent";
+export default function Formdcalc({ slug = "kundlislug" }) {
   const { messages: t } = useLanguage();
   const router = useRouter();
   const dispatch = useDispatch();
-
+const content = ASTRO_CONTENT[slug] || ASTRO_CONTENT.kundlislug;
   const matchData = useSelector((state) => state.daUserForm.matchForm);
 
   const handleBoyChange = (e) => {
@@ -97,12 +99,16 @@ export default function Formdcalc({ slug }) {
           src="/ds-img/ganeshji.png"
         />
         <div className="kundli-para text-black flex flex-col text-sm mt-2">
-          <h4 className="text-md sm:text-2xl text-center font-bold uppercase">
-            {t?.comfree?.kuhead || "Get Free Online Kundli Matching"}
-          </h4>
-          <p className="text-xs sm:text-sm">
-            Kundli is an astrological chart that shows the exact positions of heavenly bodies and planets at a specific time...
-          </p>
+ <h4 className="text-md sm:text-2xl text-center font-bold uppercase">
+  {content.intro?.title ||
+    t?.comfree?.kuhead ||
+    "Get Free Online Kundli Matching"}
+</h4>
+
+<p className="text-xs sm:text-sm">
+  {content.intro?.paragraphs?.[0] ||
+    "Enter the birth details of both partners to explore traditional Kundali Matching."}
+</p>
         </div>
       </div>
 
@@ -126,10 +132,13 @@ export default function Formdcalc({ slug }) {
           <button aria-label="Show Match Details"
             type="submit"
             className="w-[50%] text-xs sm:text-sm cursor-pointer place-self-center mx-auto bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-full shadow-lg">
-            {t?.comfree?.kumatch || "Show Match Details"}
+      {content.calculator?.buttonText ||
+  t?.comfree?.kumatch ||
+  "Show Match Details"}
           </button>
         </div>
       </form>
+      <KundaliMilanContent content={content} />
     </div>
   );
 }
