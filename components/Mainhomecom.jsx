@@ -21,9 +21,9 @@ export default function Mainhomecom() {
     <div className="flex flex-col gap-5 pt-0 main_body-content w-full">
 
       {/* Primary page heading */}
-      <h1 className="text-[#2f1254] text-xl sm:text-2xl lg:text-3xl text-center font-semibold px-4">
+      {/* <h1 className="text-[#2f1254] text-xl sm:text-2xl lg:text-3xl text-center font-semibold px-4">
         Online Astrology, Horoscope & Kundli Services
-      </h1>
+      </h1> */}
 
       <Banner />
 

@@ -518,14 +518,20 @@ export const GET_COUPONS = gql`
     getCoupons {
       id
       code
+      description
       type
+      visibility
+      couponCount
+      applicable
+      status
       percentage
       flatAmount
       maxDiscount
       minOrderAmount
-      description
-      visibility
-      applicable
+      redeemLimit
+      usedCount
+      startDate
+      endDate
     }
   }
 `;

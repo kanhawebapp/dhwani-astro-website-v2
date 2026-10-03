@@ -149,7 +149,7 @@ const astrologerlist = isLoggedIn
   }
 
   if (error) {
-    console.error("Astrologer API Error:", astrologerError);
+    //console.error("Astrologer API Error:", astrologerError);
     return null;
   }
 
