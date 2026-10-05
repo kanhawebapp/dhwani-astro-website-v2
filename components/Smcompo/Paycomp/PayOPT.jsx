@@ -22,11 +22,6 @@ const CREATE_ORDER = gql`
       orderId
       amount
       currency
-
-      payableAmount
-      originalAmount
-      discount
-      finalAmount
     }
   }
 `;
