@@ -11,7 +11,7 @@ export default function Remecalc() {
   const remedbox = [
     {
       id: 1,
-      ulname: `${t.remedies.rem1 || "Gemstones"}`,
+      ulname: `${t.remedies.rem1 || "Gemstones "}`,
       src: "/ds-img/navratan.png",
       link: "/formpage",
       slug: "gemfol",
@@ -97,13 +97,7 @@ export default function Remecalc() {
       link: "/doubleform",
       slug: "kundlislug",
     },
-    {
-      id: 4,
-      ulname: `${t.calculator.calc4 || "Moon Bio"}`,
-      src: "/ds-img/moonbio.png",
-      link: "/formpage",
-      slug: "moonbio",
-    },
+ 
   ];
 
   return (
@@ -195,12 +189,7 @@ export default function Remecalc() {
         </div>
 
         <div className="astro-free-calculator w-full  flex flex-col gap-3 sm:gap-2 items-center justify-center">
-          <h2
-            dangerouslySetInnerHTML={{
-              __html: t?.calculator?.heading || "About Calculator",
-            }}
-            className="relative head-wrap text-[#2f1254] text-[15px] sm:text-xl lg:text-2xl sm:py-3 text-center font-semibold"
-          ></h2>
+
           <div className="relative sm:py-3 grid  max-w-7xl w-full items-center justify-center grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 z-10">
             {calbox.map((calcu) => (
               <div key={calcu.id} className="flex flex-col gap-2">
