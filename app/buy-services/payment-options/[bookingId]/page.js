@@ -1,7 +1,8 @@
 "use client";
 
-import { useParams, useSearchParams } from "next/navigation";
-import { useQuery } from "@apollo/client/react";
+import { useParams } from "next/navigation";
+import { useQuery, useMutation } from "@apollo/client/react";
+import { gql } from "@apollo/client";
 import PayOPT from "@/components/Smcompo/Paycomp/PayOPT";
 import {
   GET_COUPONS,
@@ -10,17 +11,108 @@ import {
 import { useState } from "react";
 import Swal from "sweetalert2";
 
+/*
+ * =========================================================
+ * VERIFY SERVICE COUPON
+ * =========================================================
+ *
+ * Coupon is verified when user clicks Apply.
+ *
+ * It is NOT verified inside PayOPT during order creation.
+ *
+ * Required:
+ * - bookingId
+ * - couponCode
+ * =========================================================
+ */
+
+const VERIFY_SERVICE_COUPON = gql`
+  mutation VerifyServiceCoupon(
+    $input: VerifyServiceCouponInput!
+  ) {
+    verifyServiceCoupon(input: $input) {
+      success
+      message
+
+      originalAmount
+      discount
+      discountedPrice
+      cashback
+      payableAmount
+      gstAmount
+
+      coupon {
+        id
+        code
+        description
+        type
+        visibility
+        couponCount
+        applicable
+        status
+        percentage
+        flatAmount
+        maxDiscount
+        minOrderAmount
+        redeemLimit
+        usedCount
+        startDate
+        endDate
+      }
+    }
+  }
+`;
+
+/*
+ * =========================================================
+ * PAGE
+ * =========================================================
+ */
+
 export default function CartPage() {
-  const searchParams = useSearchParams();
   const params = useParams();
 
-  const bookingId = params.bookingId;
+  const bookingId = params?.bookingId;
+
+  /*
+   * =========================================================
+   * COUPON STATE
+   * =========================================================
+   */
+
+  const [couponCode, setCouponCode] = useState("");
+
+  const [selectedCoupon, setSelectedCoupon] =
+    useState(null);
+
+  /*
+   * Backend verification result.
+   *
+   * This contains the authoritative:
+   *
+   * discount
+   * discountedPrice
+   * gstAmount
+   * payableAmount
+   * cashback
+   *
+   * returned by VERIFY_SERVICE_COUPON.
+   */
+  const [verifiedCouponData, setVerifiedCouponData] =
+    useState(null);
+
+  const [showCouponModal, setShowCouponModal] =
+    useState(false);
+
+  const [couponVerifying, setCouponVerifying] =
+    useState(false);
 
   /*
    * =========================================================
    * GET SERVICE BOOKING
    * =========================================================
    */
+
   const {
     data: bookingData,
     loading,
@@ -29,234 +121,350 @@ export default function CartPage() {
     variables: {
       bookingId,
     },
+    skip: !bookingId,
   });
 
-  const booking = bookingData?.getServiceBooking;
-
-  /*
-   * =========================================================
-   * COUPON STATE
-   * =========================================================
-   */
-  const [couponCode, setCouponCode] = useState("");
-  const [selectedCoupon, setSelectedCoupon] = useState(null);
-  const [showCouponModal, setShowCouponModal] = useState(false);
+  const booking =
+    bookingData?.getServiceBooking;
 
   /*
    * =========================================================
    * GET COUPONS
    * =========================================================
    */
+
   const {
     data: couponData,
     loading: couponLoading,
     error: couponError,
-  } = useQuery(GET_COUPONS);
+  } = useQuery(GET_COUPONS, {
+    fetchPolicy: "network-only",
+  });
 
   /*
    * =========================================================
-   * APPLY COUPON BY CODE
+   * VERIFY COUPON MUTATION
    * =========================================================
    */
-  const applyCouponByCode = () => {
-    const code = couponCode.trim().toUpperCase();
 
-    if (!code) {
-      Swal.fire({
-        icon: "warning",
-        title: "Enter Coupon Code",
-      });
-
-      return;
-    }
-
-    const coupons = couponData?.getCoupons || [];
-
-    const coupon = coupons.find(
-      (item) =>
-        item?.code?.trim()?.toUpperCase() === code
-    );
-
-    if (!coupon) {
-      Swal.fire({
-        icon: "error",
-        title: "Invalid Coupon",
-        text: "Coupon code not found.",
-      });
-
-      return;
-    }
-
-    applyCoupon(coupon);
-
-    setCouponCode("");
-  };
+  const [verifyServiceCoupon] =
+    useMutation(VERIFY_SERVICE_COUPON);
 
   /*
    * =========================================================
-   * LOADING / ERROR
+   * LOADING
    * =========================================================
    */
+
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="p-6 text-center">
+        Loading...
+      </div>
+    );
   }
 
+  /*
+   * =========================================================
+   * ERROR
+   * =========================================================
+   */
+
   if (error || !booking) {
-    return <div>Booking not found</div>;
+    return (
+      <div className="p-6 text-center text-red-500">
+        Booking not found
+      </div>
+    );
   }
 
   /*
    * =========================================================
    * ORIGINAL SERVICE AMOUNT
+   * =========================================================
+   */
+
+  const amount = Number(
+    booking.amount || 0,
+  );
+
+  /*
+   * =========================================================
+   * AVAILABLE SERVICE COUPONS
+   * =========================================================
+   */
+
+  const availableCoupons =
+    (couponData?.getCoupons || []).filter(
+      (coupon) => {
+        const applicable =
+          coupon?.applicable
+            ?.trim()
+            ?.toLowerCase();
+
+        return (
+          coupon?.visibility ===
+            "VISIBLE" &&
+          coupon?.status === true &&
+          (
+            applicable === "service" ||
+            applicable === "services" ||
+            applicable === "both"
+          )
+        );
+      },
+    );
+
+  /*
+   * =========================================================
+   * LOCAL DISCOUNT CALCULATION
+   * =========================================================
    *
-   * IMPORTANT:
-   * GST is calculated AFTER coupon discount.
+   * This is only used as a fallback/display
+   * before backend verification.
+   *
+   * Once VERIFY_SERVICE_COUPON succeeds,
+   * backend values are preferred.
    * =========================================================
    */
-  const amount = Number(booking.amount || 0);
 
-  /*
-   * =========================================================
-   * DISCOUNT CALCULATION
-   * =========================================================
-   */
-  let discountAmount = 0;
-
-  if (selectedCoupon) {
-    /*
-     * ---------------------------------------------------------
-     * DISCOUNT COUPON
-     * ---------------------------------------------------------
-     */
-    if (selectedCoupon.type === "DISCOUNT") {
-      /*
-       * Percentage discount on ORIGINAL service amount
-       */
-      if (
-        selectedCoupon.percentage !== null &&
-        selectedCoupon.percentage !== undefined
-      ) {
-        discountAmount =
-          (amount *
-            Number(selectedCoupon.percentage)) /
-          100;
-      }
-
-      /*
-       * Flat discount
-       */
-      if (
-        selectedCoupon.flatAmount !== null &&
-        selectedCoupon.flatAmount !== undefined
-      ) {
-        discountAmount =
-          Number(selectedCoupon.flatAmount);
-      }
-
-      /*
-       * Maximum discount
-       */
-      if (
-        selectedCoupon.maxDiscount !== null &&
-        selectedCoupon.maxDiscount !== undefined &&
-        discountAmount >
-          Number(selectedCoupon.maxDiscount)
-      ) {
-        discountAmount =
-          Number(selectedCoupon.maxDiscount);
-      }
-
-      /*
-       * Discount cannot exceed original amount
-       */
-      discountAmount = Math.min(
-        discountAmount,
-        amount
-      );
+  const calculateLocalDiscount = (
+    coupon,
+  ) => {
+    if (
+      !coupon ||
+      coupon.type !== "DISCOUNT"
+    ) {
+      return 0;
     }
-  }
+
+    let discount = 0;
+
+    /*
+     * Percentage discount
+     */
+    if (
+      coupon.percentage !== null &&
+      coupon.percentage !== undefined
+    ) {
+      discount =
+        (amount *
+          Number(coupon.percentage)) /
+        100;
+    }
+
+    /*
+     * Flat discount
+     */
+    if (
+      coupon.flatAmount !== null &&
+      coupon.flatAmount !== undefined
+    ) {
+      discount =
+        Number(coupon.flatAmount);
+    }
+
+    /*
+     * Maximum discount
+     */
+    if (
+      coupon.maxDiscount !== null &&
+      coupon.maxDiscount !== undefined &&
+      discount >
+        Number(coupon.maxDiscount)
+    ) {
+      discount =
+        Number(coupon.maxDiscount);
+    }
+
+    /*
+     * Discount cannot exceed amount
+     */
+    discount = Math.min(
+      discount,
+      amount,
+    );
+
+    return Number(
+      discount.toFixed(2),
+    );
+  };
 
   /*
    * =========================================================
-   * PRICE AFTER COUPON
+   * DISCOUNT AMOUNT
+   * =========================================================
+   *
+   * Backend verified amount is preferred.
    * =========================================================
    */
+
+  const discountAmount =
+    verifiedCouponData
+      ? Number(
+          verifiedCouponData.discount ||
+            0,
+        )
+      : calculateLocalDiscount(
+          selectedCoupon,
+        );
+
+  /*
+   * =========================================================
+   * DISCOUNTED PRICE
+   * =========================================================
+   */
+
   const discountedPrice =
-    amount - discountAmount;
+    verifiedCouponData
+      ? Number(
+          verifiedCouponData.discountedPrice ??
+            amount -
+              discountAmount,
+        )
+      : Number(
+          (
+            amount -
+            discountAmount
+          ).toFixed(2),
+        );
 
   /*
    * =========================================================
-   * GST AFTER DISCOUNT
+   * GST
    * =========================================================
    */
+
   const gstAmount =
-    (discountedPrice * 18) / 100;
+    verifiedCouponData
+      ? Number(
+          verifiedCouponData.gstAmount ||
+            0,
+        )
+      : Number(
+          (
+            (discountedPrice *
+              18) /
+            100
+          ).toFixed(2),
+        );
 
   /*
    * =========================================================
-   * FINAL PAYABLE
+   * FINAL PAYABLE AMOUNT
    * =========================================================
    */
+
   const finalAmount =
-    discountedPrice + gstAmount;
+    verifiedCouponData
+      ? Number(
+          verifiedCouponData.payableAmount ??
+            discountedPrice +
+              gstAmount,
+        )
+      : Number(
+          (
+            discountedPrice +
+            gstAmount
+          ).toFixed(2),
+        );
+
+  /*
+   * =========================================================
+   * CLOSE COUPON MODAL
+   * =========================================================
+   */
+
+  const closeCoup = () => {
+    setShowCouponModal(false);
+    setCouponCode("");
+  };
 
   /*
    * =========================================================
    * APPLY COUPON
    * =========================================================
+   *
+   * IMPORTANT:
+   *
+   * VERIFY_SERVICE_COUPON is called HERE.
+   *
+   * Flow:
+   *
+   * 1. Frontend basic validation
+   * 2. VERIFY_SERVICE_COUPON
+   * 3. Backend validates coupon
+   * 4. Backend calculates discount
+   * 5. Backend calculates GST
+   * 6. Backend calculates payable amount
+   * 7. Only successful verification applies coupon
+   * =========================================================
    */
-  const applyCoupon = (coupon) => {
+
+  const applyCoupon = async (coupon) => {
     if (!coupon) {
       return;
     }
 
     /*
-     * ---------------------------------------------------------
-     * CHECK COUPON STATUS
-     * ---------------------------------------------------------
+     * Prevent duplicate verification
      */
-    if (!coupon.status) {
+    if (couponVerifying) {
+      return;
+    }
+
+    /*
+     * =======================================================
+     * CHECK STATUS
+     * =======================================================
+     */
+
+    if (coupon.status !== true) {
       Swal.fire({
         icon: "error",
         title: "Coupon Inactive",
-        text: "This coupon is currently inactive.",
+        text:
+          "This coupon is currently inactive.",
+        confirmButtonColor:
+          "#7c3aed",
       });
 
       return;
     }
 
     /*
-     * ---------------------------------------------------------
+     * =======================================================
      * CHECK VISIBILITY
-     * ---------------------------------------------------------
+     * =======================================================
      */
+
     if (
       coupon.visibility &&
-      coupon.visibility !== "VISIBLE"
+      coupon.visibility !==
+        "VISIBLE"
     ) {
       Swal.fire({
         icon: "error",
         title: "Coupon Not Available",
-        text: "This coupon is currently not available.",
+        text:
+          "This coupon is currently not available.",
+        confirmButtonColor:
+          "#7c3aed",
       });
 
       return;
     }
 
     /*
-     * ---------------------------------------------------------
+     * =======================================================
      * CHECK APPLICABLE
-     *
-     * Database may contain:
-     *
-     * services
-     * service
-     * both
-     *
-     * ---------------------------------------------------------
+     * =======================================================
      */
+
     const applicable =
-      coupon.applicable?.trim()?.toLowerCase();
+      coupon.applicable
+        ?.trim()
+        ?.toLowerCase();
 
     if (
       applicable &&
@@ -267,55 +475,65 @@ export default function CartPage() {
       Swal.fire({
         icon: "error",
         title: "Coupon Not Applicable",
-        text: "This coupon cannot be used for services.",
+        text:
+          "This coupon cannot be used for services.",
+        confirmButtonColor:
+          "#7c3aed",
       });
 
       return;
     }
 
     /*
-     * ---------------------------------------------------------
+     * =======================================================
      * CHECK MINIMUM ORDER
-     *
-     * IMPORTANT:
-     * Check against ORIGINAL amount.
-     * GST is not included.
-     * ---------------------------------------------------------
+     * =======================================================
      */
+
     if (
-      coupon.minOrderAmount !== null &&
-      coupon.minOrderAmount !== undefined &&
+      coupon.minOrderAmount !==
+        null &&
+      coupon.minOrderAmount !==
+        undefined &&
       amount <
-        Number(coupon.minOrderAmount)
+        Number(
+          coupon.minOrderAmount,
+        )
     ) {
       Swal.fire({
         icon: "error",
         title: "Coupon Not Applicable",
         text: `Minimum order amount should be ₹${Number(
-          coupon.minOrderAmount
+          coupon.minOrderAmount,
         )}`,
+        confirmButtonColor:
+          "#7c3aed",
       });
 
       return;
     }
 
     /*
-     * ---------------------------------------------------------
+     * =======================================================
      * CHECK DATE
-     * ---------------------------------------------------------
+     * =======================================================
      */
+
     const now = new Date();
 
     if (
       coupon.startDate &&
-      new Date(coupon.startDate) > now
+      new Date(coupon.startDate) >
+        now
     ) {
       Swal.fire({
         icon: "error",
         title: "Coupon Not Active",
         text: `Coupon will be active from ${new Date(
-          coupon.startDate
+          coupon.startDate,
         ).toLocaleDateString()}`,
+        confirmButtonColor:
+          "#7c3aed",
       });
 
       return;
@@ -323,53 +541,249 @@ export default function CartPage() {
 
     if (
       coupon.endDate &&
-      new Date(coupon.endDate) < now
+      new Date(coupon.endDate) <
+        now
     ) {
       Swal.fire({
         icon: "error",
         title: "Coupon Expired",
         text: `Coupon expired on ${new Date(
-          coupon.endDate
+          coupon.endDate,
         ).toLocaleDateString()}`,
+        confirmButtonColor:
+          "#7c3aed",
       });
 
       return;
     }
 
     /*
-     * ---------------------------------------------------------
+     * =======================================================
      * CHECK GLOBAL REDEMPTION LIMIT
-     * ---------------------------------------------------------
+     * =======================================================
      */
+
     if (
-      coupon.redeemLimit !== null &&
-      coupon.redeemLimit !== undefined &&
-      Number(coupon.usedCount || 0) >=
-        Number(coupon.redeemLimit)
+      coupon.redeemLimit !==
+        null &&
+      coupon.redeemLimit !==
+        undefined &&
+      Number(
+        coupon.usedCount || 0,
+      ) >=
+        Number(
+          coupon.redeemLimit,
+        )
     ) {
       Swal.fire({
         icon: "error",
         title: "Coupon Limit Reached",
-        text: "This coupon redemption limit has been reached.",
+        text:
+          "This coupon redemption limit has been reached.",
+        confirmButtonColor:
+          "#7c3aed",
       });
 
       return;
     }
 
     /*
-     * ---------------------------------------------------------
-     * APPLY COUPON
-     * ---------------------------------------------------------
+     * =======================================================
+     * BOOKING ID CHECK
+     * =======================================================
      */
-    setSelectedCoupon(coupon);
-    setShowCouponModal(false);
 
-    Swal.fire({
-      icon: "success",
-      title: "Congratulations 🎉",
-      text: `Coupon ${coupon.code} applied successfully.`,
-      confirmButtonColor: "#7c3aed",
-    });
+    if (!bookingId) {
+      Swal.fire({
+        icon: "error",
+        title: "Booking Not Found",
+        text:
+          "Booking ID is required to verify this coupon.",
+        confirmButtonColor:
+          "#7c3aed",
+      });
+
+      return;
+    }
+
+    /*
+     * =======================================================
+     * CALL VERIFY_SERVICE_COUPON
+     * =======================================================
+     */
+
+    try {
+      setCouponVerifying(true);
+
+      /*
+       * Clear previous verification first.
+       */
+      setVerifiedCouponData(null);
+
+      const result =
+        await verifyServiceCoupon({
+          variables: {
+            input: {
+              bookingId:
+                bookingId,
+              couponCode:
+                coupon.code,
+            },
+          },
+        });
+
+      const verification =
+        result?.data
+          ?.verifyServiceCoupon;
+
+      /*
+       * =====================================================
+       * VERIFICATION FAILED
+       * =====================================================
+       */
+
+      if (!verification?.success) {
+        throw new Error(
+          verification?.message ||
+            "Coupon verification failed",
+        );
+      }
+
+      /*
+       * =====================================================
+       * BACKEND VERIFIED COUPON
+       * =====================================================
+       */
+
+      const verifiedCoupon =
+        verification?.coupon ||
+        coupon;
+
+      /*
+       * =====================================================
+       * SAVE VERIFIED DATA
+       * =====================================================
+       */
+
+      setSelectedCoupon(
+        verifiedCoupon,
+      );
+
+      setVerifiedCouponData(
+        verification,
+      );
+
+      /*
+       * Close modal
+       */
+      setShowCouponModal(false);
+
+      setCouponCode("");
+
+      /*
+       * =====================================================
+       * SUCCESS
+       * =====================================================
+       */
+
+      if (
+        verifiedCoupon.type ===
+        "CASHBACK"
+      ) {
+        Swal.fire({
+          icon: "success",
+          title: "Coupon Applied 🎉",
+          text: `Cashback coupon ${verifiedCoupon.code} applied successfully.`,
+          confirmButtonColor:
+            "#7c3aed",
+        });
+      } else {
+        Swal.fire({
+          icon: "success",
+          title: "Congratulations 🎉",
+          text: `Coupon ${verifiedCoupon.code} applied successfully.`,
+          confirmButtonColor:
+            "#7c3aed",
+        });
+      }
+    } catch (error) {
+      console.error(
+        "VERIFY_SERVICE_COUPON error:",
+        error,
+      );
+
+      /*
+       * IMPORTANT:
+       *
+       * Do NOT apply coupon if verification fails.
+       */
+
+      setSelectedCoupon(null);
+      setVerifiedCouponData(null);
+
+      Swal.fire({
+        icon: "error",
+        title: "Coupon Not Applied",
+        text:
+          error?.message ||
+          "Unable to verify coupon.",
+        confirmButtonColor:
+          "#7c3aed",
+      });
+    } finally {
+      setCouponVerifying(false);
+    }
+  };
+
+  /*
+   * =========================================================
+   * APPLY COUPON BY CODE
+   * =========================================================
+   */
+
+  const applyCouponByCode = async () => {
+    const code =
+      couponCode
+        .trim()
+        .toUpperCase();
+
+    if (!code) {
+      Swal.fire({
+        icon: "warning",
+        title: "Enter Coupon Code",
+        confirmButtonColor:
+          "#7c3aed",
+      });
+
+      return;
+    }
+
+    const coupon =
+      availableCoupons.find(
+        (item) =>
+          item?.code
+            ?.trim()
+            ?.toUpperCase() ===
+          code,
+      );
+
+    if (!coupon) {
+      Swal.fire({
+        icon: "error",
+        title: "Invalid Coupon",
+        text:
+          "Coupon code not found or coupon is not applicable.",
+        confirmButtonColor:
+          "#7c3aed",
+      });
+
+      return;
+    }
+
+    /*
+     * VERIFY happens inside applyCoupon()
+     */
+    await applyCoupon(coupon);
   };
 
   /*
@@ -377,12 +791,26 @@ export default function CartPage() {
    * REMOVE COUPON
    * =========================================================
    */
+
   const removeCoupon = () => {
     setSelectedCoupon(null);
+
+    /*
+     * Very important:
+     *
+     * Clear backend verification data also.
+     */
+    setVerifiedCouponData(null);
+
+    setCouponCode("");
 
     Swal.fire({
       icon: "success",
       title: "Coupon Removed",
+      text:
+        "Coupon has been removed successfully.",
+      confirmButtonColor:
+        "#7c3aed",
       timer: 1200,
       showConfirmButton: false,
     });
@@ -390,49 +818,9 @@ export default function CartPage() {
 
   /*
    * =========================================================
-   * CLOSE COUPON MODAL
+   * RENDER
    * =========================================================
    */
-  const closeCoup = () => {
-    setShowCouponModal(false);
-  };
-
-  /*
-   * =========================================================
-   * AVAILABLE SERVICE COUPONS
-   *
-   * THIS IS THE IMPORTANT FIX.
-   *
-   * Your API returns:
-   *
-   * "applicable": "services"
-   *
-   * But your old frontend was checking:
-   *
-   * coupon.applicable === "recharge"
-   *
-   * Therefore nothing was rendered.
-   * =========================================================
-   */
-  const availableCoupons =
-    (couponData?.getCoupons || []).filter(
-      (coupon) => {
-        const applicable =
-          coupon?.applicable
-            ?.trim()
-            ?.toLowerCase();
-
-        return (
-          coupon?.visibility === "VISIBLE" &&
-          coupon?.status === true &&
-          (
-            applicable === "service" ||
-            applicable === "services" ||
-            applicable === "both"
-          )
-        );
-      }
-    );
 
   return (
     <div className="text-gray-500 lg:w-[80%] w-full md:p-4 p-2 bg-white rounded-xl shadow-md flex flex-col gap-3 my-4 sm:my-8 place-self-center">
@@ -442,6 +830,7 @@ export default function CartPage() {
         {/* =====================================================
             PAYMENT SUMMARY
         ===================================================== */}
+
         <div className="p-4 shadow-xl w-full mb-5 sm:mb-0 rounded-xl bg-white">
 
           <h3 className="bg-gradient-to-r text-sm sm:text-md text-center from-purple-400 to-purple-600 py-2 px-3 text-white rounded-lg font-bold mb-4">
@@ -450,16 +839,24 @@ export default function CartPage() {
 
           <div className="sm:space-y-3 space-y-2 text-sm sm:text-md w-full text-black">
 
+            {/* ITEM */}
+
             <div className="flex justify-between">
-              <span>Item</span>
+              <span>
+                Item
+              </span>
 
               <span className="font-semibold">
                 {booking.service?.name}
               </span>
             </div>
 
+            {/* ASTROLOGER */}
+
             <div className="flex justify-between">
-              <span>Astrologer</span>
+              <span>
+                Astrologer
+              </span>
 
               <span>
                 {booking.astrologer?.displayName}
@@ -467,8 +864,11 @@ export default function CartPage() {
             </div>
 
             {/* ORIGINAL AMOUNT */}
+
             <div className="flex justify-between">
-              <span>Amount</span>
+              <span>
+                Amount
+              </span>
 
               <span>
                 ₹ {amount.toFixed(2)}
@@ -476,70 +876,105 @@ export default function CartPage() {
             </div>
 
             {/* DISCOUNT */}
-            {selectedCoupon && (
+
+            {selectedCoupon?.type ===
+              "DISCOUNT" && (
               <div className="flex justify-between text-green-600">
+
                 <span>
                   Coupon Discount
                 </span>
 
                 <span>
-                  - ₹{discountAmount.toFixed(2)}
+                  - ₹
+                  {discountAmount.toFixed(
+                    2,
+                  )}
                 </span>
+
               </div>
             )}
 
             {/* DISCOUNTED PRICE */}
-            {selectedCoupon && (
+
+            {selectedCoupon?.type ===
+              "DISCOUNT" && (
               <div className="flex justify-between">
+
                 <span>
                   Price After Discount
                 </span>
 
                 <span>
-                  ₹ {discountedPrice.toFixed(2)}
+                  ₹
+                  {discountedPrice.toFixed(
+                    2,
+                  )}
                 </span>
+
               </div>
             )}
 
             {/* GST */}
+
             <div className="flex justify-between">
+
               <span>
                 GST @18%
               </span>
 
               <span>
-                ₹ {gstAmount.toFixed(2)}
+                ₹
+                {gstAmount.toFixed(
+                  2,
+                )}
               </span>
+
             </div>
 
             {/* =================================================
                 COUPON BUTTON
             ================================================= */}
+
             <div className="sm:mt-4 mt-2">
 
               <div className="border border-gray-300 rounded-2xl px-3 sm:py-3 py-1 flex justify-between items-center">
 
                 <span className="text-purple-400 font-semibold text-xs sm:text-sm">
+
                   {selectedCoupon
                     ? `${selectedCoupon.code} Applied`
                     : "Apply Coupon"}
+
                 </span>
 
                 {selectedCoupon ? (
                   <div className="flex gap-2">
 
                     <button
-                      onClick={() =>
-                        setShowCouponModal(true)
+                      type="button"
+                      disabled={
+                        couponVerifying
                       }
-                      className="text-white bg-purple-600 rounded-full px-3 py-1 text-xs cursor-pointer font-semibold"
+                      onClick={() =>
+                        setShowCouponModal(
+                          true,
+                        )
+                      }
+                      className="text-white bg-purple-600 rounded-full px-3 py-1 text-xs cursor-pointer font-semibold disabled:opacity-50"
                     >
                       Change
                     </button>
 
                     <button
-                      onClick={removeCoupon}
-                      className="text-red-600 text-xs bg-red-100 px-2 py-1 rounded-full cursor-pointer font-semibold"
+                      type="button"
+                      disabled={
+                        couponVerifying
+                      }
+                      onClick={
+                        removeCoupon
+                      }
+                      className="text-red-600 text-xs bg-red-100 px-2 py-1 rounded-full cursor-pointer font-semibold disabled:opacity-50"
                     >
                       Remove
                     </button>
@@ -547,8 +982,11 @@ export default function CartPage() {
                   </div>
                 ) : (
                   <button
+                    type="button"
                     onClick={() =>
-                      setShowCouponModal(true)
+                      setShowCouponModal(
+                        true,
+                      )
                     }
                     className="text-white bg-green-500 rounded-full px-2 py-1 text-xs sm:text-sm cursor-pointer font-semibold"
                   >
@@ -561,7 +999,28 @@ export default function CartPage() {
 
             <hr />
 
+            {/* CASHBACK */}
+
+            {selectedCoupon?.type ===
+              "CASHBACK" && (
+              <div className="flex justify-between text-green-600">
+
+                <span>
+                  Cashback
+                </span>
+
+                <span>
+                  {verifiedCouponData?.cashback ??
+                    selectedCoupon.percentage ??
+                    0}
+                  %
+                </span>
+
+              </div>
+            )}
+
             {/* FINAL AMOUNT */}
+
             <div className="flex justify-between font-bold text-sm sm:text-base">
 
               <span>
@@ -569,7 +1028,10 @@ export default function CartPage() {
               </span>
 
               <span>
-                ₹ {finalAmount.toFixed(2)}
+                ₹
+                {finalAmount.toFixed(
+                  2,
+                )}
               </span>
 
             </div>
@@ -580,22 +1042,35 @@ export default function CartPage() {
         {/* =====================================================
             PAYMENT OPTIONS
         ===================================================== */}
+
         <PayOPT
           type="SERVICE"
+
           bookingId={booking.id}
+
           amount={finalAmount}
-          oriamount={booking.amount}
-          coupon_id={
-            selectedCoupon?.id ?? null
+
+          oriamount={
+            booking.amount
           }
+
+          coupon_id={
+            selectedCoupon?.id ??
+            null
+          }
+
           couponprice={
             discountAmount
           }
+
           coupon_code={
-            selectedCoupon?.code ?? null
+            selectedCoupon?.code ??
+            null
           }
+
           coupon_type={
-            selectedCoupon?.type ?? null
+            selectedCoupon?.type ??
+            null
           }
         />
 
@@ -604,13 +1079,14 @@ export default function CartPage() {
       {/* =======================================================
           COUPON MODAL
       ======================================================= */}
-      {showCouponModal && (
 
+      {showCouponModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
 
           <div className="bg-white rounded-xl w-80 sm:w-[400px] p-5 max-h-[80vh] overflow-y-auto">
 
             {/* HEADER */}
+
             <div className="flex bg-purple-200 rounded-2xl px-4 py-2 text-black items-center justify-between">
 
               <h2 className="font-bold text-sm sm:text-base">
@@ -618,8 +1094,14 @@ export default function CartPage() {
               </h2>
 
               <button
+                type="button"
                 className="cursor-pointer hover:scale-104"
-                onClick={closeCoup}
+                onClick={
+                  closeCoup
+                }
+                disabled={
+                  couponVerifying
+                }
               >
                 <svg
                   height={22}
@@ -637,37 +1119,63 @@ export default function CartPage() {
             {/* =================================================
                 ENTER COUPON CODE
             ================================================= */}
+
             <div className="flex items-center gap-2 mt-4">
 
               <input
                 type="text"
                 value={couponCode}
+                disabled={
+                  couponVerifying
+                }
                 onChange={(e) =>
                   setCouponCode(
-                    e.target.value.toUpperCase()
+                    e.target.value.toUpperCase(),
                   )
                 }
                 onKeyDown={(e) => {
-                  if (e.key === "Enter") {
+                  if (
+                    e.key ===
+                    "Enter"
+                  ) {
                     applyCouponByCode();
                   }
                 }}
                 placeholder="Enter coupon code"
-                className="flex-1 rounded-full border border-gray-300 px-4 py-1 sm:py-2 text-sm outline-none focus:border-purple-500"
+                className="flex-1 rounded-full border border-gray-300 px-4 py-1 sm:py-2 text-sm outline-none focus:border-purple-500 disabled:bg-gray-100"
               />
 
               <button
-                onClick={applyCouponByCode}
-                className="rounded-full bg-purple-600 text-white px-5 py-1 sm:py-2 text-xs sm:text-sm font-semibold hover:bg-purple-700 transition"
+                type="button"
+                disabled={
+                  couponVerifying
+                }
+                onClick={
+                  applyCouponByCode
+                }
+                className="rounded-full bg-purple-600 text-white px-5 py-1 sm:py-2 text-xs sm:text-sm font-semibold hover:bg-purple-700 transition disabled:opacity-50"
               >
-                Apply
+                {couponVerifying
+                  ? "Verifying..."
+                  : "Apply"}
               </button>
 
             </div>
 
             {/* =================================================
+                VERIFY LOADING
+            ================================================= */}
+
+            {couponVerifying && (
+              <div className="text-center text-sm text-purple-600 mt-5 font-semibold">
+                Verifying coupon...
+              </div>
+            )}
+
+            {/* =================================================
                 LOADING
             ================================================= */}
+
             {couponLoading && (
               <div className="text-center text-sm text-purple-600 mt-5">
                 Loading coupons...
@@ -677,6 +1185,7 @@ export default function CartPage() {
             {/* =================================================
                 API ERROR
             ================================================= */}
+
             {couponError && (
               <div className="text-center text-sm text-red-500 mt-5">
                 Failed to load coupons.
@@ -686,9 +1195,11 @@ export default function CartPage() {
             {/* =================================================
                 NO COUPONS
             ================================================= */}
+
             {!couponLoading &&
               !couponError &&
-              availableCoupons.length === 0 && (
+              availableCoupons.length ===
+                0 && (
                 <div className="text-center text-sm text-gray-500 mt-5">
                   No coupons available for this service.
                 </div>
@@ -697,65 +1208,109 @@ export default function CartPage() {
             {/* =================================================
                 COUPON LIST
             ================================================= */}
-            {availableCoupons.map(
-              (coupon) => {
 
-                const isSelected =
-                  selectedCoupon?.id ===
-                  coupon.id;
+            {!couponVerifying &&
+              availableCoupons.map(
+                (coupon) => {
+                  const isSelected =
+                    selectedCoupon?.id ===
+                    coupon.id;
 
-                return (
-                  <div
-                    key={coupon.id}
-                    onClick={() =>
-                      applyCoupon(coupon)
-                    }
-                    className={`border text-black border-gray-300 rounded-2xl shadow-xl p-3 mb-3 mt-5 cursor-pointer transition
-                    ${
-                      isSelected
-                        ? "bg-green-100 border-green-500"
-                        : "bg-gradient-to-r from-purple-200 via-violet-200 to-indigo-200 hover:bg-gray-100"
-                    }`}
-                  >
+                  return (
+                    <div
+                      key={coupon.id}
+                      onClick={() =>
+                        applyCoupon(
+                          coupon,
+                        )
+                      }
+                      className={`border text-black border-gray-300 rounded-2xl shadow-xl p-3 mb-3 mt-5 cursor-pointer transition ${
+                        isSelected
+                          ? "bg-green-100 border-green-500"
+                          : "bg-gradient-to-r from-purple-200 via-violet-200 to-indigo-200 hover:bg-gray-100"
+                      }`}
+                    >
 
-                    <div className="flex justify-between items-center">
+                      <div className="flex justify-between items-center">
 
-                      <div className="font-semibold text-sm">
-                        {coupon.code}
+                        <div className="font-semibold text-sm">
+                          {coupon.code}
+                        </div>
+
+                        {isSelected && (
+                          <span className="text-xs text-green-700 font-bold">
+                            Applied
+                          </span>
+                        )}
+
                       </div>
 
-                      {isSelected && (
-                        <span className="text-xs text-green-700 font-bold">
-                          Applied
-                        </span>
+                      {coupon.description && (
+                        <div className="text-xs sm:text-sm text-gray-600 mt-1">
+                          {
+                            coupon.description
+                          }
+                        </div>
                       )}
 
-                    </div>
+                      <div className="text-xs sm:text-sm text-gray-600 mt-1">
 
-                    <div className="text-xs sm:text-sm text-gray-600 mt-1">
-                      {coupon.type === "FLAT"
-                        ? `₹${coupon.flatAmount} OFF`
-                        : `${coupon.percentage}% OFF`}
-                    </div>
+                        {coupon.type ===
+                          "DISCOUNT" &&
+                          coupon.flatAmount !==
+                            null &&
+                          coupon.flatAmount !==
+                            undefined &&
+                          `₹${coupon.flatAmount} OFF`}
 
-                    {coupon.description && (
-                      <div className="text-xs text-gray-500 mt-1">
-                        {coupon.description}
+                        {coupon.type ===
+                          "DISCOUNT" &&
+                          coupon.percentage !==
+                            null &&
+                          coupon.percentage !==
+                            undefined &&
+                          `${coupon.percentage}% OFF`}
+
+                        {coupon.type ===
+                          "CASHBACK" &&
+                          coupon.percentage !==
+                            null &&
+                          coupon.percentage !==
+                            undefined &&
+                          `${coupon.percentage}% Cashback`}
+
                       </div>
-                    )}
 
-                    {coupon.minOrderAmount !== null &&
-                      coupon.minOrderAmount !== undefined && (
-                        <div className="text-xs text-gray-500 mt-1">
-                          Minimum order: ₹
-                          {coupon.minOrderAmount}
-                        </div>
-                    )}
+                      {coupon.minOrderAmount !==
+                        null &&
+                        coupon.minOrderAmount !==
+                          undefined && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            Minimum order: ₹
+                            {
+                              coupon.minOrderAmount
+                            }
+                          </div>
+                        )}
 
-                  </div>
-                );
-              }
-            )}
+                      {coupon.type ===
+                        "DISCOUNT" &&
+                        coupon.maxDiscount !==
+                          null &&
+                        coupon.maxDiscount !==
+                          undefined && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            Maximum discount: ₹
+                            {
+                              coupon.maxDiscount
+                            }
+                          </div>
+                        )}
+
+                    </div>
+                  );
+                },
+              )}
 
           </div>
         </div>

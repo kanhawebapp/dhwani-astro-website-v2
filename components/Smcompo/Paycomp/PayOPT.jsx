@@ -1,10 +1,11 @@
+
 "use client";
 
 import Image from "next/image";
 import Script from "next/script";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useMutation } from "@apollo/client/react";
 import { gql } from "@apollo/client";
 
@@ -22,55 +23,10 @@ const CREATE_ORDER = gql`
       orderId
       amount
       currency
-    }
-  }
-`;
-
-/*
- * =========================================================
- * VERIFY SERVICE COUPON
- * =========================================================
- *
- * IMPORTANT:
- *
- * This mutation is for SERVICE / HEALING booking.
- *
- * It requires bookingId.
- *
- * DO NOT send recharge pack ID as bookingId.
- * =========================================================
- */
-const VERIFY_SERVICE_COUPON = gql`
-  mutation VerifyServiceCoupon($input: VerifyServiceCouponInput!) {
-    verifyServiceCoupon(input: $input) {
-      success
-      message
-
       originalAmount
       discount
-      discountedPrice
-      cashback
       payableAmount
-      gstAmount
-
-      coupon {
-        id
-        code
-        description
-        type
-        visibility
-        couponCount
-        applicable
-        status
-        percentage
-        flatAmount
-        maxDiscount
-        minOrderAmount
-        redeemLimit
-        usedCount
-        startDate
-        endDate
-      }
+      finalAmount
     }
   }
 `;
@@ -87,6 +43,11 @@ export default function PayOPT({
   packid,
   bookingId,
 }) {
+  /*
+   * =========================================================
+   * GEO INFORMATION
+   * =========================================================
+   */
   const [geoInfo, setGeoInfo] = useState({
     ip: "",
     city: "",
@@ -94,13 +55,21 @@ export default function PayOPT({
     country: "",
   });
 
+  /*
+   * =========================================================
+   * PAYMENT LOADING
+   * =========================================================
+   */
   const [loading, setLoading] = useState(false);
 
+  /*
+   * =========================================================
+   * USER
+   * =========================================================
+   */
   const [user, setUserData] = useState(null);
 
   const route = useRouter();
-
-  const searchParams = useSearchParams();
 
   /*
    * =========================================================
@@ -110,7 +79,9 @@ export default function PayOPT({
   useEffect(() => {
     const getGeo = async () => {
       try {
-        const res = await fetch("https://ipapi.co/json/");
+        const res = await fetch(
+          "https://ipapi.co/json/",
+        );
 
         const data = await res.json();
 
@@ -118,10 +89,14 @@ export default function PayOPT({
           ip: data.ip || "",
           city: data.city || "",
           state: data.region || "",
-          country: data.country_name || "",
+          country:
+            data.country_name || "",
         });
       } catch (err) {
-        console.error("Geo fetch failed", err);
+        console.error(
+          "Geo fetch failed",
+          err,
+        );
       }
     };
 
@@ -130,78 +105,42 @@ export default function PayOPT({
 
   /*
    * =========================================================
-   * CREATE ORDER
+   * CREATE RECHARGE ORDER
    * =========================================================
    */
-  const [createOrder] = useMutation(CREATE_ORDER);
+  const [createOrder] =
+    useMutation(CREATE_ORDER);
 
   /*
    * =========================================================
    * CREATE HEALING ORDER
    * =========================================================
    */
-  const [createHealingOrder] = useMutation(CREATE_HEALING_ORDER);
-
-  /*
-   * =========================================================
-   * VERIFY SERVICE COUPON
-   * =========================================================
-   */
-  const [verifyServiceCoupon] = useMutation(VERIFY_SERVICE_COUPON);
+  const [createHealingOrder] =
+    useMutation(CREATE_HEALING_ORDER);
 
   /*
    * =========================================================
    * PAYMENT AMOUNT
    * =========================================================
-   */
-  const payAmount = Number(amount || 0);
-
-  /*
-   * =========================================================
-   * VERIFY SERVICE COUPON
-   * =========================================================
    *
-   * This function is only used for SERVICE.
+   * This amount is already calculated by page.js.
    *
-   * Recharge does NOT call verifyServiceCoupon because
-   * verifyServiceCoupon expects bookingId.
+   * For SERVICE:
+   *
+   * page.js
+   *   ↓
+   * VERIFY_SERVICE_COUPON
+   *   ↓
+   * payableAmount
+   *   ↓
+   * PayOPT
+   *
+   * Therefore PayOPT does NOT verify coupon again.
    */
-  const verifyCouponBeforeServiceOrder = async () => {
-    /*
-     * No coupon
-     */
-    if (!coupon_code) {
-      return {
-        success: true,
-        coupon: null,
-      };
-    }
-
-    /*
-     * bookingId is required for service coupon
-     */
-    if (!bookingId) {
-      throw new Error("Booking ID is required to verify service coupon");
-    }
-
-    const result = await verifyServiceCoupon({
-      variables: {
-        input: {
-          bookingId: bookingId,
-
-          couponCode: coupon_code,
-        },
-      },
-    });
-
-    const verification = result?.data?.verifyServiceCoupon;
-
-    if (!verification?.success) {
-      throw new Error(verification?.message || "Coupon verification failed");
-    }
-
-    return verification;
-  };
+  const payAmount = Number(
+    amount || 0,
+  );
 
   /*
    * =========================================================
@@ -221,76 +160,96 @@ export default function PayOPT({
        */
       if (type === "RECHARGE") {
         /*
-         * Recharge order backend should validate:
+         * Recharge order creation.
          *
-         * coupon code
-         * coupon status
-         * coupon availability
-         * coupon date
-         * min order
-         * coupon redemption
-         * discount
-         * GST
-         *
-         * The frontend amount is only for display.
+         * Coupon verification for recharge,
+         * if required by backend, is handled by
+         * createOrder/backend.
          */
-        const result = await createOrder({
-          variables: {
-            input: {
-              rechargePackId: packid,
+        const result =
+          await createOrder({
+            variables: {
+              input: {
+                rechargePackId:
+                  packid,
 
-              coupan_code: coupon_code || "",
+                coupan_code:
+                  coupon_code || "",
+              },
             },
-          },
-        });
+          });
 
-        order = result?.data?.createOrder;
-      } else if (type === "SERVICE") {
+        order =
+          result?.data?.createOrder;
+      }
 
       /*
        * =====================================================
        * SERVICE / HEALING
        * =====================================================
        */
+      else if (
+        type === "SERVICE"
+      ) {
         /*
-         * First verify coupon on backend.
-         */
-        const couponVerification = await verifyCouponBeforeServiceOrder();
-
-        /*
-         * Backend verified amount should be used.
+         * IMPORTANT:
          *
-         * If coupon exists, use backend calculated
-         * payableAmount.
+         * Coupon has ALREADY been verified
+         * inside service page.js when user clicked
+         * Apply Coupon.
+         *
+         * Therefore:
+         *
+         * DO NOT call VERIFY_SERVICE_COUPON here.
          */
-        const serviceAmount = couponVerification?.success
-          ? Number(couponVerification.payableAmount || payAmount)
-          : payAmount;
 
-        /*
-         * Create healing order
-         */
-        const result = await createHealingOrder({
-          variables: {
-            input: {
-              bookingId: bookingId,
+        if (!bookingId) {
+          throw new Error(
+            "Booking ID is required",
+          );
+        }
 
-              couponCode: coupon_code || "",
+        const result =
+          await createHealingOrder({
+            variables: {
+              input: {
+                bookingId:
+                  bookingId,
 
-              amount: serviceAmount,
+                /*
+                 * This is the amount already
+                 * calculated after coupon verification.
+                 */
+                amount: payAmount,
+
+                /*
+                 * Send the verified coupon code.
+                 */
+                couponCode:
+                  coupon_code || "",
+              },
             },
-          },
-        });
+          });
 
-        order = result?.data?.createHealingOrder;
-      } else {
+        order =
+          result?.data
+            ?.createHealingOrder;
+
+        console.log(
+          "Healing order result:",
+          result,
+        );
+      }
 
       /*
        * =====================================================
        * UNKNOWN PAYMENT TYPE
        * =====================================================
        */
-        throw new Error(`Unsupported payment type: ${type}`);
+      else {
+        throw new Error(
+          `Unsupported payment type: ${type}`,
+        );
       }
 
       /*
@@ -299,7 +258,10 @@ export default function PayOPT({
        * =====================================================
        */
       if (!order?.success) {
-        toast.error(order?.message || "Error creating order");
+        toast.error(
+          order?.message ||
+            "Error creating order",
+        );
 
         setLoading(false);
 
@@ -310,10 +272,18 @@ export default function PayOPT({
        * =====================================================
        * RAZORPAY AMOUNT
        * =====================================================
+       *
+       * Prefer backend order amount.
+       *
+       * Backend should return the actual payable amount.
        */
-      const razorpayAmount = Number(
-        order.payableAmount ?? order.amount ?? payAmount,
-      );
+      const razorpayAmount =
+        Number(
+          order.payableAmount ??
+            order.amount ??
+            order.finalAmount ??
+            payAmount,
+        );
 
       /*
        * =====================================================
@@ -321,18 +291,28 @@ export default function PayOPT({
        * =====================================================
        */
       const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        key:
+          process.env
+            .NEXT_PUBLIC_RAZORPAY_KEY_ID,
 
-        amount: Math.round(razorpayAmount * 100),
+        amount:
+          Math.round(
+            razorpayAmount * 100,
+          ),
 
-        currency: order.currency || "INR",
+        currency:
+          order.currency || "INR",
 
-        order_id: order.orderId,
+        order_id:
+          order.orderId,
 
-        name: "Dhwani Astro LLP",
+        name:
+          "Dhwani Astro LLP",
 
         description:
-          type === "RECHARGE" ? "Wallet Recharge" : "Healing Service",
+          type === "RECHARGE"
+            ? "Wallet Recharge"
+            : "Healing Service",
 
         prefill: {
           name: "",
@@ -348,56 +328,94 @@ export default function PayOPT({
         notes:
           type === "RECHARGE"
             ? {
-                userId: user?.id || "",
+                userId:
+                  user?.id || "",
 
-                rechargePackId: packid,
+                rechargePackId:
+                  packid,
 
-                couponId: coupon_id || "",
+                couponId:
+                  coupon_id || "",
 
-                couponCode: coupon_code || "",
+                couponCode:
+                  coupon_code || "",
 
-                couponType: coupon_type || "",
+                couponType:
+                  coupon_type || "",
 
-                originalAmount: order.originalAmount ?? oriamount ?? 0,
+                originalAmount:
+                  order.originalAmount ??
+                  oriamount ??
+                  0,
 
-                discount: order.discount ?? couponprice ?? 0,
+                discount:
+                  order.discount ??
+                  couponprice ??
+                  0,
 
-                cashback: cashback || 0,
+                cashback:
+                  cashback || 0,
 
                 finalAmount:
-                  order.finalAmount ?? order.payableAmount ?? razorpayAmount,
+                  order.finalAmount ??
+                  order.payableAmount ??
+                  razorpayAmount,
 
-                ipAddress: geoInfo.ip,
+                ipAddress:
+                  geoInfo.ip,
 
-                state: geoInfo.state,
+                state:
+                  geoInfo.state,
 
-                city: geoInfo.city,
+                city:
+                  geoInfo.city,
 
-                country: geoInfo.country,
+                country:
+                  geoInfo.country,
 
                 platform: "WEB",
               }
             : {
-                userId: user?.id || "",
+                userId:
+                  user?.id || "",
 
-                bookingId: bookingId,
+                bookingId:
+                  bookingId,
 
-                couponId: coupon_id || "",
-                ipAddress: geoInfo.ip,
+                couponId:
+                  coupon_id || "",
 
-                state: geoInfo.state,
+                couponCode:
+                  coupon_code || "",
 
-                city: geoInfo.city,
+                couponType:
+                  coupon_type || "",
 
-                country: geoInfo.country,
+                discount:
+                  couponprice || 0,
 
-                couponCode: coupon_code || "",
+                cashback:
+                  cashback || 0,
 
-                couponType: coupon_type || "",
+                originalAmount:
+                  oriamount || 0,
 
-                discount: couponprice || 0,
+                finalAmount:
+                  order.finalAmount ??
+                  order.payableAmount ??
+                  razorpayAmount,
 
-                cashback: cashback || 0,
+                ipAddress:
+                  geoInfo.ip,
+
+                state:
+                  geoInfo.state,
+
+                city:
+                  geoInfo.city,
+
+                country:
+                  geoInfo.country,
 
                 platform: "WEB",
               },
@@ -407,20 +425,26 @@ export default function PayOPT({
          * PAYMENT SUCCESS
          * ===================================================
          *
-         * Important:
-         *
          * Actual payment success should be confirmed
          * by Razorpay/backend webhook.
          *
-         * This handler only redirects the UI.
+         * This handler only redirects UI.
          */
-        handler: async function (response) {
-          console.log("Razorpay payment response:", response);
+        handler:
+          async function (
+            response,
+          ) {
+            console.log(
+              "Razorpay payment response:",
+              response,
+            );
 
-          toast.success("Payment Successful");
+            toast.success(
+              "Payment Successful",
+            );
 
-          route.push("/");
-        },
+            route.push("/");
+          },
 
         /*
          * ===================================================
@@ -428,9 +452,14 @@ export default function PayOPT({
          * ===================================================
          */
         modal: {
-          ondismiss: function () {
-            toast.error("Payment Cancelled");
-          },
+          ondismiss:
+            function () {
+              setLoading(false);
+
+              toast.error(
+                "Payment Cancelled",
+              );
+            },
         },
 
         /*
@@ -443,30 +472,63 @@ export default function PayOPT({
         },
       };
 
+      /*
+       * =====================================================
+       * STOP OUR LOADING
+       * =====================================================
+       *
+       * Razorpay itself now handles payment loading.
+       */
       setLoading(false);
+
+      /*
+       * =====================================================
+       * BROWSER CHECK
+       * =====================================================
+       */
+      if (
+        typeof window ===
+        "undefined"
+      ) {
+        throw new Error(
+          "Browser window not available",
+        );
+      }
+
+      /*
+       * =====================================================
+       * RAZORPAY SDK CHECK
+       * =====================================================
+       */
+      if (!window.Razorpay) {
+        throw new Error(
+          "Razorpay SDK is not loaded yet. Please try again.",
+        );
+      }
 
       /*
        * =====================================================
        * OPEN RAZORPAY
        * =====================================================
        */
-      if (typeof window === "undefined") {
-        throw new Error("Browser window not available");
-      }
-
-      if (!window.Razorpay) {
-        throw new Error("Razorpay SDK is not loaded yet. Please try again.");
-      }
-
-      const razor = new window.Razorpay(options);
+      const razor =
+        new window.Razorpay(
+          options,
+        );
 
       razor.open();
     } catch (error) {
-      console.error("Checkout Error:", error);
+      console.error(
+        "Checkout Error:",
+        error,
+      );
 
       setLoading(false);
 
-      toast.error(error?.message || "Payment failed");
+      toast.error(
+        error?.message ||
+          "Payment failed",
+      );
     }
   };
 
@@ -477,6 +539,7 @@ export default function PayOPT({
    */
   return (
     <div className="col-span-2">
+
       <Script
         src="https://checkout.razorpay.com/v1/checkout.js"
         strategy="afterInteractive"
@@ -493,6 +556,7 @@ export default function PayOPT({
       )}
 
       <div className="grid grid-cols-3 gap-3 sm:gap-4">
+
         {[
           {
             name: "Paytm",
@@ -530,29 +594,37 @@ export default function PayOPT({
             name: "Bhim UPI",
             icon: "/prblm/bh-a.png",
           },
-        ].map((method, idx) => (
-          <button
-            type="button"
-            aria-label={`Pay with ${method.name}`}
-            disabled={loading}
-            onClick={handleCheckout}
-            key={idx}
-            className="bg-[linear-gradient(to_right,#a65ed677_54%,#ba38cb67_100%)] rounded-lg p-2 flex flex-col gap-1 items-center hover:scale-105 transition-transform shadow disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Image
-              src={method.icon}
-              alt={method.name}
-              width={100}
-              height={100}
-              className="sm:h-8 sm:w-10.5 h-5.7 w-7"
-            />
+        ].map(
+          (method, idx) => (
+            <button
+              type="button"
+              aria-label={`Pay with ${method.name}`}
+              disabled={loading}
+              onClick={
+                handleCheckout
+              }
+              key={idx}
+              className="bg-[linear-gradient(to_right,#a65ed677_54%,#ba38cb67_100%)] rounded-lg p-2 flex flex-col gap-1 items-center hover:scale-105 transition-transform shadow disabled:opacity-50 disabled:cursor-not-allowed"
+            >
 
-            <span className="text-xs font-semibold text-center text-white sn:font-bold">
-              {method.name}
-            </span>
-          </button>
-        ))}
+              <Image
+                src={method.icon}
+                alt={method.name}
+                width={100}
+                height={100}
+                className="sm:h-8 sm:w-10.5 h-5.7 w-7"
+              />
+
+              <span className="text-xs font-semibold text-center text-white sn:font-bold">
+                {method.name}
+              </span>
+
+            </button>
+          ),
+        )}
+
       </div>
     </div>
   );
 }
+  
