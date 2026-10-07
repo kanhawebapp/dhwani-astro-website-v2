@@ -15,6 +15,16 @@ import { CREATE_HEALING_ORDER } from "@/app/graphql/gqlQuery";
  * =========================================================
  * CREATE RECHARGE ORDER
  * =========================================================
+ *
+ * Backend CreateOrderResponse currently returns only:
+ *
+ * success
+ * orderId
+ * amount
+ * currency
+ *
+ * IMPORTANT:
+ * amount is returned by Razorpay in PAISE.
  */
 const CREATE_ORDER = gql`
   mutation CreateOrder($input: CreateOrderInput!) {
@@ -23,10 +33,6 @@ const CREATE_ORDER = gql`
       orderId
       amount
       currency
-      originalAmount
-      discount
-      payableAmount
-      finalAmount
     }
   }
 `;
@@ -124,8 +130,6 @@ export default function PayOPT({
    * PAYMENT AMOUNT
    * =========================================================
    *
-   * This amount is already calculated by page.js.
-   *
    * For SERVICE:
    *
    * page.js
@@ -160,11 +164,16 @@ export default function PayOPT({
        */
       if (type === "RECHARGE") {
         /*
-         * Recharge order creation.
+         * Backend handles recharge coupon validation.
          *
-         * Coupon verification for recharge,
-         * if required by backend, is handled by
-         * createOrder/backend.
+         * The backend CreateOrder response is:
+         *
+         * {
+         *   success,
+         *   orderId,
+         *   amount,     // Razorpay amount in paise
+         *   currency
+         * }
          */
         const result =
           await createOrder({
@@ -181,6 +190,11 @@ export default function PayOPT({
 
         order =
           result?.data?.createOrder;
+
+        console.log(
+          "Recharge order result:",
+          result,
+        );
       }
 
       /*
@@ -220,7 +234,8 @@ export default function PayOPT({
                  * This is the amount already
                  * calculated after coupon verification.
                  */
-                amount: payAmount,
+                amount:
+                  payAmount,
 
                 /*
                  * Send the verified coupon code.
@@ -273,17 +288,52 @@ export default function PayOPT({
        * RAZORPAY AMOUNT
        * =====================================================
        *
-       * Prefer backend order amount.
+       * IMPORTANT FOR RECHARGE:
        *
-       * Backend should return the actual payable amount.
+       * Backend returns:
+       *
+       * order.amount = Razorpay amount in PAISE
+       *
+       * Example:
+       *
+       * ₹531
+       * ↓
+       * 53100 paise
+       *
+       * Therefore DO NOT multiply order.amount by 100.
        */
-      const razorpayAmount =
-        Number(
-          order.payableAmount ??
-            order.amount ??
-            order.finalAmount ??
-            payAmount,
+      let razorpayAmount;
+
+      if (type === "RECHARGE") {
+        razorpayAmount = Number(
+          order.amount || 0,
         );
+      } else {
+        /*
+         * Keep SERVICE handling based on the
+         * existing healing-order response.
+         *
+         * If healing backend returns amount in paise,
+         * this value should be used directly.
+         */
+        razorpayAmount = Number(
+          order.amount || 0,
+        );
+      }
+
+      /*
+       * =====================================================
+       * VALIDATE RAZORPAY AMOUNT
+       * =====================================================
+       */
+      if (
+        !razorpayAmount ||
+        razorpayAmount <= 0
+      ) {
+        throw new Error(
+          "Invalid payment amount received from server",
+        );
+      }
 
       /*
        * =====================================================
@@ -295,10 +345,19 @@ export default function PayOPT({
           process.env
             .NEXT_PUBLIC_RAZORPAY_KEY_ID,
 
+        /*
+         * IMPORTANT:
+         *
+         * order.amount is already in PAISE.
+         *
+         * DO NOT:
+         *
+         * Math.round(razorpayAmount * 100)
+         *
+         * because that would multiply the amount twice.
+         */
         amount:
-          Math.round(
-            razorpayAmount * 100,
-          ),
+          razorpayAmount,
 
         currency:
           order.currency || "INR",
@@ -343,23 +402,37 @@ export default function PayOPT({
                 couponType:
                   coupon_type || "",
 
+                /*
+                 * These values come from the frontend
+                 * coupon calculation/display.
+                 *
+                 * Backend createOrder does NOT return
+                 * originalAmount or discount anymore.
+                 */
                 originalAmount:
-                  order.originalAmount ??
-                  oriamount ??
-                  0,
+                  Number(
+                    oriamount || 0,
+                  ),
 
                 discount:
-                  order.discount ??
-                  couponprice ??
-                  0,
+                  Number(
+                    couponprice || 0,
+                  ),
 
                 cashback:
-                  cashback || 0,
+                  Number(
+                    cashback || 0,
+                  ),
 
+                /*
+                 * Convert Razorpay paise to INR
+                 * only for the note value.
+                 *
+                 * Example:
+                 * 53100 paise / 100 = ₹531
+                 */
                 finalAmount:
-                  order.finalAmount ??
-                  order.payableAmount ??
-                  razorpayAmount,
+                  razorpayAmount / 100,
 
                 ipAddress:
                   geoInfo.ip,
@@ -373,7 +446,8 @@ export default function PayOPT({
                 country:
                   geoInfo.country,
 
-                platform: "WEB",
+                platform:
+                  "WEB",
               }
             : {
                 userId:
@@ -392,18 +466,26 @@ export default function PayOPT({
                   coupon_type || "",
 
                 discount:
-                  couponprice || 0,
+                  Number(
+                    couponprice || 0,
+                  ),
 
                 cashback:
-                  cashback || 0,
+                  Number(
+                    cashback || 0,
+                  ),
 
                 originalAmount:
-                  oriamount || 0,
+                  Number(
+                    oriamount || 0,
+                  ),
 
+                /*
+                 * Service order amount is assumed
+                 * to be returned in paise as well.
+                 */
                 finalAmount:
-                  order.finalAmount ??
-                  order.payableAmount ??
-                  razorpayAmount,
+                  razorpayAmount / 100,
 
                 ipAddress:
                   geoInfo.ip,
@@ -417,7 +499,8 @@ export default function PayOPT({
                 country:
                   geoInfo.country,
 
-                platform: "WEB",
+                platform:
+                  "WEB",
               },
 
         /*
@@ -539,7 +622,6 @@ export default function PayOPT({
    */
   return (
     <div className="col-span-2">
-
       <Script
         src="https://checkout.razorpay.com/v1/checkout.js"
         strategy="afterInteractive"
@@ -556,7 +638,6 @@ export default function PayOPT({
       )}
 
       <div className="grid grid-cols-3 gap-3 sm:gap-4">
-
         {[
           {
             name: "Paytm",
@@ -606,7 +687,6 @@ export default function PayOPT({
               key={idx}
               className="bg-[linear-gradient(to_right,#a65ed677_54%,#ba38cb67_100%)] rounded-lg p-2 flex flex-col gap-1 items-center hover:scale-105 transition-transform shadow disabled:opacity-50 disabled:cursor-not-allowed"
             >
-
               <Image
                 src={method.icon}
                 alt={method.name}
@@ -618,13 +698,10 @@ export default function PayOPT({
               <span className="text-xs font-semibold text-center text-white sn:font-bold">
                 {method.name}
               </span>
-
             </button>
           ),
         )}
-
       </div>
     </div>
   );
 }
-  
