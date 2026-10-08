@@ -17,7 +17,7 @@ export const CREATE_HEALING_ORDER = gql`
       bookingId
       currency
       totalAmount
-      payableAmount
+      amount
     }
   }
 `;

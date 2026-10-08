@@ -142,9 +142,10 @@ export default function PayOPT({
    *
    * Therefore PayOPT does NOT verify coupon again.
    */
+  console.log("sssssssssssssssssssssssssssssss",amount,oriamount,);
   const payAmount = Number(
-    amount || 0,
-  );
+    oriamount || 0,
+  )
 
   /*
    * =========================================================
@@ -190,7 +191,7 @@ export default function PayOPT({
 
         order =
           result?.data?.createOrder;
-
+        console.log("order------recharge----",order);
         console.log(
           "Recharge order result:",
           result,
@@ -253,6 +254,11 @@ export default function PayOPT({
         console.log(
           "Healing order result:",
           result,
+        );
+
+        console.log(
+          "Healing order order:",
+          order,
         );
       }
 
