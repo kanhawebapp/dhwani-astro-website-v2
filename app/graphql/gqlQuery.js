@@ -22,8 +22,6 @@ export const CREATE_HEALING_ORDER = gql`
   }
 `;
 
-
-
 export const GET_ASTROLOGER_BY_ID = gql`
   query GetAstrologerById($id: String!) {
     getAstrologerById(id: $id) {
@@ -449,7 +447,6 @@ export const GET_TESTIMONIALS = gql`
   }
 `;
 
-
 export const GET_DISCLAIMER_PAGE = gql`
   query GetDisclaimerPage {
     getDisclaimerPage {
@@ -700,6 +697,35 @@ export const GET_PAYMENT_INVOICE = gql`
       panNumber
 
       createdAt
+    }
+  }
+`;
+
+export const GET_LIVE_GIFTS = gql`
+  query GetLiveGifts {
+    getLiveGifts {
+      id
+      name
+      icon
+      price
+    }
+  }
+`;
+export const SEND_LIVE_GIFT = gql`
+  mutation SendLiveGift($streamId: ID!, $giftId: ID!, $quantity: Int!) {
+    sendLiveGift(streamId: $streamId, giftId: $giftId, quantity: $quantity) {
+      success
+      message
+      giftId
+      giftName
+      icon
+      quantity
+      totalCoins
+      astrologerCoins
+      commissionCoins
+      userBalance
+      astrologerBalance
+      transactionId
     }
   }
 `;
