@@ -302,7 +302,7 @@ export default function WatchLive() {
       agoraClientRef.current = client;
 
       const chatClient = new AgoraChat.connection({
-        appKey: process.env.NEXT_PUBLIC_AGORA_CHAT_APPKEY || "61200039703#200055699",
+        appKey: process.env.NEXT_PUBLIC_AGORA_CHAT_APPKEY || "3a1816ebf7bf47b094c7540e2cf2aac0",
       });
 
       chatClientRef.current = chatClient;
