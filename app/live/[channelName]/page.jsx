@@ -50,6 +50,8 @@ export default function WatchLive() {
   // =======================================================
 
   const chatRef = useRef(null);
+  // ADD THIS: Ref for the video container
+  const remoteVideoRef = useRef(null); 
 
   const agoraClientRef = useRef(null);
   const chatClientRef = useRef(null);
@@ -345,6 +347,7 @@ export default function WatchLive() {
 
   const subscribeToUser = useCallback(
     async (user, mediaType, generation) => {
+      
       const client = agoraClientRef.current;
 
       if (
@@ -373,12 +376,12 @@ export default function WatchLive() {
             return;
           }
 
-          const videoContainer =
-            document.getElementById("remote-video");
+          // Use the ref instead of document.getElementById
+          const videoContainer = remoteVideoRef.current;
 
           if (!videoContainer) {
             console.error(
-              "Remote video container not found."
+              "Remote video container ref is not ready."
             );
             return;
           }
@@ -998,8 +1001,9 @@ export default function WatchLive() {
             )}
 
             <div className="relative isolate h-[75vh] min-h-[450px] w-full overflow-hidden rounded-2xl bg-black">
-              {/* Remote Agora video */}
+              {/* Remote Agora video - ATTACHED REF HERE */}
               <div
+                ref={remoteVideoRef}
                 id="remote-video"
                 className="absolute inset-0 z-0 h-full w-full bg-black"
               />
