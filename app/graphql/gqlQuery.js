@@ -392,16 +392,17 @@ export const GET_UPCOMING_LIVES = gql`
 `;
 export const JOIN_LIVE_STREAM = gql`
   query JoinLive($channelName: String!) {
-     joinLive(channelName: $channelName) {
-    rtcToken
-    uid
-    appId
-    channelName
-    chatUserId
-    chatToken
-    chatRoomId
-    chatAppKey
-  }
+    joinLive(channelName: $channelName) {
+      id
+      rtcToken
+      uid
+      appId
+      channelName
+      chatUserId
+      chatToken
+      chatRoomId
+      chatAppKey
+    }
   }
 `;
 
