@@ -396,6 +396,7 @@ export default function WatchLive() {
           user.videoTrack.play(videoContainer);
 
           if (isCurrentGeneration(generation)) {
+            console.log("-----isCurrentGeneration-------------");
             setHostJoined(true);
             setError("");
           }
@@ -436,7 +437,7 @@ export default function WatchLive() {
       let localRtcClient = null;
       let localChatClient = null;
       let localChatRoomId = null;
-
+      console.log("1111111111111111111111111");
       try {
         if (!isCurrentGeneration(generation)) {
           return;
@@ -447,6 +448,7 @@ export default function WatchLive() {
         setHostJoined(false);
         setLiveInfo(null);
         setMessages([]);
+        console.log("channelName--------------",channelName);
 
         if (!channelName) {
           throw new Error(
@@ -483,6 +485,8 @@ export default function WatchLive() {
               channelName,
             },
           });
+
+          console.log("2222222222222222222222response---------:",response);
 
         if (!isCurrentGeneration(generation)) {
           return;
