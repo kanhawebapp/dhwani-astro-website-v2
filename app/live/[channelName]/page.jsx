@@ -253,17 +253,10 @@ export default function WatchLive() {
 
   // =======================================================
   // DISPOSE LOCAL CLIENTS
-  //
-  // Used when initialization becomes stale, such as during
-  // React Strict Mode cleanup or when the user leaves.
   // =======================================================
 
   const disposeLocalClients = useCallback(
     async (chatClient, rtcClient, roomId) => {
-      // Remove refs only if they still point to these clients.
-      // This prevents an old initialization from clearing a
-      // newer connection's refs.
-
       if (chatClientRef.current === chatClient) {
         chatClientRef.current = null;
       }
@@ -322,9 +315,6 @@ export default function WatchLive() {
   // =======================================================
 
   const cleanup = useCallback(async () => {
-    // Capture and clear refs immediately so another cleanup
-    // cannot accidentally reuse the same clients.
-
     const chatClient = chatClientRef.current;
     const rtcClient = agoraClientRef.current;
     const chatRoomId = chatRoomIdRef.current;
@@ -393,10 +383,13 @@ export default function WatchLive() {
             return;
           }
 
+          // Clear existing content to prevent duplicates
+          videoContainer.innerHTML = ""; 
+
           user.videoTrack.play(videoContainer);
 
           if (isCurrentGeneration(generation)) {
-            console.log("-----isCurrentGeneration-------------");
+            console.log("Host video published and playing");
             setHostJoined(true);
             setError("");
           }
@@ -437,7 +430,7 @@ export default function WatchLive() {
       let localRtcClient = null;
       let localChatClient = null;
       let localChatRoomId = null;
-      console.log("1111111111111111111111111");
+
       try {
         if (!isCurrentGeneration(generation)) {
           return;
@@ -448,7 +441,6 @@ export default function WatchLive() {
         setHostJoined(false);
         setLiveInfo(null);
         setMessages([]);
-        console.log("channelName--------------",channelName);
 
         if (!channelName) {
           throw new Error(
@@ -486,8 +478,6 @@ export default function WatchLive() {
             },
           });
 
-          console.log("2222222222222222222222response---------:",response);
-
         if (!isCurrentGeneration(generation)) {
           return;
         }
@@ -514,6 +504,7 @@ export default function WatchLive() {
         localRtcClient = rtcClient;
         agoraClientRef.current = rtcClient;
 
+        // Listen for users publishing
         rtcClient.on(
           "user-published",
           async (user, mediaType) => {
@@ -524,6 +515,11 @@ export default function WatchLive() {
             );
           }
         );
+
+        // Listen for users joining (in case they join after us)
+        rtcClient.on("user-joined", (user) => {
+          console.log("Remote user joined:", user.uid);
+        });
 
         rtcClient.on(
           "user-unpublished",
@@ -658,30 +654,39 @@ export default function WatchLive() {
         // ---------------------------------------------------
         // 5. Subscribe to tracks already published
         //
-        // The astrologer may have started broadcasting
-        // before this viewer joined.
+        // This is the most critical part. If the host is already live,
+        // we must manually subscribe to their tracks.
         // ---------------------------------------------------
 
-        for (const user of rtcClient.remoteUsers) {
-          if (!isCurrentGeneration(generation)) {
-            break;
-          }
+        // Check for existing remote users
+        if (rtcClient.remoteUsers.length > 0) {
+          console.log(`Found ${rtcClient.remoteUsers.length} existing remote users.`);
+          
+          for (const user of rtcClient.remoteUsers) {
+            if (!isCurrentGeneration(generation)) {
+              break;
+            }
 
-          if (user.hasVideo) {
-            await subscribeToUser(
-              user,
-              "video",
-              generation
-            );
-          }
+            if (user.hasVideo) {
+              console.log(`Subscribing to existing video track for user ${user.uid}`);
+              await subscribeToUser(
+                user,
+                "video",
+                generation
+              );
+            }
 
-          if (user.hasAudio) {
-            await subscribeToUser(
-              user,
-              "audio",
-              generation
-            );
+            if (user.hasAudio) {
+              console.log(`Subscribing to existing audio track for user ${user.uid}`);
+              await subscribeToUser(
+                user,
+                "audio",
+                generation
+              );
+            }
           }
+        } else {
+          console.log("No remote users found upon joining. Waiting for host to publish...");
         }
 
         if (isCurrentGeneration(generation)) {
@@ -700,9 +705,6 @@ export default function WatchLive() {
 
           await cleanup();
         } else {
-          // This initialization belongs to an old generation.
-          // Dispose only the clients created by this attempt.
-
           await disposeLocalClients(
             localChatClient,
             localRtcClient,
@@ -859,20 +861,6 @@ export default function WatchLive() {
       setGiftNotice(
         `Successfully sent ${result.giftName || "gift"} × ${result.quantity ?? giftQuantity}.`
       );
-
-      /*
-       * Do not add a gift message to local chat here.
-       *
-       * Expected backend behavior:
-       * 1. Validate the gift and quantity.
-       * 2. Verify the authenticated user's wallet balance.
-       * 3. Deduct the correct number of coins.
-       * 4. Save the gift transaction.
-       * 5. Broadcast a GIFT event to the Agora Chat room.
-       *
-       * The incoming Chat event displays the gift to everyone.
-       * Adding it locally here could cause duplicate messages.
-       */
 
       setSelectedGiftId("");
       setGiftQuantity(1);
