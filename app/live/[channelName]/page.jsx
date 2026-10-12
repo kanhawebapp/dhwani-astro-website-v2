@@ -50,8 +50,10 @@ export default function WatchLive() {
   // =======================================================
 
   const chatRef = useRef(null);
-  // ADD THIS: Ref for the video container
   const remoteVideoRef = useRef(null); 
+
+  // NEW: Store the video track so we can play it when the container is ready
+  const pendingVideoTrackRef = useRef(null);
 
   const agoraClientRef = useRef(null);
   const chatClientRef = useRef(null);
@@ -182,10 +184,6 @@ export default function WatchLive() {
       // The message is ordinary text, not a JSON payload.
     }
 
-    // -------------------------------------------------------
-    // Gift notification
-    // -------------------------------------------------------
-
     if (payload?.type === "GIFT") {
       const messageId = msg?.id
         ? `gift-${msg.id}`
@@ -223,10 +221,6 @@ export default function WatchLive() {
 
       return;
     }
-
-    // -------------------------------------------------------
-    // Ordinary text message
-    // -------------------------------------------------------
 
     const messageId = msg?.id
       ? `message-${msg.id}`
@@ -329,6 +323,9 @@ export default function WatchLive() {
 
     chatRoomIdRef.current = null;
     joinedRef.current = false;
+    
+    // Clear pending track
+    pendingVideoTrackRef.current = null;
 
     if (mountedRef.current) {
       setHostJoined(false);
@@ -376,25 +373,21 @@ export default function WatchLive() {
             return;
           }
 
-          // Use the ref instead of document.getElementById
-          const videoContainer = remoteVideoRef.current;
-
-          if (!videoContainer) {
-            console.error(
-              "Remote video container ref is not ready."
-            );
-            return;
-          }
-
-          // Clear existing content to prevent duplicates
-          videoContainer.innerHTML = ""; 
-
-          user.videoTrack.play(videoContainer);
-
-          if (isCurrentGeneration(generation)) {
-            console.log("Host video published and playing");
-            setHostJoined(true);
-            setError("");
+          // Store the track in the ref. 
+          // The useEffect below will handle playing it when the container is ready.
+          pendingVideoTrackRef.current = user.videoTrack;
+          
+          // If container is ALREADY ready, play immediately
+          if (remoteVideoRef.current) {
+             remoteVideoRef.current.innerHTML = ""; 
+             user.videoTrack.play(remoteVideoRef.current);
+             if (isCurrentGeneration(generation)) {
+                console.log("Host video published and playing (immediate)");
+                setHostJoined(true);
+                setError("");
+             }
+          } else {
+             console.log("Video track ready, waiting for container...");
           }
         }
 
@@ -451,10 +444,6 @@ export default function WatchLive() {
           );
         }
 
-        // ---------------------------------------------------
-        // 1. Import browser-only Agora SDKs
-        // ---------------------------------------------------
-
         const [
           { default: AgoraRTC },
           { default: AgoraChat },
@@ -469,10 +458,6 @@ export default function WatchLive() {
 
         agoraRTCRef.current = AgoraRTC;
         agoraChatRef.current = AgoraChat;
-
-        // ---------------------------------------------------
-        // 2. Fetch stream details and tokens
-        // ---------------------------------------------------
 
         const response =
           await joinLiveRef.current({
@@ -494,10 +479,6 @@ export default function WatchLive() {
         localChatRoomId = live.chatRoomId;
         chatRoomIdRef.current = live.chatRoomId;
 
-        // ---------------------------------------------------
-        // 3. Initialize Agora RTC
-        // ---------------------------------------------------
-
         const rtcClient =
           AgoraRTC.createClient({
             mode: "live",
@@ -507,7 +488,6 @@ export default function WatchLive() {
         localRtcClient = rtcClient;
         agoraClientRef.current = rtcClient;
 
-        // Listen for users publishing
         rtcClient.on(
           "user-published",
           async (user, mediaType) => {
@@ -519,7 +499,6 @@ export default function WatchLive() {
           }
         );
 
-        // Listen for users joining (in case they join after us)
         rtcClient.on("user-joined", (user) => {
           console.log("Remote user joined:", user.uid);
         });
@@ -588,10 +567,6 @@ export default function WatchLive() {
 
         joinedRef.current = true;
 
-        // ---------------------------------------------------
-        // 4. Initialize Agora Chat
-        // ---------------------------------------------------
-
         const chatClient =
           new AgoraChat.connection({
             appKey: live.chatAppKey,
@@ -656,12 +631,8 @@ export default function WatchLive() {
 
         // ---------------------------------------------------
         // 5. Subscribe to tracks already published
-        //
-        // This is the most critical part. If the host is already live,
-        // we must manually subscribe to their tracks.
         // ---------------------------------------------------
 
-        // Check for existing remote users
         if (rtcClient.remoteUsers.length > 0) {
           console.log(`Found ${rtcClient.remoteUsers.length} existing remote users.`);
           
@@ -693,7 +664,7 @@ export default function WatchLive() {
         }
 
         if (isCurrentGeneration(generation)) {
-          setLoading(false);
+          setLoading(false); // This triggers the render of the video container
           setError("");
         }
       } catch (err) {
@@ -754,11 +725,7 @@ export default function WatchLive() {
 
     return () => {
       mountedRef.current = false;
-
-      // Invalidate all pending async operations.
       generationRef.current++;
-
-      // Do not wait for cleanup in the effect destructor.
       void cleanup();
     };
   }, [
@@ -766,6 +733,29 @@ export default function WatchLive() {
     initializeLive,
     cleanup,
   ]);
+
+  // =======================================================
+  // NEW EFFECT: Play video when container becomes ready
+  // =======================================================
+  useEffect(() => {
+    // If we are not loading, we have live info, and we have a pending video track
+    if (!loading && liveInfo && pendingVideoTrackRef.current && remoteVideoRef.current) {
+      console.log("Container is ready. Playing pending video track.");
+      
+      // Clear container to prevent duplicates
+      remoteVideoRef.current.innerHTML = "";
+      
+      // Play the track
+      pendingVideoTrackRef.current.play(remoteVideoRef.current);
+      
+      // Update state
+      setHostJoined(true);
+      setError("");
+      
+      // Clear the pending ref since it's now playing
+      pendingVideoTrackRef.current = null;
+    }
+  }, [loading, liveInfo]);
 
   // =======================================================
   // SEND ORDINARY CHAT MESSAGE
@@ -884,7 +874,6 @@ export default function WatchLive() {
   // =======================================================
 
   const handleLeaveLive = async () => {
-    // Prevent pending initialization from updating this screen.
     generationRef.current++;
 
     await cleanup();
@@ -977,7 +966,6 @@ export default function WatchLive() {
                   setError("");
                   setLoading(true);
 
-                  // A new generation is required for retry.
                   const generation =
                     ++generationRef.current;
 
@@ -1001,7 +989,7 @@ export default function WatchLive() {
             )}
 
             <div className="relative isolate h-[75vh] min-h-[450px] w-full overflow-hidden rounded-2xl bg-black">
-              {/* Remote Agora video - ATTACHED REF HERE */}
+              {/* Remote Agora video */}
               <div
                 ref={remoteVideoRef}
                 id="remote-video"
