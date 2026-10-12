@@ -1,8 +1,17 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import {
+  useEffect,
+  useState,
+  useRef,
+  useCallback,
+} from "react";
 import { useParams } from "next/navigation";
-import { useLazyQuery, useQuery, useMutation } from "@apollo/client/react";
+import {
+  useLazyQuery,
+  useQuery,
+  useMutation,
+} from "@apollo/client/react";
 
 import {
   JOIN_LIVE_STREAM,
@@ -14,7 +23,9 @@ export default function WatchLive() {
   const params = useParams();
 
   const channelName =
-    typeof params?.channelName === "string" ? params.channelName : "";
+    typeof params?.channelName === "string"
+      ? params.channelName
+      : "";
 
   // =======================================================
   // STATE
@@ -39,7 +50,7 @@ export default function WatchLive() {
   // =======================================================
 
   const chatRef = useRef(null);
-  const remoteVideoRef = useRef(null);
+  const remoteVideoRef = useRef(null); 
 
   // NEW: Store the video track so we can play it when the container is ready
   const pendingVideoTrackRef = useRef(null);
@@ -90,7 +101,10 @@ export default function WatchLive() {
   // =======================================================
 
   const isCurrentGeneration = useCallback((generation) => {
-    return mountedRef.current && generationRef.current === generation;
+    return (
+      mountedRef.current &&
+      generationRef.current === generation
+    );
   }, []);
 
   const getErrorMessage = useCallback((err) => {
@@ -104,12 +118,14 @@ export default function WatchLive() {
 
   const isValidLiveResponse = useCallback((live) => {
     if (!live) {
-      throw new Error("Live stream not found or has already ended.");
+      throw new Error(
+        "Live stream not found or has already ended."
+      );
     }
 
     if (!live.id) {
       throw new Error(
-        "Stream database ID is missing. Add id to LiveJoinResponse and JOIN_LIVE_STREAM.",
+        "Stream database ID is missing. Add id to LiveJoinResponse and JOIN_LIVE_STREAM."
       );
     }
 
@@ -119,7 +135,9 @@ export default function WatchLive() {
       !live.rtcToken ||
       live.uid == null
     ) {
-      throw new Error("Required Agora RTC configuration is missing.");
+      throw new Error(
+        "Required Agora RTC configuration is missing."
+      );
     }
 
     if (
@@ -128,7 +146,9 @@ export default function WatchLive() {
       !live.chatToken ||
       !live.chatRoomId
     ) {
-      throw new Error("Required Agora Chat configuration is missing.");
+      throw new Error(
+        "Required Agora Chat configuration is missing."
+      );
     }
 
     return true;
@@ -140,7 +160,8 @@ export default function WatchLive() {
 
   useEffect(() => {
     if (chatRef.current) {
-      chatRef.current.scrollTop = chatRef.current.scrollHeight;
+      chatRef.current.scrollTop =
+        chatRef.current.scrollHeight;
     }
   }, [messages]);
 
@@ -148,33 +169,32 @@ export default function WatchLive() {
   // HANDLE INCOMING CHAT MESSAGES AND GIFTS
   // =======================================================
 
-  const handleIncomingTextMessage = useCallback(
-    (msg) => {
-      if (!mountedRef.current) {
-        return;
-      }
+  const handleIncomingTextMessage = useCallback((msg) => {
+    if (!mountedRef.current) {
+      return;
+    }
 
-      const rawMessage = msg?.msg || "";
-      const isOwnMessage = msg?.from === liveInfo?.chatUserId;
+    const rawMessage = msg?.msg || "";
 
-      let payload = null;
-      try {
-        payload = JSON.parse(rawMessage);
-      } catch {
-        // Ordinary text
-      }
+    let payload = null;
 
-      if (payload?.type === "GIFT") {
-        // ... gift handling (existing code)
-        return;
-      }
+    try {
+      payload = JSON.parse(rawMessage);
+    } catch {
+      // The message is ordinary text, not a JSON payload.
+    }
 
+    if (payload?.type === "GIFT") {
       const messageId = msg?.id
-        ? `message-${msg.id}`
-        : `message-${Date.now()}-${Math.random()}`;
+        ? `gift-${msg.id}`
+        : `gift-${Date.now()}-${Math.random()}`;
 
       setMessages((previous) => {
-        if (previous.some((item) => item.id === messageId)) {
+        if (
+          previous.some(
+            (item) => item.id === messageId
+          )
+        ) {
           return previous;
         }
 
@@ -182,16 +202,50 @@ export default function WatchLive() {
           ...previous,
           {
             id: messageId,
-            kind: "text",
-            senderName: isOwnMessage ? "You" : msg?.from || "User",
-            message: rawMessage,
-            isOwn: isOwnMessage, // Optional flag for styling
+            kind: "gift",
+            senderName:
+              payload.senderName ||
+              payload.sender ||
+              msg?.from ||
+              "User",
+            giftName: payload.giftName || "Gift",
+            giftIcon:
+              payload.icon ||
+              payload.giftIcon ||
+              "🎁",
+            quantity: Number(payload.quantity) || 1,
+            totalCoins: payload.totalCoins,
           },
         ];
       });
-    },
-    [liveInfo?.chatUserId],
-  ); // Add liveInfo to deps
+
+      return;
+    }
+
+    const messageId = msg?.id
+      ? `message-${msg.id}`
+      : `message-${Date.now()}-${Math.random()}`;
+
+    setMessages((previous) => {
+      if (
+        previous.some(
+          (item) => item.id === messageId
+        )
+      ) {
+        return previous;
+      }
+
+      return [
+        ...previous,
+        {
+          id: messageId,
+          kind: "text",
+          senderName: msg?.from || "User",
+          message: rawMessage,
+        },
+      ];
+    });
+  }, []);
 
   // =======================================================
   // DISPOSE LOCAL CLIENTS
@@ -218,14 +272,20 @@ export default function WatchLive() {
               roomId,
             });
           } catch (err) {
-            console.warn("Unable to leave Agora Chat room:", err?.message);
+            console.warn(
+              "Unable to leave Agora Chat room:",
+              err?.message
+            );
           }
         }
 
         try {
           await chatClient.close();
         } catch (err) {
-          console.warn("Unable to close Agora Chat:", err?.message);
+          console.warn(
+            "Unable to close Agora Chat:",
+            err?.message
+          );
         }
       }
 
@@ -243,7 +303,7 @@ export default function WatchLive() {
         }
       }
     },
-    [],
+    []
   );
 
   // =======================================================
@@ -263,7 +323,7 @@ export default function WatchLive() {
 
     chatRoomIdRef.current = null;
     joinedRef.current = false;
-
+    
     // Clear pending track
     pendingVideoTrackRef.current = null;
 
@@ -271,7 +331,11 @@ export default function WatchLive() {
       setHostJoined(false);
     }
 
-    await disposeLocalClients(chatClient, rtcClient, chatRoomId);
+    await disposeLocalClients(
+      chatClient,
+      rtcClient,
+      chatRoomId
+    );
   }, [disposeLocalClients]);
 
   // =======================================================
@@ -280,9 +344,13 @@ export default function WatchLive() {
 
   const subscribeToUser = useCallback(
     async (user, mediaType, generation) => {
+      
       const client = agoraClientRef.current;
 
-      if (!client || !isCurrentGeneration(generation)) {
+      if (
+        !client ||
+        !isCurrentGeneration(generation)
+      ) {
         return;
       }
 
@@ -299,25 +367,27 @@ export default function WatchLive() {
 
         if (mediaType === "video") {
           if (!user.videoTrack) {
-            console.warn("Astrologer video track is unavailable.");
+            console.warn(
+              "Astrologer video track is unavailable."
+            );
             return;
           }
 
-          // Store the track in the ref.
+          // Store the track in the ref. 
           // The useEffect below will handle playing it when the container is ready.
           pendingVideoTrackRef.current = user.videoTrack;
-
+          
           // If container is ALREADY ready, play immediately
           if (remoteVideoRef.current) {
-            remoteVideoRef.current.innerHTML = "";
-            user.videoTrack.play(remoteVideoRef.current);
-            if (isCurrentGeneration(generation)) {
-              console.log("Host video published and playing (immediate)");
-              setHostJoined(true);
-              setError("");
-            }
+             remoteVideoRef.current.innerHTML = ""; 
+             user.videoTrack.play(remoteVideoRef.current);
+             if (isCurrentGeneration(generation)) {
+                console.log("Host video published and playing (immediate)");
+                setHostJoined(true);
+                setError("");
+             }
           } else {
-            console.log("Video track ready, waiting for container...");
+             console.log("Video track ready, waiting for container...");
           }
         }
 
@@ -325,20 +395,26 @@ export default function WatchLive() {
         // Audio
         // ---------------------------------------------------
 
-        if (mediaType === "audio" && user.audioTrack) {
+        if (
+          mediaType === "audio" &&
+          user.audioTrack
+        ) {
           user.audioTrack.play();
         }
       } catch (err) {
-        console.error(`Agora ${mediaType} subscription failed:`, err);
+        console.error(
+          `Agora ${mediaType} subscription failed:`,
+          err
+        );
 
         if (isCurrentGeneration(generation)) {
           setError(
-            `Unable to receive astrologer's ${mediaType}. Please try reconnecting.`,
+            `Unable to receive astrologer's ${mediaType}. Please try reconnecting.`
           );
         }
       }
     },
-    [isCurrentGeneration],
+    [isCurrentGeneration]
   );
 
   // =======================================================
@@ -363,11 +439,18 @@ export default function WatchLive() {
         setMessages([]);
 
         if (!channelName) {
-          throw new Error("Live stream channel name is missing.");
+          throw new Error(
+            "Live stream channel name is missing."
+          );
         }
 
-        const [{ default: AgoraRTC }, { default: AgoraChat }] =
-          await Promise.all([import("agora-rtc-sdk-ng"), import("agora-chat")]);
+        const [
+          { default: AgoraRTC },
+          { default: AgoraChat },
+        ] = await Promise.all([
+          import("agora-rtc-sdk-ng"),
+          import("agora-chat"),
+        ]);
 
         if (!isCurrentGeneration(generation)) {
           return;
@@ -376,11 +459,12 @@ export default function WatchLive() {
         agoraRTCRef.current = AgoraRTC;
         agoraChatRef.current = AgoraChat;
 
-        const response = await joinLiveRef.current({
-          variables: {
-            channelName,
-          },
-        });
+        const response =
+          await joinLiveRef.current({
+            variables: {
+              channelName,
+            },
+          });
 
         if (!isCurrentGeneration(generation)) {
           return;
@@ -395,31 +479,44 @@ export default function WatchLive() {
         localChatRoomId = live.chatRoomId;
         chatRoomIdRef.current = live.chatRoomId;
 
-        const rtcClient = AgoraRTC.createClient({
-          mode: "live",
-          codec: "vp8",
-        });
+        const rtcClient =
+          AgoraRTC.createClient({
+            mode: "live",
+            codec: "vp8",
+          });
 
         localRtcClient = rtcClient;
         agoraClientRef.current = rtcClient;
 
-        rtcClient.on("user-published", async (user, mediaType) => {
-          await subscribeToUser(user, mediaType, generation);
-        });
+        rtcClient.on(
+          "user-published",
+          async (user, mediaType) => {
+            await subscribeToUser(
+              user,
+              mediaType,
+              generation
+            );
+          }
+        );
 
         rtcClient.on("user-joined", (user) => {
           console.log("Remote user joined:", user.uid);
         });
 
-        rtcClient.on("user-unpublished", (user, mediaType) => {
-          if (!isCurrentGeneration(generation)) {
-            return;
-          }
+        rtcClient.on(
+          "user-unpublished",
+          (user, mediaType) => {
+            if (
+              !isCurrentGeneration(generation)
+            ) {
+              return;
+            }
 
-          if (mediaType === "video") {
-            setHostJoined(false);
+            if (mediaType === "video") {
+              setHostJoined(false);
+            }
           }
-        });
+        );
 
         rtcClient.on("user-left", () => {
           if (isCurrentGeneration(generation)) {
@@ -430,12 +527,15 @@ export default function WatchLive() {
         rtcClient.on(
           "connection-state-change",
           (state, previousState, reason) => {
-            console.log("Agora RTC connection:", {
-              state,
-              previousState,
-              reason,
-            });
-          },
+            console.log(
+              "Agora RTC connection:",
+              {
+                state,
+                previousState,
+                reason,
+              }
+            );
+          }
         );
 
         await rtcClient.setClientRole("audience");
@@ -444,7 +544,7 @@ export default function WatchLive() {
           await disposeLocalClients(
             localChatClient,
             localRtcClient,
-            localChatRoomId,
+            localChatRoomId
           );
           return;
         }
@@ -453,42 +553,54 @@ export default function WatchLive() {
           live.appId,
           live.channelName,
           live.rtcToken,
-          live.uid,
+          live.uid
         );
 
         if (!isCurrentGeneration(generation)) {
           await disposeLocalClients(
             localChatClient,
             localRtcClient,
-            localChatRoomId,
+            localChatRoomId
           );
           return;
         }
 
         joinedRef.current = true;
 
-        const chatClient = new AgoraChat.connection({
-          appKey: live.chatAppKey,
-        });
+        const chatClient =
+          new AgoraChat.connection({
+            appKey: live.chatAppKey,
+          });
 
         localChatClient = chatClient;
         chatClientRef.current = chatClient;
 
-        chatClient.addEventHandler(`LIVE_CHAT_${generation}`, {
-          onTextMessage: handleIncomingTextMessage,
+        chatClient.addEventHandler(
+          `LIVE_CHAT_${generation}`,
+          {
+            onTextMessage:
+              handleIncomingTextMessage,
 
-          onError: (chatError) => {
-            console.error("Agora Chat error:", chatError);
-          },
+            onError: (chatError) => {
+              console.error(
+                "Agora Chat error:",
+                chatError
+              );
+            },
 
-          onConnected: () => {
-            console.log("Agora Chat connected.");
-          },
+            onConnected: () => {
+              console.log(
+                "Agora Chat connected."
+              );
+            },
 
-          onDisconnected: () => {
-            console.log("Agora Chat disconnected.");
-          },
-        });
+            onDisconnected: () => {
+              console.log(
+                "Agora Chat disconnected."
+              );
+            },
+          }
+        );
 
         await chatClient.open({
           user: live.chatUserId,
@@ -499,7 +611,7 @@ export default function WatchLive() {
           await disposeLocalClients(
             localChatClient,
             localRtcClient,
-            localChatRoomId,
+            localChatRoomId
           );
           return;
         }
@@ -512,7 +624,7 @@ export default function WatchLive() {
           await disposeLocalClients(
             localChatClient,
             localRtcClient,
-            localChatRoomId,
+            localChatRoomId
           );
           return;
         }
@@ -522,33 +634,33 @@ export default function WatchLive() {
         // ---------------------------------------------------
 
         if (rtcClient.remoteUsers.length > 0) {
-          console.log(
-            `Found ${rtcClient.remoteUsers.length} existing remote users.`,
-          );
-
+          console.log(`Found ${rtcClient.remoteUsers.length} existing remote users.`);
+          
           for (const user of rtcClient.remoteUsers) {
             if (!isCurrentGeneration(generation)) {
               break;
             }
 
             if (user.hasVideo) {
-              console.log(
-                `Subscribing to existing video track for user ${user.uid}`,
+              console.log(`Subscribing to existing video track for user ${user.uid}`);
+              await subscribeToUser(
+                user,
+                "video",
+                generation
               );
-              await subscribeToUser(user, "video", generation);
             }
 
             if (user.hasAudio) {
-              console.log(
-                `Subscribing to existing audio track for user ${user.uid}`,
+              console.log(`Subscribing to existing audio track for user ${user.uid}`);
+              await subscribeToUser(
+                user,
+                "audio",
+                generation
               );
-              await subscribeToUser(user, "audio", generation);
             }
           }
         } else {
-          console.log(
-            "No remote users found upon joining. Waiting for host to publish...",
-          );
+          console.log("No remote users found upon joining. Waiting for host to publish...");
         }
 
         if (isCurrentGeneration(generation)) {
@@ -556,7 +668,10 @@ export default function WatchLive() {
           setError("");
         }
       } catch (err) {
-        console.error("Initialize live error:", err);
+        console.error(
+          "Initialize live error:",
+          err
+        );
 
         if (isCurrentGeneration(generation)) {
           setError(getErrorMessage(err));
@@ -567,7 +682,7 @@ export default function WatchLive() {
           await disposeLocalClients(
             localChatClient,
             localRtcClient,
-            localChatRoomId,
+            localChatRoomId
           );
         }
       }
@@ -581,7 +696,7 @@ export default function WatchLive() {
       isCurrentGeneration,
       isValidLiveResponse,
       subscribeToUser,
-    ],
+    ]
   );
 
   // =======================================================
@@ -591,11 +706,14 @@ export default function WatchLive() {
   useEffect(() => {
     mountedRef.current = true;
 
-    const generation = ++generationRef.current;
+    const generation =
+      ++generationRef.current;
 
     if (!channelName) {
       setLoading(false);
-      setError("Live stream channel name is missing.");
+      setError(
+        "Live stream channel name is missing."
+      );
 
       return () => {
         mountedRef.current = false;
@@ -610,31 +728,30 @@ export default function WatchLive() {
       generationRef.current++;
       void cleanup();
     };
-  }, [channelName, initializeLive, cleanup]);
+  }, [
+    channelName,
+    initializeLive,
+    cleanup,
+  ]);
 
   // =======================================================
   // NEW EFFECT: Play video when container becomes ready
   // =======================================================
   useEffect(() => {
     // If we are not loading, we have live info, and we have a pending video track
-    if (
-      !loading &&
-      liveInfo &&
-      pendingVideoTrackRef.current &&
-      remoteVideoRef.current
-    ) {
+    if (!loading && liveInfo && pendingVideoTrackRef.current && remoteVideoRef.current) {
       console.log("Container is ready. Playing pending video track.");
-
+      
       // Clear container to prevent duplicates
       remoteVideoRef.current.innerHTML = "";
-
+      
       // Play the track
       pendingVideoTrackRef.current.play(remoteVideoRef.current);
-
+      
       // Update state
       setHostJoined(true);
       setError("");
-
+      
       // Clear the pending ref since it's now playing
       pendingVideoTrackRef.current = null;
     }
@@ -655,39 +772,30 @@ export default function WatchLive() {
     const AgoraChat = agoraChatRef.current;
 
     if (!chatClient || !AgoraChat) {
-      setError("Agora Chat is not connected. Please reconnect.");
+      setError(
+        "Agora Chat is not connected. Please reconnect."
+      );
       return;
     }
 
     try {
-      const chatMessage = AgoraChat.message.create({
-        chatType: "chatRoom",
-        type: "txt",
-        to: liveInfo.chatRoomId,
-        msg: trimmedMessage,
-      });
+      const chatMessage =
+        AgoraChat.message.create({
+          chatType: "chatRoom",
+          type: "txt",
+          to: liveInfo.chatRoomId,
+          msg: trimmedMessage,
+        });
 
       await chatClient.send(chatMessage);
-
-      // ✅ FIX: Manually add the sent message to local state
-      // We use a unique ID based on timestamp + random to avoid duplicates
-      const localMessageId = `sent-${Date.now()}-${Math.random()}`;
-
-      setMessages((previous) => [
-        ...previous,
-        {
-          id: localMessageId,
-          kind: "text",
-          senderName: "You", // Or use the current user's name if you have it
-          message: trimmedMessage,
-          isOwn: true, // Optional flag to style your own messages differently
-        },
-      ]);
 
       setMessage("");
       setError("");
     } catch (err) {
-      console.error("Send message error:", err);
+      console.error(
+        "Send message error:",
+        err
+      );
 
       setError(getErrorMessage(err));
     }
@@ -700,7 +808,7 @@ export default function WatchLive() {
   const handleSendGift = async () => {
     if (!liveInfo?.id) {
       setGiftNotice(
-        "Stream database ID is missing. Check the joinLive GraphQL response.",
+        "Stream database ID is missing. Check the joinLive GraphQL response."
       );
       return;
     }
@@ -715,7 +823,9 @@ export default function WatchLive() {
       giftQuantity < 1 ||
       giftQuantity > 100
     ) {
-      setGiftNotice("Quantity must be between 1 and 100.");
+      setGiftNotice(
+        "Quantity must be between 1 and 100."
+      );
       return;
     }
 
@@ -731,20 +841,27 @@ export default function WatchLive() {
         },
       });
 
-      const result = response?.data?.sendLiveGift;
+      const result =
+        response?.data?.sendLiveGift;
 
       if (!result?.success) {
-        throw new Error(result?.message || "Gift transaction failed.");
+        throw new Error(
+          result?.message ||
+            "Gift transaction failed."
+        );
       }
 
       setGiftNotice(
-        `Successfully sent ${result.giftName || "gift"} × ${result.quantity ?? giftQuantity}.`,
+        `Successfully sent ${result.giftName || "gift"} × ${result.quantity ?? giftQuantity}.`
       );
 
       setSelectedGiftId("");
       setGiftQuantity(1);
     } catch (err) {
-      console.error("Send live gift error:", err);
+      console.error(
+        "Send live gift error:",
+        err
+      );
 
       setGiftNotice(getErrorMessage(err));
     } finally {
@@ -767,7 +884,9 @@ export default function WatchLive() {
       setMessages([]);
       setMessage("");
       setLoading(false);
-      setError("You have left the live stream.");
+      setError(
+        "You have left the live stream."
+      );
     }
   };
 
@@ -775,10 +894,13 @@ export default function WatchLive() {
   // GIFT CALCULATIONS
   // =======================================================
 
-  const selectedGift = gifts.find((gift) => gift.id === selectedGiftId);
+  const selectedGift = gifts.find(
+    (gift) => gift.id === selectedGiftId
+  );
 
   const totalGiftCoins = selectedGift
-    ? Number(selectedGift.price) * Number(giftQuantity || 0)
+    ? Number(selectedGift.price) *
+      Number(giftQuantity || 0)
     : 0;
 
   // =======================================================
@@ -795,14 +917,22 @@ export default function WatchLive() {
           </div>
 
           <div>
-            <h2 className="text-lg font-semibold text-white">Live Session</h2>
+            <h2 className="text-lg font-semibold text-white">
+              Live Session
+            </h2>
 
-            <p className="text-xs text-gray-400">Watch astrologer live</p>
+            <p className="text-xs text-gray-400">
+              Watch astrologer live
+            </p>
           </div>
         </div>
 
         <div className="rounded-full bg-gray-800 px-3 py-1 text-sm text-white">
-          {hostJoined ? "● Connected" : loading ? "Connecting" : "Waiting"}
+          {hostJoined
+            ? "● Connected"
+            : loading
+              ? "Connecting"
+              : "Waiting"}
         </div>
       </div>
 
@@ -813,7 +943,9 @@ export default function WatchLive() {
             <div className="text-center">
               <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-red-500 border-t-transparent" />
 
-              <p className="text-lg text-white">Connecting to live stream...</p>
+              <p className="text-lg text-white">
+                Connecting to live stream...
+              </p>
 
               <p className="mt-2 text-sm text-gray-400">
                 Please wait while we connect you.
@@ -834,7 +966,8 @@ export default function WatchLive() {
                   setError("");
                   setLoading(true);
 
-                  const generation = ++generationRef.current;
+                  const generation =
+                    ++generationRef.current;
 
                   void initializeLive(generation);
                 }}
@@ -871,9 +1004,13 @@ export default function WatchLive() {
                   </div>
 
                   <div>
-                    <h3 className="font-semibold text-white">Astrologer</h3>
+                    <h3 className="font-semibold text-white">
+                      Astrologer
+                    </h3>
 
-                    <p className="text-xs text-gray-300">Live Consultation</p>
+                    <p className="text-xs text-gray-300">
+                      Live Consultation
+                    </p>
                   </div>
                 </div>
 
@@ -886,11 +1023,15 @@ export default function WatchLive() {
               {giftPanelOpen && (
                 <div className="absolute bottom-28 left-3 right-3 z-30 max-h-[55%] overflow-y-auto rounded-xl border border-gray-700 bg-gray-950/95 p-4 shadow-xl">
                   <div className="mb-3 flex items-center justify-between">
-                    <h3 className="font-semibold text-white">Send a Gift</h3>
+                    <h3 className="font-semibold text-white">
+                      Send a Gift
+                    </h3>
 
                     <button
                       type="button"
-                      onClick={() => setGiftPanelOpen(false)}
+                      onClick={() =>
+                        setGiftPanelOpen(false)
+                      }
                       className="text-gray-400 hover:text-white"
                       aria-label="Close gift panel"
                     >
@@ -899,13 +1040,17 @@ export default function WatchLive() {
                   </div>
 
                   {giftsLoading ? (
-                    <p className="text-gray-300">Loading gifts...</p>
+                    <p className="text-gray-300">
+                      Loading gifts...
+                    </p>
                   ) : giftsError ? (
                     <p className="text-sm text-red-400">
                       Unable to load gifts.
                     </p>
                   ) : gifts.length === 0 ? (
-                    <p className="text-gray-300">No gifts available.</p>
+                    <p className="text-gray-300">
+                      No gifts available.
+                    </p>
                   ) : (
                     <>
                       <div className="grid grid-cols-3 gap-2">
@@ -914,16 +1059,21 @@ export default function WatchLive() {
                             type="button"
                             key={gift.id}
                             onClick={() => {
-                              setSelectedGiftId(gift.id);
+                              setSelectedGiftId(
+                                gift.id
+                              );
                               setGiftNotice("");
                             }}
                             className={`rounded-lg border p-3 ${
-                              selectedGiftId === gift.id
+                              selectedGiftId ===
+                              gift.id
                                 ? "border-yellow-400 bg-yellow-500/20"
                                 : "border-gray-700 bg-gray-800"
                             }`}
                           >
-                            <div className="text-2xl">{gift.icon || "🎁"}</div>
+                            <div className="text-2xl">
+                              {gift.icon || "🎁"}
+                            </div>
 
                             <div className="mt-1 text-sm text-white">
                               {gift.name}
@@ -951,14 +1101,16 @@ export default function WatchLive() {
                           max="100"
                           value={giftQuantity}
                           onChange={(event) => {
-                            const rawValue = event.target.value;
+                            const rawValue =
+                              event.target.value;
 
                             if (rawValue === "") {
                               setGiftQuantity("");
                               return;
                             }
 
-                            const value = Number(rawValue);
+                            const value =
+                              Number(rawValue);
 
                             if (
                               Number.isInteger(value) &&
@@ -970,7 +1122,9 @@ export default function WatchLive() {
                           }}
                           onBlur={() => {
                             if (
-                              !Number.isInteger(giftQuantity) ||
+                              !Number.isInteger(
+                                giftQuantity
+                              ) ||
                               giftQuantity < 1 ||
                               giftQuantity > 100
                             ) {
@@ -997,13 +1151,17 @@ export default function WatchLive() {
                         disabled={
                           sendingGift ||
                           !selectedGiftId ||
-                          !Number.isInteger(giftQuantity) ||
+                          !Number.isInteger(
+                            giftQuantity
+                          ) ||
                           giftQuantity < 1 ||
                           giftQuantity > 100
                         }
                         className="mt-4 w-full rounded-lg bg-yellow-500 py-3 font-semibold text-black disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        {sendingGift ? "Sending..." : "Send Gift 🎁"}
+                        {sendingGift
+                          ? "Sending..."
+                          : "Send Gift 🎁"}
                       </button>
                     </>
                   )}
@@ -1017,18 +1175,50 @@ export default function WatchLive() {
                   className="h-44 space-y-2 overflow-y-auto px-3 py-2"
                 >
                   {messages.map((item) => (
-                    <div key={item.id} className="mb-2">
+                    <div
+                      key={item.id}
+                      className="mb-2"
+                    >
                       {item.kind === "gift" ? (
                         <div className="inline-flex max-w-[95%] items-center rounded-xl border border-yellow-400/40 bg-yellow-500/20 p-3 text-white">
-                          {/* ... gift rendering ... */}
+                          <span className="mr-2 text-2xl">
+                            {item.giftIcon || "🎁"}
+                          </span>
+
+                          <div className="break-words">
+                            <strong>
+                              {item.senderName}
+                            </strong>
+
+                            {" sent "}
+
+                            <strong>
+                              {item.giftName}
+                            </strong>
+
+                            {item.quantity > 1 && (
+                              <span>
+                                {" "}
+                                × {item.quantity}
+                              </span>
+                            )}
+
+                            {item.totalCoins != null && (
+                              <div className="mt-1 text-xs text-yellow-300">
+                                {item.totalCoins} coins
+                              </div>
+                            )}
+                          </div>
                         </div>
                       ) : (
-                        // 👇 THIS IS THE BLOCK YOU NEED TO REPLACE
                         <div className="inline-flex max-w-[95%] break-words rounded-xl bg-black/70 px-3 py-2">
                           <span className="mr-2 font-semibold text-yellow-400">
                             {item.senderName}
                           </span>
-                          <span className="text-white">{item.message}</span>
+
+                          <span className="text-white">
+                            {item.message}
+                          </span>
                         </div>
                       )}
                     </div>
@@ -1046,12 +1236,17 @@ export default function WatchLive() {
               <div className="absolute bottom-14 left-0 right-0 z-20 flex items-center gap-2 bg-black/80 p-3">
                 <input
                   value={message}
-                  onChange={(event) => setMessage(event.target.value)}
+                  onChange={(event) =>
+                    setMessage(event.target.value)
+                  }
                   placeholder="Write a message..."
                   maxLength={1000}
                   className="min-w-0 flex-1 rounded-full bg-gray-900 px-4 py-3 text-white outline-none"
                   onKeyDown={(event) => {
-                    if (event.key === "Enter" && !event.shiftKey) {
+                    if (
+                      event.key === "Enter" &&
+                      !event.shiftKey
+                    ) {
                       event.preventDefault();
                       void sendMessage();
                     }
@@ -1074,47 +1269,60 @@ export default function WatchLive() {
                   type="button"
                   onClick={() => {
                     setGiftNotice(
-                      "Likes are not connected to the backend yet.",
+                      "Likes are not connected to the backend yet."
                     );
                     setGiftPanelOpen(false);
                   }}
                   className="flex flex-col items-center text-white"
                 >
                   ❤️
-                  <span className="text-xs">Like</span>
+                  <span className="text-xs">
+                    Like
+                  </span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => {
-                    setGiftPanelOpen((open) => !open);
+                    setGiftPanelOpen(
+                      (open) => !open
+                    );
                     setGiftNotice("");
                   }}
                   className="flex flex-col items-center text-white"
                 >
                   🎁
-                  <span className="text-xs">Gift</span>
+                  <span className="text-xs">
+                    Gift
+                  </span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => {
                     setGiftNotice(
-                      "Calling is not connected to the backend yet.",
+                      "Calling is not connected to the backend yet."
                     );
                   }}
                   className="flex flex-col items-center text-green-400"
                 >
                   📞
-                  <span className="text-xs">Call</span>
+                  <span className="text-xs">
+                    Call
+                  </span>
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => void handleLeaveLive()}
+                  onClick={() =>
+                    void handleLeaveLive()
+                  }
                   className="flex flex-col items-center text-red-500"
                 >
-                  ❌<span className="text-xs">Leave</span>
+                  ❌
+                  <span className="text-xs">
+                    Leave
+                  </span>
                 </button>
               </div>
             </div>
