@@ -406,16 +406,16 @@ export const JOIN_LIVE_STREAM = gql`
   }
 `;
 
-export const START_LIVE = gql`
-  mutation StartLive($title: String!) {
-    startLive(title: $title) {
-      token
-      uid
-      appId
-      channelName
-    }
-  }
-`;
+// export const START_LIVE = gql`
+//   mutation StartLive($title: String!) {
+//     startLive(title: $title) {
+//       token
+//       uid
+//       appId
+//       channelName
+//     }
+//   }
+// `;
 
 export const GET_FAQS = gql`
   query GetFaqs {
