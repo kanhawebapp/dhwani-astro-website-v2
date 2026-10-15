@@ -1,17 +1,19 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
-import { useParams } from "next/navigation";
+import { useParams,useRouter } from "next/navigation";
 import { useLazyQuery, useQuery, useMutation } from "@apollo/client/react";
 
 import {
   JOIN_LIVE_STREAM,
   GET_LIVE_GIFTS,
   SEND_LIVE_GIFT,
+  LEAVE_LIVE_STREAM
 } from "@/app/graphql/gqlQuery";
 
 export default function WatchLive() {
   const params = useParams();
+  const router = useRouter();
 
   const channelName =
     typeof params?.channelName === "string" ? params.channelName : "";
@@ -84,9 +86,12 @@ export default function WatchLive() {
     error: giftsError,
   } = useQuery(GET_LIVE_GIFTS, {
     fetchPolicy: "cache-and-network",
+    errorPolicy: "all",
   });
 
   const [sendLiveGift] = useMutation(SEND_LIVE_GIFT);
+  const [leaveLiveStream, { loading: leavingLive }] =
+  useMutation(LEAVE_LIVE_STREAM);
 
   const gifts = giftData?.getLiveGifts ?? [];
 
@@ -770,10 +775,19 @@ export default function WatchLive() {
         throw new Error(result?.message || "Gift transaction failed.");
       }
 
+      const sentName = result.giftName || selectedGift?.name || "gift";
+      const sentQuantity = result.quantity ?? giftQuantity;
+      const balanceMessage = Number.isFinite(result.userBalance)
+        ? ` Remaining wallet balance: ${result.userBalance} coins.`
+        : "";
+      const transactionMessage = result.transactionId
+        ? ` Transaction: ${result.transactionId}.`
+        : "";
+
       setGiftNotice(
-        `Successfully sent ${result.giftName || "gift"} × ${
-          result.quantity ?? giftQuantity
-        }.`,
+        `Successfully sent ${sentName} × ${sentQuantity} for ${
+          result.totalCoins ?? totalGiftCoins
+        } coins.${balanceMessage}${transactionMessage}`,
       );
 
       setSelectedGiftId("");
@@ -790,20 +804,45 @@ export default function WatchLive() {
   // LEAVE LIVE STREAM
   // =======================================================
 
-  const handleLeaveLive = async () => {
+  // =======================================================
+// LEAVE LIVE STREAM
+// =======================================================
+
+const handleLeaveLive = async () => {
+  if (leavingLive) return;
+
+  try {
+    // 1. Call the backend leaveLive API
+    const { data } = await leaveLiveStream({
+      variables: {
+        channelName,
+      },
+    });
+
+    if (data?.leaveLive?.success) {
+      console.log(data.leaveLive.message);
+    }
+  } catch (error) {
+    console.error("Failed to leave live API:", error);
+  } finally {
+    // 2. Invalidate the current initialization generation
+    // so pending Agora operations cannot continue normally.
     generationRef.current++;
 
-    await cleanup();
-
-    if (mountedRef.current) {
-      setHostJoined(false);
-      setLiveInfo(null);
-      setMessages([]);
-      setMessage("");
-      setLoading(false);
-      setError("You have left the live stream.");
+    // 3. Disconnect Agora RTC and Chat using your existing refs.
+    // cleanup() also leaves the Agora Chat room.
+    try {
+      await cleanup();
+    } catch (error) {
+      console.error("Agora cleanup error:", error);
     }
-  };
+
+    // 4. Navigate away from the live page
+    router.push("/astrologer/liveStream");
+  }
+};
+
+  
 
   // =======================================================
   // GIFT CALCULATIONS
@@ -1060,7 +1099,7 @@ export default function WatchLive() {
 
                   {/* Bottom controls */}
                   <div className="absolute bottom-0 left-0 right-0 z-20 flex justify-around bg-black/90 py-3">
-                    <button
+                    {/* <button
                       type="button"
                       onClick={() => {
                         setGiftNotice(
@@ -1072,7 +1111,7 @@ export default function WatchLive() {
                     >
                       ❤️
                       <span className="text-xs">Like</span>
-                    </button>
+                    </button> */}
 
                     <button
                       type="button"
@@ -1095,16 +1134,16 @@ export default function WatchLive() {
                       }}
                       className="flex flex-col items-center text-green-400"
                     >
-                      📞
-                      <span className="text-xs">Call</span>
+                      {/* 📞
+                      <span className="text-xs">Call</span> */}
                     </button>
 
                     <button
                       type="button"
-                      onClick={() => void handleLeaveLive()}
-                      className="flex flex-col items-center text-red-500"
+                      onClick={handleLeaveLive}
+                      disabled={leavingLive}
                     >
-                      ❌<span className="text-xs">Leave</span>
+                      {leavingLive ? "Leaving..." : "Leave Live"}
                     </button>
                   </div>
                 </div>
@@ -1152,9 +1191,11 @@ export default function WatchLive() {
                     /* ✅ Updated text message rendering */
                     <div
                       className={`flex  flex-col max-w-[95%] break-words rounded-xl px-3 py-2 ${
-                        item.isOwn ? "bg-red-900/50 place-self-end self-end justify-self-end" : "bg-black/70"
+                        item.isOwn
+                          ? "bg-red-900/50 place-self-end self-end justify-self-end"
+                          : "bg-black/70"
                       }`}
-                     >
+                    >
                       <span
                         className={`mr-2 font-semibold ${
                           item.isOwn ? "text-green-400 " : "text-yellow-400"

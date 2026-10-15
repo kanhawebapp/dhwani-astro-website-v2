@@ -711,9 +711,18 @@ export const GET_LIVE_GIFTS = gql`
     }
   }
 `;
+
 export const SEND_LIVE_GIFT = gql`
-  mutation SendLiveGift($streamId: ID!, $giftId: ID!, $quantity: Int!) {
-    sendLiveGift(streamId: $streamId, giftId: $giftId, quantity: $quantity) {
+  mutation SendLiveGift(
+    $streamId: ID!
+    $giftId: ID!
+    $quantity: Int!
+  ) {
+    sendLiveGift(
+      streamId: $streamId
+      giftId: $giftId
+      quantity: $quantity
+    ) {
       success
       message
       giftId
@@ -726,6 +735,15 @@ export const SEND_LIVE_GIFT = gql`
       userBalance
       astrologerBalance
       transactionId
+    }
+  }
+`;
+export const LEAVE_LIVE_STREAM = gql`
+  mutation LeaveLiveStream($channelName: String!) {
+    leaveLive(channelName: $channelName) {
+      success
+      message
+      channelName
     }
   }
 `;
