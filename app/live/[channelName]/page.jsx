@@ -1201,7 +1201,7 @@ const handleLeaveLive = async () => {
                           item.isOwn ? "text-green-400 " : "text-yellow-400"
                         }`}
                       >
-                        {item.senderName}
+                       {item.senderName?.split("_")[0]?.replace(/^./, (char) => char.toUpperCase())}
                       </span>
                       <span className="text-white">{item.message}</span>
                     </div>
