@@ -394,10 +394,14 @@ export const JOIN_LIVE_STREAM = gql`
   query JoinLive($channelName: String!) {
     joinLive(channelName: $channelName) {
       id
-      rtcToken
-      uid
+      astrologerId
+      totalViews
+
       appId
       channelName
+      uid
+      rtcToken
+
       chatUserId
       chatToken
       chatRoomId
@@ -744,6 +748,44 @@ export const LEAVE_LIVE_STREAM = gql`
       success
       message
       channelName
+    }
+  }
+`;
+
+// =======================================================
+// FOLLOW / UNFOLLOW ASTROLOGER
+// =======================================================
+
+export const IS_FOLLOWING = gql`
+  query IsFollowing($astrologerId: ID!) {
+    isFollowing(astrologerId: $astrologerId) {
+      isFollowing
+    }
+  }
+`;
+
+export const GET_ASTROLOGER_FOLLOWERS_COUNT = gql`
+  query GetAstrologerFollowersCount($astrologerId: ID!) {
+    getAstrologerFollowersCount(astrologerId: $astrologerId) {
+      totalFollowers
+    }
+  }
+`;
+
+export const FOLLOW_ASTROLOGER = gql`
+  mutation FollowAstrologer($astrologerId: ID!) {
+    followAstrologer(astrologerId: $astrologerId) {
+      success
+      message
+    }
+  }
+`;
+
+export const UNFOLLOW_ASTROLOGER = gql`
+  mutation UnfollowAstrologer($astrologerId: ID!) {
+    unfollowAstrologer(astrologerId: $astrologerId) {
+      success
+      message
     }
   }
 `;
