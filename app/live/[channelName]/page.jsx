@@ -34,6 +34,7 @@ export default function WatchLive() {
   const [message, setMessage] = useState("");
   const [liveInfo, setLiveInfo] = useState(null);
 
+  // Gift state
   const [giftPanelOpen, setGiftPanelOpen] = useState(false);
   const [selectedGiftId, setSelectedGiftId] = useState("");
   const [giftQuantity, setGiftQuantity] = useState(1);
@@ -64,7 +65,7 @@ export default function WatchLive() {
 
   const leavingRef = useRef(false);
 
-  // Keep the current live information accessible to event handlers.
+  // Keep current live information accessible to event handlers.
   useEffect(() => {
     liveInfoRef.current = liveInfo;
   }, [liveInfo]);
@@ -92,6 +93,7 @@ export default function WatchLive() {
     data: giftData,
     loading: giftsLoading,
     error: giftsError,
+    refetch: refetchGifts,
   } = useQuery(GET_LIVE_GIFTS, {
     fetchPolicy: "cache-and-network",
     errorPolicy: "all",
@@ -104,10 +106,15 @@ export default function WatchLive() {
 
   const gifts = giftData?.getLiveGifts ?? [];
 
-  const selectedGift = gifts.find((gift) => gift.id === selectedGiftId);
+  const selectedGift = gifts.find(
+    (gift) => String(gift.id) === String(selectedGiftId)
+  );
+
+  const quantityNumber =
+    giftQuantity === "" ? 0 : Number(giftQuantity);
 
   const totalGiftCoins = selectedGift
-    ? Number(selectedGift.price) * Number(giftQuantity || 0)
+    ? Number(selectedGift.price) * quantityNumber
     : 0;
 
   // =======================================================
@@ -180,13 +187,13 @@ export default function WatchLive() {
   const isValidLiveResponse = useCallback((live) => {
     if (!live) {
       throw new Error(
-        "Live stream not found or has already ended.",
+        "Live stream not found or has already ended."
       );
     }
 
     if (!live.id) {
       throw new Error(
-        "Stream database ID is missing from the joinLive response.",
+        "Stream database ID is missing from the joinLive response."
       );
     }
 
@@ -197,7 +204,7 @@ export default function WatchLive() {
       live.uid == null
     ) {
       throw new Error(
-        "Required Agora RTC configuration is missing.",
+        "Required Agora RTC configuration is missing."
       );
     }
 
@@ -208,13 +215,13 @@ export default function WatchLive() {
       !live.chatRoomId
     ) {
       throw new Error(
-        "Required Agora Chat configuration is missing.",
+        "Required Agora Chat configuration is missing."
       );
     }
 
     if (!live.astrologerId) {
       console.warn(
-        "astrologerId is missing from the joinLive response. Follow functionality will be unavailable.",
+        "astrologerId is missing from the joinLive response. Follow functionality will be unavailable."
       );
     }
 
@@ -228,7 +235,7 @@ export default function WatchLive() {
   const handleFollowToggle = async () => {
     if (!astrologerId) {
       setFollowNotice(
-        "Astrologer information is unavailable. Check the joinLive response.",
+        "Astrologer information is unavailable. Check the joinLive response."
       );
       return;
     }
@@ -261,7 +268,7 @@ export default function WatchLive() {
           result?.message ||
             `Unable to ${
               isFollowing ? "unfollow" : "follow"
-            } astrologer.`,
+            } astrologer.`
         );
       }
 
@@ -269,7 +276,7 @@ export default function WatchLive() {
         result.message ||
           (isFollowing
             ? "You have unfollowed the astrologer."
-            : "You are now following the astrologer."),
+            : "You are now following the astrologer.")
       );
 
       await Promise.all([
@@ -317,7 +324,7 @@ export default function WatchLive() {
       // Ordinary text message.
     }
 
-    // Gift notification
+    // Gift notifications sent by the backend through Agora Chat.
     if (payload?.type === "GIFT") {
       const messageId = msg?.id
         ? `gift-${msg.id}`
@@ -350,7 +357,7 @@ export default function WatchLive() {
       return;
     }
 
-    // The sender adds their own message locally.
+    // Do not duplicate ordinary messages sent by the current user.
     if (isOwnMessage) {
       return;
     }
@@ -402,7 +409,7 @@ export default function WatchLive() {
           } catch (err) {
             console.warn(
               "Unable to leave Agora Chat room:",
-              err?.message,
+              err?.message
             );
           }
         }
@@ -412,7 +419,7 @@ export default function WatchLive() {
         } catch (err) {
           console.warn(
             "Unable to close Agora Chat:",
-            err?.message,
+            err?.message
           );
         }
       }
@@ -431,7 +438,7 @@ export default function WatchLive() {
         }
       }
     },
-    [],
+    []
   );
 
   // =======================================================
@@ -459,7 +466,7 @@ export default function WatchLive() {
     await disposeLocalClients(
       chatClient,
       rtcClient,
-      roomId,
+      roomId
     );
   }, [disposeLocalClients]);
 
@@ -488,7 +495,7 @@ export default function WatchLive() {
         if (mediaType === "video") {
           if (!user.videoTrack) {
             console.warn(
-              "Astrologer video track is unavailable.",
+              "Astrologer video track is unavailable."
             );
             return;
           }
@@ -512,17 +519,17 @@ export default function WatchLive() {
       } catch (err) {
         console.error(
           `Agora ${mediaType} subscription failed:`,
-          err,
+          err
         );
 
         if (isCurrentGeneration(generation)) {
           setError(
-            `Unable to receive the astrologer's ${mediaType}. Please try reconnecting.`,
+            `Unable to receive the astrologer's ${mediaType}. Please try reconnecting.`
           );
         }
       }
     },
-    [isCurrentGeneration],
+    [isCurrentGeneration]
   );
 
   // =======================================================
@@ -551,7 +558,7 @@ export default function WatchLive() {
 
         if (!channelName) {
           throw new Error(
-            "Live stream channel name is missing.",
+            "Live stream channel name is missing."
           );
         }
 
@@ -590,10 +597,7 @@ export default function WatchLive() {
         localChatRoomId = live.chatRoomId;
         chatRoomIdRef.current = live.chatRoomId;
 
-        // ---------------------------------------------------
-        // RTC client
-        // ---------------------------------------------------
-
+        // Initialize RTC client.
         const rtcClient = AgoraRTC.createClient({
           mode: "live",
           codec: "vp8",
@@ -608,15 +612,15 @@ export default function WatchLive() {
             await subscribeToUser(
               user,
               mediaType,
-              generation,
+              generation
             );
-          },
+          }
         );
 
         rtcClient.on("user-joined", (user) => {
           console.log(
             "Remote user joined:",
-            user.uid,
+            user.uid
           );
         });
 
@@ -631,7 +635,7 @@ export default function WatchLive() {
               setHostJoined(false);
               pendingVideoTrackRef.current = null;
             }
-          },
+          }
         );
 
         rtcClient.on("user-left", () => {
@@ -649,7 +653,7 @@ export default function WatchLive() {
               previousState,
               reason,
             });
-          },
+          }
         );
 
         await rtcClient.setClientRole("audience");
@@ -658,7 +662,7 @@ export default function WatchLive() {
           await disposeLocalClients(
             localChatClient,
             localRtcClient,
-            localChatRoomId,
+            localChatRoomId
           );
           return;
         }
@@ -667,22 +671,19 @@ export default function WatchLive() {
           live.appId,
           live.channelName,
           live.rtcToken,
-          live.uid,
+          live.uid
         );
 
         if (!isCurrentGeneration(generation)) {
           await disposeLocalClients(
             localChatClient,
             localRtcClient,
-            localChatRoomId,
+            localChatRoomId
           );
           return;
         }
 
-        // ---------------------------------------------------
-        // Agora Chat client
-        // ---------------------------------------------------
-
+        // Initialize Agora Chat client.
         const chatClient = new AgoraChat.connection({
           appKey: live.chatAppKey,
         });
@@ -698,7 +699,7 @@ export default function WatchLive() {
             onError: (chatError) => {
               console.error(
                 "Agora Chat error:",
-                chatError,
+                chatError
               );
             },
 
@@ -709,7 +710,7 @@ export default function WatchLive() {
             onDisconnected: () => {
               console.log("Agora Chat disconnected.");
             },
-          },
+          }
         );
 
         await chatClient.open({
@@ -721,7 +722,7 @@ export default function WatchLive() {
           await disposeLocalClients(
             localChatClient,
             localRtcClient,
-            localChatRoomId,
+            localChatRoomId
           );
           return;
         }
@@ -734,15 +735,12 @@ export default function WatchLive() {
           await disposeLocalClients(
             localChatClient,
             localRtcClient,
-            localChatRoomId,
+            localChatRoomId
           );
           return;
         }
 
-        // ---------------------------------------------------
-        // Subscribe to already-published tracks
-        // ---------------------------------------------------
-
+        // Subscribe to already-published tracks.
         for (const user of rtcClient.remoteUsers) {
           if (!isCurrentGeneration(generation)) {
             break;
@@ -752,7 +750,7 @@ export default function WatchLive() {
             await subscribeToUser(
               user,
               "video",
-              generation,
+              generation
             );
           }
 
@@ -760,7 +758,7 @@ export default function WatchLive() {
             await subscribeToUser(
               user,
               "audio",
-              generation,
+              generation
             );
           }
         }
@@ -781,7 +779,7 @@ export default function WatchLive() {
           await disposeLocalClients(
             localChatClient,
             localRtcClient,
-            localChatRoomId,
+            localChatRoomId
           );
         }
       }
@@ -795,7 +793,7 @@ export default function WatchLive() {
       isCurrentGeneration,
       isValidLiveResponse,
       subscribeToUser,
-    ],
+    ]
   );
 
   // =======================================================
@@ -842,7 +840,7 @@ export default function WatchLive() {
         remoteVideoRef.current.innerHTML = "";
 
         pendingVideoTrackRef.current.play(
-          remoteVideoRef.current,
+          remoteVideoRef.current
         );
 
         pendingVideoTrackRef.current = null;
@@ -850,8 +848,14 @@ export default function WatchLive() {
         setHostJoined(true);
         setError("");
       } catch (err) {
-        console.error("Unable to play remote video:", err);
-        setError("Unable to play the astrologer's video.");
+        console.error(
+          "Unable to play remote video:",
+          err
+        );
+
+        setError(
+          "Unable to play the astrologer's video."
+        );
       }
     }
   }, [loading, liveInfo]);
@@ -872,7 +876,7 @@ export default function WatchLive() {
 
     if (!chatClient || !AgoraChat) {
       setError(
-        "Agora Chat is not connected. Please reconnect.",
+        "Agora Chat is not connected. Please reconnect."
       );
       return;
     }
@@ -913,7 +917,7 @@ export default function WatchLive() {
   const handleSendGift = async () => {
     if (!liveInfo?.id) {
       setGiftNotice(
-        "Stream database ID is missing from the joinLive response.",
+        "Stream database ID is missing from the joinLive response."
       );
       return;
     }
@@ -923,14 +927,20 @@ export default function WatchLive() {
       return;
     }
 
+    const quantity = Number(giftQuantity);
+
     if (
-      !Number.isInteger(giftQuantity) ||
-      giftQuantity < 1 ||
-      giftQuantity > 100
+      !Number.isInteger(quantity) ||
+      quantity < 1 ||
+      quantity > 100
     ) {
       setGiftNotice(
-        "Quantity must be between 1 and 100.",
+        "Quantity must be between 1 and 100."
       );
+      return;
+    }
+
+    if (sendingGift) {
       return;
     }
 
@@ -942,7 +952,7 @@ export default function WatchLive() {
         variables: {
           streamId: liveInfo.id,
           giftId: selectedGiftId,
-          quantity: giftQuantity,
+          quantity,
         },
       });
 
@@ -950,30 +960,45 @@ export default function WatchLive() {
 
       if (!result?.success) {
         throw new Error(
-          result?.message || "Gift transaction failed.",
+          result?.message || "Gift transaction failed."
         );
       }
 
       const sentName =
-        result.giftName || selectedGift?.name || "gift";
+        result.giftName || selectedGift?.name || "Gift";
 
       const sentQuantity =
-        result.quantity ?? giftQuantity;
+        Number(result.quantity ?? quantity);
 
       const coins =
-        result.totalCoins ?? totalGiftCoins;
+        Number(result.totalCoins ?? totalGiftCoins);
+
+      const balance = Number(result.userBalance);
 
       const balanceMessage =
-        Number.isFinite(result.userBalance)
-          ? ` Remaining wallet balance: ${result.userBalance} coins.`
+        result.userBalance != null &&
+        Number.isFinite(balance)
+          ? ` Remaining wallet balance: ${balance} coins.`
           : "";
 
       setGiftNotice(
-        `Successfully sent ${sentName} × ${sentQuantity} for ${coins} coins.${balanceMessage}`,
+        `Successfully sent ${sentName} × ${sentQuantity} for ${coins} coins.${balanceMessage}`
       );
 
+      // Reset selection after successful transaction.
       setSelectedGiftId("");
       setGiftQuantity(1);
+
+      // Refresh the gift list in case the backend changes it.
+      // Do not fail the completed transaction if refetch fails.
+      try {
+        await refetchGifts();
+      } catch (refreshError) {
+        console.warn(
+          "Unable to refresh gifts:",
+          refreshError
+        );
+      }
     } catch (err) {
       console.error("Send live gift error:", err);
       setGiftNotice(getErrorMessage(err));
@@ -1019,7 +1044,29 @@ export default function WatchLive() {
   };
 
   // =======================================================
-  // UI
+  // GIFT QUANTITY HELPERS
+  // =======================================================
+
+  const decreaseGiftQuantity = () => {
+    setGiftQuantity((previous) => {
+      const current = Number(previous) || 1;
+      return Math.max(1, current - 1);
+    });
+
+    setGiftNotice("");
+  };
+
+  const increaseGiftQuantity = () => {
+    setGiftQuantity((previous) => {
+      const current = Number(previous) || 1;
+      return Math.min(100, current + 1);
+    });
+
+    setGiftNotice("");
+  };
+
+  // =======================================================
+  // UI DATA
   // =======================================================
 
   const astrologerName =
@@ -1033,12 +1080,13 @@ export default function WatchLive() {
     liveInfo?.profilePic ||
     "";
 
+  // =======================================================
+  // UI
+  // =======================================================
+
   return (
     <div className="flex min-h-[70vh] w-full flex-col bg-gradient-to-b from-gray-950 to-black text-white lg:flex-row">
-      {/* ===================================================
-          VIDEO PANEL
-      =================================================== */}
-
+      {/* VIDEO PANEL */}
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Header */}
         <div className="sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-gray-800 bg-black/80 px-4 py-3 backdrop-blur">
@@ -1128,10 +1176,47 @@ export default function WatchLive() {
                 />
 
                 {/* =================================================
+                    CROSS ICON: LEAVE LIVE
+                ================================================= */}
+
+                <button
+                  type="button"
+                  onClick={handleLeaveLive}
+                  disabled={leavingLive}
+                  aria-label="Leave live stream"
+                  title={
+                    leavingLive
+                      ? "Leaving live..."
+                      : "Leave live stream"
+                  }
+                  className="absolute right-3 top-3 z-50 flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/70 text-white shadow-lg backdrop-blur transition duration-200 hover:scale-105 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400 disabled:cursor-not-allowed disabled:opacity-60 sm:right-4 sm:top-4 sm:h-11 sm:w-11"
+                >
+                  {leavingLive ? (
+                    <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                  ) : (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2.5}
+                      className="h-6 w-6"
+                      aria-hidden="true"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M6 6l12 12M18 6L6 18"
+                      />
+                    </svg>
+                  )}
+                </button>
+
+                {/* =================================================
                     STREAM HEADER OVERLAY
                 ================================================= */}
 
-                <div className="absolute left-0 right-0 top-0 z-10 flex flex-wrap items-start justify-between gap-3 bg-gradient-to-b from-black/90 to-transparent p-3 sm:p-4">
+                <div className="absolute left-0 right-0 top-0 z-10 flex flex-wrap items-start justify-between gap-3 bg-gradient-to-b from-black/90 to-transparent p-3 pr-16 sm:p-4 sm:pr-20">
                   {/* Astrologer information */}
                   <div className="flex min-w-0 items-center gap-3">
                     {astrologerProfilePic ? (
@@ -1155,7 +1240,6 @@ export default function WatchLive() {
                         Live Consultation
                       </p>
 
-                      {/* Views and followers */}
                       <div className="mt-2 flex flex-wrap items-center gap-3 text-sm">
                         <span
                           className="inline-flex items-center gap-1"
@@ -1164,7 +1248,7 @@ export default function WatchLive() {
                           👁️
                           <strong>
                             {Number(
-                              liveInfo.totalViews ?? 0,
+                              liveInfo.totalViews ?? 0
                             ).toLocaleString("en-IN")}
                           </strong>
                           <span className="text-gray-300">
@@ -1179,7 +1263,7 @@ export default function WatchLive() {
                           👥
                           <strong>
                             {Number(
-                              totalFollowers,
+                              totalFollowers
                             ).toLocaleString("en-IN")}
                           </strong>
                           <span className="text-gray-300">
@@ -1237,138 +1321,290 @@ export default function WatchLive() {
                 ================================================= */}
 
                 {giftPanelOpen && (
-                  <div className="absolute bottom-20 left-3 right-3 z-30 max-h-[60%] overflow-y-auto rounded-xl border border-gray-700 bg-gray-950/95 p-4 shadow-xl sm:bottom-24">
-                    <div className="mb-3 flex items-center justify-between">
-                      <h3 className="font-semibold">
-                        Send a Gift
-                      </h3>
+                  <div
+                    role="dialog"
+                    aria-modal="false"
+                    aria-label="Send a gift"
+                    className="absolute bottom-[76px] right-3 z-40 max-h-[65%] w-[calc(100%-24px)] max-w-[360px] overflow-y-auto rounded-2xl border border-white/10 bg-gray-950/95 p-4 shadow-2xl backdrop-blur-md sm:bottom-[88px] sm:right-4"
+                  >
+                    {/* Panel header */}
+                    <div className="mb-4 flex items-center justify-between gap-3 border-b border-gray-800 pb-3">
+                      <div>
+                        <h3 className="text-lg font-bold">
+                          🎁 Send a Gift
+                        </h3>
+
+                        <p className="mt-1 text-xs text-gray-400">
+                          Choose a gift to support the astrologer.
+                        </p>
+                      </div>
 
                       <button
                         type="button"
                         onClick={() => setGiftPanelOpen(false)}
-                        className="text-gray-400 hover:text-white"
                         aria-label="Close gift panel"
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-800 text-gray-300 transition hover:bg-gray-700 hover:text-white"
                       >
                         ✕
                       </button>
                     </div>
 
-                    {giftsLoading ? (
-                      <p className="text-gray-300">
-                        Loading gifts...
-                      </p>
-                    ) : giftsError ? (
-                      <p className="text-sm text-red-400">
-                        Unable to load gifts.
-                      </p>
-                    ) : gifts.length === 0 ? (
-                      <p className="text-gray-300">
-                        No gifts available.
-                      </p>
-                    ) : (
-                      <>
-                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                          {gifts.map((gift) => (
-                            <button
-                              type="button"
-                              key={gift.id}
-                              onClick={() => {
-                                setSelectedGiftId(gift.id);
-                                setGiftNotice("");
-                              }}
-                              className={`rounded-lg border p-3 ${
-                                selectedGiftId === gift.id
-                                  ? "border-yellow-400 bg-yellow-500/20"
-                                  : "border-gray-700 bg-gray-800"
-                              }`}
-                            >
-                              <div className="text-2xl">
-                                {gift.icon || "🎁"}
-                              </div>
+                    {/* Loading state */}
+                    {giftsLoading && gifts.length === 0 && (
+                      <div className="flex items-center justify-center gap-3 py-8">
+                        <span className="h-5 w-5 animate-spin rounded-full border-2 border-yellow-400 border-t-transparent" />
 
-                              <div className="mt-1 text-sm">
-                                {gift.name}
-                              </div>
+                        <p className="text-sm text-gray-300">
+                          Loading gifts...
+                        </p>
+                      </div>
+                    )}
 
-                              <div className="mt-1 text-xs text-yellow-400">
-                                {gift.price} coins
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-
-                        <div className="mt-4 flex items-center gap-3">
-                          <label
-                            htmlFor="gift-quantity"
-                            className="text-sm"
-                          >
-                            Quantity
-                          </label>
-
-                          <input
-                            id="gift-quantity"
-                            type="number"
-                            min="1"
-                            max="100"
-                            value={giftQuantity}
-                            onChange={(event) => {
-                              const rawValue =
-                                event.target.value;
-
-                              if (rawValue === "") {
-                                setGiftQuantity("");
-                                return;
-                              }
-
-                              const value = Number(rawValue);
-
-                              if (
-                                Number.isInteger(value) &&
-                                value >= 1 &&
-                                value <= 100
-                              ) {
-                                setGiftQuantity(value);
-                              }
-                            }}
-                            onBlur={() => {
-                              if (
-                                !Number.isInteger(giftQuantity) ||
-                                giftQuantity < 1 ||
-                                giftQuantity > 100
-                              ) {
-                                setGiftQuantity(1);
-                              }
-                            }}
-                            className="w-20 rounded-lg border border-gray-700 bg-gray-800 p-2 text-white"
-                          />
-                        </div>
-
-                        <p className="mt-3 text-sm text-gray-300">
-                          Total: {totalGiftCoins} coins
+                    {/* Error state */}
+                    {giftsError && gifts.length === 0 && (
+                      <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3">
+                        <p className="text-sm text-red-300">
+                          Unable to load gifts.
                         </p>
 
-                        {giftNotice && (
-                          <p className="mt-2 break-words text-sm text-yellow-300">
-                            {giftNotice}
-                          </p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            void refetchGifts();
+                          }}
+                          className="mt-2 text-sm font-semibold text-yellow-400 hover:text-yellow-300"
+                        >
+                          Try again
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Empty state */}
+                    {!giftsLoading &&
+                      !giftsError &&
+                      gifts.length === 0 && (
+                        <p className="py-6 text-center text-sm text-gray-400">
+                          No gifts are available right now.
+                        </p>
+                      )}
+
+                    {/* Gift list */}
+                    {gifts.length > 0 && (
+                      <>
+                        <div className="grid grid-cols-3 gap-2">
+                          {gifts.map((gift) => {
+                            const isSelected =
+                              String(selectedGiftId) ===
+                              String(gift.id);
+
+                            return (
+                              <button
+                                type="button"
+                                key={gift.id}
+                                onClick={() => {
+                                  setSelectedGiftId(gift.id);
+                                  setGiftNotice("");
+                                }}
+                                aria-pressed={isSelected}
+                                className={`relative flex min-h-[105px] flex-col items-center justify-center rounded-xl border p-2 text-center transition duration-200 hover:-translate-y-0.5 ${
+                                  isSelected
+                                    ? "border-yellow-400 bg-yellow-500/20 ring-2 ring-yellow-400/40"
+                                    : "border-gray-700 bg-gray-900 hover:border-yellow-500/60 hover:bg-gray-800"
+                                }`}
+                              >
+                                {isSelected && (
+                                  <span className="absolute right-1 top-1 text-xs text-yellow-400">
+                                    ✓
+                                  </span>
+                                )}
+
+                                <span className="text-3xl">
+                                  {gift.icon || "🎁"}
+                                </span>
+
+                                <span className="mt-2 line-clamp-2 break-words text-xs font-semibold text-white">
+                                  {gift.name}
+                                </span>
+
+                                <span className="mt-1 text-xs font-medium text-yellow-400">
+                                  {Number(gift.price).toLocaleString(
+                                    "en-IN"
+                                  )}{" "}
+                                  coins
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {/* Selected gift */}
+                        {selectedGift && (
+                          <div className="mt-4 rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-3">
+                            <div className="flex items-center gap-3">
+                              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-black/30 text-3xl">
+                                {selectedGift.icon || "🎁"}
+                              </div>
+
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate font-semibold">
+                                  {selectedGift.name}
+                                </p>
+
+                                <p className="text-sm text-yellow-400">
+                                  {Number(
+                                    selectedGift.price
+                                  ).toLocaleString("en-IN")}{" "}
+                                  coins each
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Quantity controls */}
+                            <div className="mt-4 flex items-center justify-between gap-3">
+                              <span className="text-sm text-gray-300">
+                                Quantity
+                              </span>
+
+                              <div className="flex items-center gap-3">
+                                <button
+                                  type="button"
+                                  onClick={decreaseGiftQuantity}
+                                  disabled={
+                                    sendingGift ||
+                                    quantityNumber <= 1
+                                  }
+                                  aria-label="Decrease quantity"
+                                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-700 bg-gray-800 text-lg font-bold hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-40"
+                                >
+                                  −
+                                </button>
+
+                                <input
+                                  id="gift-quantity"
+                                  type="number"
+                                  min="1"
+                                  max="100"
+                                  step="1"
+                                  value={giftQuantity}
+                                  disabled={sendingGift}
+                                  onChange={(event) => {
+                                    const rawValue =
+                                      event.target.value;
+
+                                    setGiftNotice("");
+
+                                    if (rawValue === "") {
+                                      setGiftQuantity("");
+                                      return;
+                                    }
+
+                                    const value = Number(rawValue);
+
+                                    if (
+                                      Number.isInteger(value) &&
+                                      value >= 1 &&
+                                      value <= 100
+                                    ) {
+                                      setGiftQuantity(value);
+                                    }
+                                  }}
+                                  onBlur={() => {
+                                    const value =
+                                      Number(giftQuantity);
+
+                                    if (
+                                      !Number.isInteger(value) ||
+                                      value < 1 ||
+                                      value > 100
+                                    ) {
+                                      setGiftQuantity(1);
+                                    }
+                                  }}
+                                  aria-label="Gift quantity"
+                                  className="w-14 rounded-lg border border-gray-700 bg-gray-900 p-2 text-center text-white outline-none focus:border-yellow-400"
+                                />
+
+                                <button
+                                  type="button"
+                                  onClick={increaseGiftQuantity}
+                                  disabled={
+                                    sendingGift ||
+                                    quantityNumber >= 100
+                                  }
+                                  aria-label="Increase quantity"
+                                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-700 bg-gray-800 text-lg font-bold hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-40"
+                                >
+                                  +
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Total coins */}
+                            <div className="mt-4 flex items-center justify-between border-t border-yellow-500/20 pt-3">
+                              <span className="text-sm text-gray-300">
+                                Total cost
+                              </span>
+
+                              <span className="text-lg font-bold text-yellow-400">
+                                {Number(
+                                  totalGiftCoins
+                                ).toLocaleString("en-IN")}{" "}
+                                coins
+                              </span>
+                            </div>
+                          </div>
                         )}
 
+                        {/* Gift success/error notice */}
+                        {giftNotice && (
+                          <div
+                            role="status"
+                            aria-live="polite"
+                            className={`mt-3 break-words rounded-lg border p-3 text-sm ${
+                              giftNotice.startsWith(
+                                "Successfully sent"
+                              )
+                                ? "border-green-500/30 bg-green-500/10 text-green-300"
+                                : "border-red-500/30 bg-red-500/10 text-red-300"
+                            }`}
+                          >
+                            {giftNotice}
+                          </div>
+                        )}
+
+                        {/* Send button */}
                         <button
                           type="button"
                           onClick={handleSendGift}
                           disabled={
                             sendingGift ||
                             !selectedGiftId ||
-                            !Number.isInteger(giftQuantity) ||
-                            giftQuantity < 1 ||
-                            giftQuantity > 100
+                            !Number.isInteger(quantityNumber) ||
+                            quantityNumber < 1 ||
+                            quantityNumber > 100
                           }
-                          className="mt-4 w-full rounded-lg bg-yellow-500 py-3 font-semibold text-black disabled:cursor-not-allowed disabled:opacity-50"
+                          className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-400 px-4 py-3 font-bold text-black shadow-lg transition hover:from-yellow-400 hover:to-amber-300 disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                          {sendingGift
-                            ? "Sending..."
-                            : "Send Gift 🎁"}
+                          {sendingGift ? (
+                            <>
+                              <span className="h-5 w-5 animate-spin rounded-full border-2 border-black/30 border-t-black" />
+                              Sending gift...
+                            </>
+                          ) : (
+                            <>
+                              🎁 Send Gift
+                              {selectedGift
+                                ? ` · ${Number(
+                                    totalGiftCoins
+                                  ).toLocaleString("en-IN")} coins`
+                                : ""}
+                            </>
+                          )}
                         </button>
+
+                        <p className="mt-2 text-center text-xs text-gray-500">
+                          Your wallet will be charged when the gift is sent successfully.
+                        </p>
                       </>
                     )}
                   </div>
@@ -1378,35 +1614,69 @@ export default function WatchLive() {
                     BOTTOM CONTROLS
                 ================================================= */}
 
-                <div className="absolute bottom-0 left-0 right-0 z-20 flex items-center justify-around gap-3 bg-black/90 px-3 py-3">
+                <div className="absolute bottom-0 left-0 right-0 z-20 flex items-center justify-between gap-3 bg-gradient-to-t from-black via-black/90 to-transparent px-4 pb-4 pt-10">
+                  <div className="flex items-center gap-2 text-sm text-gray-300">
+                    <span className="h-2 w-2 animate-pulse rounded-full bg-red-500" />
+
+                    <span>
+                      {hostJoined
+                        ? "Live now"
+                        : "Connecting to stream"}
+                    </span>
+                  </div>
+
                   <button
                     type="button"
                     onClick={() => {
                       setGiftPanelOpen((open) => !open);
                       setGiftNotice("");
                     }}
-                    className="flex flex-col items-center text-white"
+                    aria-label={
+                      giftPanelOpen
+                        ? "Close gift panel"
+                        : "Open gift panel"
+                    }
+                    aria-expanded={giftPanelOpen}
+                    className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full border shadow-lg transition duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-yellow-400 ${
+                      giftPanelOpen
+                        ? "border-white/20 bg-gray-800 text-white"
+                        : "border-yellow-300 bg-yellow-500 text-2xl text-black hover:bg-yellow-400"
+                    }`}
                   >
-                    <span className="text-xl">🎁</span>
-                    <span className="text-xs">Gift</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleLeaveLive}
-                    disabled={leavingLive}
-                    className="rounded-full bg-red-600 px-5 py-2 font-semibold text-white hover:bg-red-700 disabled:opacity-50"
-                  >
-                    {leavingLive
-                      ? "Leaving..."
-                      : "Leave Live"}
+                    {giftPanelOpen ? (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={2.5}
+                        className="h-6 w-6"
+                        aria-hidden="true"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M6 6l12 12M18 6L6 18"
+                        />
+                      </svg>
+                    ) : (
+                      "🎁"
+                    )}
                   </button>
                 </div>
               </div>
 
-              {/* Gift notice outside the gift panel */}
+              {/* Gift notice outside the video when panel is closed */}
               {giftNotice && !giftPanelOpen && (
-                <div className="mt-3 rounded-lg bg-gray-900 p-3 text-sm text-yellow-300">
+                <div
+                  role="status"
+                  aria-live="polite"
+                  className={`mt-3 break-words rounded-lg border p-3 text-sm ${
+                    giftNotice.startsWith("Successfully sent")
+                      ? "border-green-500/30 bg-green-500/10 text-green-300"
+                      : "border-red-500/30 bg-red-500/10 text-red-300"
+                  }`}
+                >
                   {giftNotice}
                 </div>
               )}
@@ -1456,7 +1726,10 @@ export default function WatchLive() {
 
                     {item.totalCoins != null && (
                       <div className="mt-1 text-xs text-yellow-300">
-                        {item.totalCoins} coins
+                        {Number(
+                          item.totalCoins
+                        ).toLocaleString("en-IN")}{" "}
+                        coins
                       </div>
                     )}
                   </div>
@@ -1481,7 +1754,7 @@ export default function WatchLive() {
                       : item.senderName
                           ?.split("_")[0]
                           ?.replace(/^./, (char) =>
-                            char.toUpperCase(),
+                            char.toUpperCase()
                           )}
                   </span>
 
