@@ -4,10 +4,7 @@ import { useParams } from "next/navigation";
 import { useQuery, useMutation } from "@apollo/client/react";
 import { gql } from "@apollo/client";
 import PayOPT from "@/components/Smcompo/Paycomp/PayOPT";
-import {
-  GET_COUPONS,
-
-} from "@/app/graphql/gqlQuery";
+import { GET_COUPONS } from "@/app/graphql/gqlQuery";
 import { useState } from "react";
 import Swal from "sweetalert2";
 
@@ -16,9 +13,9 @@ const GET_PUJA_BOOKING = gql`
     getPujaBooking(bookingId: $bookingId) {
       id
       pujaId
-          puja {
-      title
-    }
+      puja {
+        title
+      }
       mantraOptionName
       quantity
       unitPrice
@@ -29,11 +26,8 @@ const GET_PUJA_BOOKING = gql`
   }
 `;
 
-
 const VERIFY_SERVICE_COUPON = gql`
-  mutation VerifyServiceCoupon(
-    $input: VerifyServiceCouponInput!
-  ) {
+  mutation VerifyServiceCoupon($input: VerifyServiceCouponInput!) {
     verifyServiceCoupon(input: $input) {
       success
       message
@@ -86,8 +80,7 @@ export default function CartPage() {
 
   const [couponCode, setCouponCode] = useState("");
 
-  const [selectedCoupon, setSelectedCoupon] =
-    useState(null);
+  const [selectedCoupon, setSelectedCoupon] = useState(null);
 
   /*
    * Backend verification result.
@@ -102,14 +95,11 @@ export default function CartPage() {
    *
    * returned by VERIFY_SERVICE_COUPON.
    */
-  const [verifiedCouponData, setVerifiedCouponData] =
-    useState(null);
+  const [verifiedCouponData, setVerifiedCouponData] = useState(null);
 
-  const [showCouponModal, setShowCouponModal] =
-    useState(false);
+  const [showCouponModal, setShowCouponModal] = useState(false);
 
-  const [couponVerifying, setCouponVerifying] =
-    useState(false);
+  const [couponVerifying, setCouponVerifying] = useState(false);
 
   /*
    * =========================================================
@@ -117,18 +107,18 @@ export default function CartPage() {
    * =========================================================
    */
 
- const {
-  data: bookingData,
-  loading,
-  error,
-} = useQuery(GET_PUJA_BOOKING, {
-  variables: { bookingId },
-  skip: !bookingId,
-  fetchPolicy: "network-only",
-});
+  const {
+    data: bookingData,
+    loading,
+    error,
+  } = useQuery(GET_PUJA_BOOKING, {
+    variables: { bookingId },
+    skip: !bookingId,
+    fetchPolicy: "network-only",
+  });
 
-const booking = bookingData?.getPujaBooking;
-const title = booking?.puja?.title;
+  const booking = bookingData?.getPujaBooking;
+  const title = booking?.puja?.title;
   /*
    * =========================================================
    * GET COUPONS
@@ -149,8 +139,7 @@ const title = booking?.puja?.title;
    * =========================================================
    */
 
-  const [verifyServiceCoupon] =
-    useMutation(VERIFY_SERVICE_COUPON);
+  const [verifyServiceCoupon] = useMutation(VERIFY_SERVICE_COUPON);
 
   /*
    * =========================================================
@@ -159,11 +148,7 @@ const title = booking?.puja?.title;
    */
 
   if (loading) {
-    return (
-      <div className="p-6 text-center">
-        Loading...
-      </div>
-    );
+    return <div className="p-6 text-center">Loading...</div>;
   }
 
   /*
@@ -174,9 +159,7 @@ const title = booking?.puja?.title;
 
   if (error || !booking) {
     return (
-      <div className="p-6 text-center text-red-500">
-        Booking not found
-      </div>
+      <div className="p-6 text-center text-red-500">Booking not found</div>
     );
   }
 
@@ -186,7 +169,7 @@ const title = booking?.puja?.title;
    * =========================================================
    */
 
-const amount = Number(booking.totalAmount || 0);
+  const amount = Number(booking.totalAmount || 0);
 
   /*
    * =========================================================
@@ -194,26 +177,20 @@ const amount = Number(booking.totalAmount || 0);
    * =========================================================
    */
 
-  const availableCoupons =
-    (couponData?.getCoupons || []).filter(
-      (coupon) => {
-        const applicable =
-          coupon?.applicable
-            ?.trim()
-            ?.toLowerCase();
+const availableCoupons = (couponData?.getCoupons || []).filter((coupon) => {
+  const applicable = coupon?.applicable?.trim()?.toLowerCase();
 
-        return (
-          coupon?.visibility ===
-            "VISIBLE" &&
-          coupon?.status === true &&
-          (
-            applicable === "service" ||
-            applicable === "services" ||
-            applicable === "both"
-          )
-        );
-      },
-    );
+  return (
+    coupon?.visibility === "VISIBLE" &&
+    coupon?.status === true &&
+    (
+      applicable === "puja" ||
+      applicable === "service" ||
+      applicable === "services" ||
+      applicable === "both"
+    )
+  );
+});
 
   /*
    * =========================================================
@@ -228,13 +205,8 @@ const amount = Number(booking.totalAmount || 0);
    * =========================================================
    */
 
-  const calculateLocalDiscount = (
-    coupon,
-  ) => {
-    if (
-      !coupon ||
-      coupon.type !== "DISCOUNT"
-    ) {
+  const calculateLocalDiscount = (coupon) => {
+    if (!coupon || coupon.type !== "DISCOUNT") {
       return 0;
     }
 
@@ -243,25 +215,15 @@ const amount = Number(booking.totalAmount || 0);
     /*
      * Percentage discount
      */
-    if (
-      coupon.percentage !== null &&
-      coupon.percentage !== undefined
-    ) {
-      discount =
-        (amount *
-          Number(coupon.percentage)) /
-        100;
+    if (coupon.percentage !== null && coupon.percentage !== undefined) {
+      discount = (amount * Number(coupon.percentage)) / 100;
     }
 
     /*
      * Flat discount
      */
-    if (
-      coupon.flatAmount !== null &&
-      coupon.flatAmount !== undefined
-    ) {
-      discount =
-        Number(coupon.flatAmount);
+    if (coupon.flatAmount !== null && coupon.flatAmount !== undefined) {
+      discount = Number(coupon.flatAmount);
     }
 
     /*
@@ -270,24 +232,17 @@ const amount = Number(booking.totalAmount || 0);
     if (
       coupon.maxDiscount !== null &&
       coupon.maxDiscount !== undefined &&
-      discount >
-        Number(coupon.maxDiscount)
+      discount > Number(coupon.maxDiscount)
     ) {
-      discount =
-        Number(coupon.maxDiscount);
+      discount = Number(coupon.maxDiscount);
     }
 
     /*
      * Discount cannot exceed amount
      */
-    discount = Math.min(
-      discount,
-      amount,
-    );
+    discount = Math.min(discount, amount);
 
-    return Number(
-      discount.toFixed(2),
-    );
+    return Number(discount.toFixed(2));
   };
 
   /*
@@ -299,15 +254,9 @@ const amount = Number(booking.totalAmount || 0);
    * =========================================================
    */
 
-  const discountAmount =
-    verifiedCouponData
-      ? Number(
-          verifiedCouponData.discount ||
-            0,
-        )
-      : calculateLocalDiscount(
-          selectedCoupon,
-        );
+  const discountAmount = verifiedCouponData
+    ? Number(verifiedCouponData.discount || 0)
+    : calculateLocalDiscount(selectedCoupon);
 
   /*
    * =========================================================
@@ -315,19 +264,9 @@ const amount = Number(booking.totalAmount || 0);
    * =========================================================
    */
 
-  const discountedPrice =
-    verifiedCouponData
-      ? Number(
-          verifiedCouponData.discountedPrice ??
-            amount -
-              discountAmount,
-        )
-      : Number(
-          (
-            amount -
-            discountAmount
-          ).toFixed(2),
-        );
+  const discountedPrice = verifiedCouponData
+    ? Number(verifiedCouponData.discountedPrice ?? amount - discountAmount)
+    : Number((amount - discountAmount).toFixed(2));
 
   /*
    * =========================================================
@@ -335,19 +274,9 @@ const amount = Number(booking.totalAmount || 0);
    * =========================================================
    */
 
-  const gstAmount =
-    verifiedCouponData
-      ? Number(
-          verifiedCouponData.gstAmount ||
-            0,
-        )
-      : Number(
-          (
-            (discountedPrice *
-              18) /
-            100
-          ).toFixed(2),
-        );
+  const gstAmount = verifiedCouponData
+    ? Number(verifiedCouponData.gstAmount || 0)
+    : Number(((discountedPrice * 18) / 100).toFixed(2));
 
   /*
    * =========================================================
@@ -355,19 +284,9 @@ const amount = Number(booking.totalAmount || 0);
    * =========================================================
    */
 
-  const finalAmount =
-    verifiedCouponData
-      ? Number(
-          verifiedCouponData.payableAmount ??
-            discountedPrice +
-              gstAmount,
-        )
-      : Number(
-          (
-            discountedPrice +
-            gstAmount
-          ).toFixed(2),
-        );
+  const finalAmount = verifiedCouponData
+    ? Number(verifiedCouponData.payableAmount ?? discountedPrice + gstAmount)
+    : Number((discountedPrice + gstAmount).toFixed(2));
 
   /*
    * =========================================================
@@ -423,10 +342,8 @@ const amount = Number(booking.totalAmount || 0);
       Swal.fire({
         icon: "error",
         title: "Coupon Inactive",
-        text:
-          "This coupon is currently inactive.",
-        confirmButtonColor:
-          "#7c3aed",
+        text: "This coupon is currently inactive.",
+        confirmButtonColor: "#7c3aed",
       });
 
       return;
@@ -438,18 +355,12 @@ const amount = Number(booking.totalAmount || 0);
      * =======================================================
      */
 
-    if (
-      coupon.visibility &&
-      coupon.visibility !==
-        "VISIBLE"
-    ) {
+    if (coupon.visibility && coupon.visibility !== "VISIBLE") {
       Swal.fire({
         icon: "error",
         title: "Coupon Not Available",
-        text:
-          "This coupon is currently not available.",
-        confirmButtonColor:
-          "#7c3aed",
+        text: "This coupon is currently not available.",
+        confirmButtonColor: "#7c3aed",
       });
 
       return;
@@ -461,10 +372,7 @@ const amount = Number(booking.totalAmount || 0);
      * =======================================================
      */
 
-    const applicable =
-      coupon.applicable
-        ?.trim()
-        ?.toLowerCase();
+    const applicable = coupon.applicable?.trim()?.toLowerCase();
 
     if (
       applicable &&
@@ -475,10 +383,8 @@ const amount = Number(booking.totalAmount || 0);
       Swal.fire({
         icon: "error",
         title: "Coupon Not Applicable",
-        text:
-          "This coupon cannot be used for services.",
-        confirmButtonColor:
-          "#7c3aed",
+        text: "This coupon cannot be used for services.",
+        confirmButtonColor: "#7c3aed",
       });
 
       return;
@@ -491,14 +397,9 @@ const amount = Number(booking.totalAmount || 0);
      */
 
     if (
-      coupon.minOrderAmount !==
-        null &&
-      coupon.minOrderAmount !==
-        undefined &&
-      amount <
-        Number(
-          coupon.minOrderAmount,
-        )
+      coupon.minOrderAmount !== null &&
+      coupon.minOrderAmount !== undefined &&
+      amount < Number(coupon.minOrderAmount)
     ) {
       Swal.fire({
         icon: "error",
@@ -506,8 +407,7 @@ const amount = Number(booking.totalAmount || 0);
         text: `Minimum order amount should be ₹${Number(
           coupon.minOrderAmount,
         )}`,
-        confirmButtonColor:
-          "#7c3aed",
+        confirmButtonColor: "#7c3aed",
       });
 
       return;
@@ -521,37 +421,27 @@ const amount = Number(booking.totalAmount || 0);
 
     const now = new Date();
 
-    if (
-      coupon.startDate &&
-      new Date(coupon.startDate) >
-        now
-    ) {
+    if (coupon.startDate && new Date(coupon.startDate) > now) {
       Swal.fire({
         icon: "error",
         title: "Coupon Not Active",
         text: `Coupon will be active from ${new Date(
           coupon.startDate,
         ).toLocaleDateString()}`,
-        confirmButtonColor:
-          "#7c3aed",
+        confirmButtonColor: "#7c3aed",
       });
 
       return;
     }
 
-    if (
-      coupon.endDate &&
-      new Date(coupon.endDate) <
-        now
-    ) {
+    if (coupon.endDate && new Date(coupon.endDate) < now) {
       Swal.fire({
         icon: "error",
         title: "Coupon Expired",
         text: `Coupon expired on ${new Date(
           coupon.endDate,
         ).toLocaleDateString()}`,
-        confirmButtonColor:
-          "#7c3aed",
+        confirmButtonColor: "#7c3aed",
       });
 
       return;
@@ -564,24 +454,15 @@ const amount = Number(booking.totalAmount || 0);
      */
 
     if (
-      coupon.redeemLimit !==
-        null &&
-      coupon.redeemLimit !==
-        undefined &&
-      Number(
-        coupon.usedCount || 0,
-      ) >=
-        Number(
-          coupon.redeemLimit,
-        )
+      coupon.redeemLimit !== null &&
+      coupon.redeemLimit !== undefined &&
+      Number(coupon.usedCount || 0) >= Number(coupon.redeemLimit)
     ) {
       Swal.fire({
         icon: "error",
         title: "Coupon Limit Reached",
-        text:
-          "This coupon redemption limit has been reached.",
-        confirmButtonColor:
-          "#7c3aed",
+        text: "This coupon redemption limit has been reached.",
+        confirmButtonColor: "#7c3aed",
       });
 
       return;
@@ -597,10 +478,8 @@ const amount = Number(booking.totalAmount || 0);
       Swal.fire({
         icon: "error",
         title: "Booking Not Found",
-        text:
-          "Booking ID is required to verify this coupon.",
-        confirmButtonColor:
-          "#7c3aed",
+        text: "Booking ID is required to verify this coupon.",
+        confirmButtonColor: "#7c3aed",
       });
 
       return;
@@ -620,21 +499,16 @@ const amount = Number(booking.totalAmount || 0);
        */
       setVerifiedCouponData(null);
 
-      const result =
-        await verifyServiceCoupon({
-          variables: {
-            input: {
-              bookingId:
-                bookingId,
-              couponCode:
-                coupon.code,
-            },
+      const result = await verifyServiceCoupon({
+        variables: {
+          input: {
+            bookingId: bookingId,
+            couponCode: coupon.code,
           },
-        });
+        },
+      });
 
-      const verification =
-        result?.data
-          ?.verifyServiceCoupon;
+      const verification = result?.data?.verifyServiceCoupon;
 
       /*
        * =====================================================
@@ -643,10 +517,7 @@ const amount = Number(booking.totalAmount || 0);
        */
 
       if (!verification?.success) {
-        throw new Error(
-          verification?.message ||
-            "Coupon verification failed",
-        );
+        throw new Error(verification?.message || "Coupon verification failed");
       }
 
       /*
@@ -655,9 +526,7 @@ const amount = Number(booking.totalAmount || 0);
        * =====================================================
        */
 
-      const verifiedCoupon =
-        verification?.coupon ||
-        coupon;
+      const verifiedCoupon = verification?.coupon || coupon;
 
       /*
        * =====================================================
@@ -665,13 +534,9 @@ const amount = Number(booking.totalAmount || 0);
        * =====================================================
        */
 
-      setSelectedCoupon(
-        verifiedCoupon,
-      );
+      setSelectedCoupon(verifiedCoupon);
 
-      setVerifiedCouponData(
-        verification,
-      );
+      setVerifiedCouponData(verification);
 
       /*
        * Close modal
@@ -686,31 +551,23 @@ const amount = Number(booking.totalAmount || 0);
        * =====================================================
        */
 
-      if (
-        verifiedCoupon.type ===
-        "CASHBACK"
-      ) {
+      if (verifiedCoupon.type === "CASHBACK") {
         Swal.fire({
           icon: "success",
           title: "Coupon Applied 🎉",
           text: `Cashback coupon ${verifiedCoupon.code} applied successfully.`,
-          confirmButtonColor:
-            "#7c3aed",
+          confirmButtonColor: "#7c3aed",
         });
       } else {
         Swal.fire({
           icon: "success",
           title: "Congratulations 🎉",
           text: `Coupon ${verifiedCoupon.code} applied successfully.`,
-          confirmButtonColor:
-            "#7c3aed",
+          confirmButtonColor: "#7c3aed",
         });
       }
     } catch (error) {
-      console.error(
-        "VERIFY_SERVICE_COUPON error:",
-        error,
-      );
+      console.error("VERIFY_SERVICE_COUPON error:", error);
 
       /*
        * IMPORTANT:
@@ -724,11 +581,8 @@ const amount = Number(booking.totalAmount || 0);
       Swal.fire({
         icon: "error",
         title: "Coupon Not Applied",
-        text:
-          error?.message ||
-          "Unable to verify coupon.",
-        confirmButtonColor:
-          "#7c3aed",
+        text: error?.message || "Unable to verify coupon.",
+        confirmButtonColor: "#7c3aed",
       });
     } finally {
       setCouponVerifying(false);
@@ -742,39 +596,28 @@ const amount = Number(booking.totalAmount || 0);
    */
 
   const applyCouponByCode = async () => {
-    const code =
-      couponCode
-        .trim()
-        .toUpperCase();
+    const code = couponCode.trim().toUpperCase();
 
     if (!code) {
       Swal.fire({
         icon: "warning",
         title: "Enter Coupon Code",
-        confirmButtonColor:
-          "#7c3aed",
+        confirmButtonColor: "#7c3aed",
       });
 
       return;
     }
 
-    const coupon =
-      availableCoupons.find(
-        (item) =>
-          item?.code
-            ?.trim()
-            ?.toUpperCase() ===
-          code,
-      );
+    const coupon = availableCoupons.find(
+      (item) => item?.code?.trim()?.toUpperCase() === code,
+    );
 
     if (!coupon) {
       Swal.fire({
         icon: "error",
         title: "Invalid Coupon",
-        text:
-          "Coupon code not found or coupon is not applicable.",
-        confirmButtonColor:
-          "#7c3aed",
+        text: "Coupon code not found or coupon is not applicable.",
+        confirmButtonColor: "#7c3aed",
       });
 
       return;
@@ -807,10 +650,8 @@ const amount = Number(booking.totalAmount || 0);
     Swal.fire({
       icon: "success",
       title: "Coupon Removed",
-      text:
-        "Coupon has been removed successfully.",
-      confirmButtonColor:
-        "#7c3aed",
+      text: "Coupon has been removed successfully.",
+      confirmButtonColor: "#7c3aed",
       timer: 1200,
       showConfirmButton: false,
     });
@@ -824,102 +665,59 @@ const amount = Number(booking.totalAmount || 0);
 
   return (
     <div className="text-gray-500 lg:w-[80%] w-full md:p-4 p-2 bg-white rounded-xl shadow-md flex flex-col gap-3 my-4 sm:my-8 place-self-center">
-
       <div className="grid grid-cols-1 w-full sm:gap-6 md:grid-cols-3">
-
         {/* =====================================================
             PAYMENT SUMMARY
         ===================================================== */}
 
         <div className="p-4 shadow-xl w-full mb-5 sm:mb-0 rounded-xl bg-white">
-
           <h3 className="bg-gradient-to-r text-sm sm:text-md text-center from-purple-400 to-purple-600 py-2 px-3 text-white rounded-lg font-bold mb-4">
             Dhwani Services Payment
           </h3>
 
           <div className="sm:space-y-3 space-y-2 text-sm sm:text-md w-full text-black">
-
             {/* ITEM */}
 
             <div className="flex justify-between">
-              <span>
-                Item
-              </span>
+              <span>Item</span>
 
-              <span className="font-semibold">
-                {title}
-              </span>
+              <span className="font-semibold">{title}</span>
             </div>
-
-          
 
             {/* ORIGINAL AMOUNT */}
 
             <div className="flex justify-between">
-              <span>
-                Amount
-              </span>
+              <span>Amount</span>
 
-              <span>
-                ₹ {amount.toFixed(2)}
-              </span>
+              <span>₹ {amount.toFixed(2)}</span>
             </div>
 
             {/* DISCOUNT */}
 
-            {selectedCoupon?.type ===
-              "DISCOUNT" && (
+            {selectedCoupon?.type === "DISCOUNT" && (
               <div className="flex justify-between text-green-600">
+                <span>Coupon Discount</span>
 
-                <span>
-                  Coupon Discount
-                </span>
-
-                <span>
-                  - ₹
-                  {discountAmount.toFixed(
-                    2,
-                  )}
-                </span>
-
+                <span>- ₹{discountAmount.toFixed(2)}</span>
               </div>
             )}
 
             {/* DISCOUNTED PRICE */}
 
-            {selectedCoupon?.type ===
-              "DISCOUNT" && (
+            {selectedCoupon?.type === "DISCOUNT" && (
               <div className="flex justify-between">
+                <span>Price After Discount</span>
 
-                <span>
-                  Price After Discount
-                </span>
-
-                <span>
-                  ₹
-                  {discountedPrice.toFixed(
-                    2,
-                  )}
-                </span>
-
+                <span>₹{discountedPrice.toFixed(2)}</span>
               </div>
             )}
 
             {/* GST */}
 
             <div className="flex justify-between">
+              <span>GST @18%</span>
 
-              <span>
-                GST @18%
-              </span>
-
-              <span>
-                ₹
-                {gstAmount.toFixed(
-                  2,
-                )}
-              </span>
-
+              <span>₹{gstAmount.toFixed(2)}</span>
             </div>
 
             {/* =================================================
@@ -927,30 +725,19 @@ const amount = Number(booking.totalAmount || 0);
             ================================================= */}
 
             <div className="sm:mt-4 mt-2">
-
               <div className="border border-gray-300 rounded-2xl px-3 sm:py-3 py-1 flex justify-between items-center">
-
                 <span className="text-purple-400 font-semibold text-xs sm:text-sm">
-
                   {selectedCoupon
                     ? `${selectedCoupon.code} Applied`
                     : "Apply Coupon"}
-
                 </span>
 
                 {selectedCoupon ? (
                   <div className="flex gap-2">
-
                     <button
                       type="button"
-                      disabled={
-                        couponVerifying
-                      }
-                      onClick={() =>
-                        setShowCouponModal(
-                          true,
-                        )
-                      }
+                      disabled={couponVerifying}
+                      onClick={() => setShowCouponModal(true)}
                       className="text-white bg-purple-600 rounded-full px-3 py-1 text-xs cursor-pointer font-semibold disabled:opacity-50"
                     >
                       Change
@@ -958,32 +745,22 @@ const amount = Number(booking.totalAmount || 0);
 
                     <button
                       type="button"
-                      disabled={
-                        couponVerifying
-                      }
-                      onClick={
-                        removeCoupon
-                      }
+                      disabled={couponVerifying}
+                      onClick={removeCoupon}
                       className="text-red-600 text-xs bg-red-100 px-2 py-1 rounded-full cursor-pointer font-semibold disabled:opacity-50"
                     >
                       Remove
                     </button>
-
                   </div>
                 ) : (
                   <button
                     type="button"
-                    onClick={() =>
-                      setShowCouponModal(
-                        true,
-                      )
-                    }
+                    onClick={() => setShowCouponModal(true)}
                     className="text-white bg-green-500 rounded-full px-2 py-1 text-xs sm:text-sm cursor-pointer font-semibold"
                   >
                     Apply
                   </button>
                 )}
-
               </div>
             </div>
 
@@ -991,13 +768,9 @@ const amount = Number(booking.totalAmount || 0);
 
             {/* CASHBACK */}
 
-            {selectedCoupon?.type ===
-              "CASHBACK" && (
+            {selectedCoupon?.type === "CASHBACK" && (
               <div className="flex justify-between text-green-600">
-
-                <span>
-                  Cashback
-                </span>
+                <span>Cashback</span>
 
                 <span>
                   {verifiedCouponData?.cashback ??
@@ -1005,27 +778,16 @@ const amount = Number(booking.totalAmount || 0);
                     0}
                   %
                 </span>
-
               </div>
             )}
 
             {/* FINAL AMOUNT */}
 
             <div className="flex justify-between font-bold text-sm sm:text-base">
+              <span>Total Payable</span>
 
-              <span>
-                Total Payable
-              </span>
-
-              <span>
-                ₹
-                {finalAmount.toFixed(
-                  2,
-                )}
-              </span>
-
+              <span>₹{finalAmount.toFixed(2)}</span>
             </div>
-
           </div>
         </div>
 
@@ -1035,37 +797,15 @@ const amount = Number(booking.totalAmount || 0);
 
         <PayOPT
           type="PUJA"
-
           pujaName={title}
-
           bookingId={booking.id}
-
           amount={finalAmount}
-
-          oriamount={
-            booking.amount
-          }
-
-          coupon_id={
-            selectedCoupon?.id ??
-            null
-          }
-
-          couponprice={
-            discountAmount
-          }
-
-          coupon_code={
-            selectedCoupon?.code ??
-            null
-          }
-
-          coupon_type={
-            selectedCoupon?.type ??
-            null
-          }
+          oriamount={booking.amount}
+          coupon_id={selectedCoupon?.id ?? null}
+          couponprice={discountAmount}
+          coupon_code={selectedCoupon?.code ?? null}
+          coupon_type={selectedCoupon?.type ?? null}
         />
-
       </div>
 
       {/* =======================================================
@@ -1074,13 +814,10 @@ const amount = Number(booking.totalAmount || 0);
 
       {showCouponModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-
           <div className="bg-white rounded-xl w-80 sm:w-[400px] p-5 max-h-[80vh] overflow-y-auto">
-
             {/* HEADER */}
 
             <div className="flex bg-purple-200 rounded-2xl px-4 py-2 text-black items-center justify-between">
-
               <h2 className="font-bold text-sm sm:text-base">
                 Available Coupons
               </h2>
@@ -1088,12 +825,8 @@ const amount = Number(booking.totalAmount || 0);
               <button
                 type="button"
                 className="cursor-pointer hover:scale-104"
-                onClick={
-                  closeCoup
-                }
-                disabled={
-                  couponVerifying
-                }
+                onClick={closeCoup}
+                disabled={couponVerifying}
               >
                 <svg
                   height={22}
@@ -1105,7 +838,6 @@ const amount = Number(booking.totalAmount || 0);
                   <path d="M320 576C461.4 576 576 461.4 576 320C576 178.6 461.4 64 320 64C178.6 64 64 178.6 64 320C64 461.4 178.6 576 320 576zM231 231C240.4 221.6 255.6 221.6 264.9 231L319.9 286L374.9 231C384.3 221.6 399.5 221.6 408.8 231C418.1 240.4 418.2 255.6 408.8 264.9L353.8 319.9L408.8 374.9C418.2 384.3 418.2 399.5 408.8 408.8C399.4 418.1 384.2 418.2 374.9 408.8L319.9 353.8L264.9 408.8C255.5 418.2 240.3 418.2 231 408.8C221.7 399.4 221.6 384.2 231 374.9z" />
                 </svg>
               </button>
-
             </div>
 
             {/* =================================================
@@ -1113,23 +845,13 @@ const amount = Number(booking.totalAmount || 0);
             ================================================= */}
 
             <div className="flex items-center gap-2 mt-4">
-
               <input
                 type="text"
                 value={couponCode}
-                disabled={
-                  couponVerifying
-                }
-                onChange={(e) =>
-                  setCouponCode(
-                    e.target.value.toUpperCase(),
-                  )
-                }
+                disabled={couponVerifying}
+                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
                 onKeyDown={(e) => {
-                  if (
-                    e.key ===
-                    "Enter"
-                  ) {
+                  if (e.key === "Enter") {
                     applyCouponByCode();
                   }
                 }}
@@ -1139,19 +861,12 @@ const amount = Number(booking.totalAmount || 0);
 
               <button
                 type="button"
-                disabled={
-                  couponVerifying
-                }
-                onClick={
-                  applyCouponByCode
-                }
+                disabled={couponVerifying}
+                onClick={applyCouponByCode}
                 className="rounded-full bg-purple-600 text-white px-5 py-1 sm:py-2 text-xs sm:text-sm font-semibold hover:bg-purple-700 transition disabled:opacity-50"
               >
-                {couponVerifying
-                  ? "Verifying..."
-                  : "Apply"}
+                {couponVerifying ? "Verifying..." : "Apply"}
               </button>
-
             </div>
 
             {/* =================================================
@@ -1190,8 +905,7 @@ const amount = Number(booking.totalAmount || 0);
 
             {!couponLoading &&
               !couponError &&
-              availableCoupons.length ===
-                0 && (
+              availableCoupons.length === 0 && (
                 <div className="text-center text-sm text-gray-500 mt-5">
                   No coupons available for this service.
                 </div>
@@ -1202,112 +916,78 @@ const amount = Number(booking.totalAmount || 0);
             ================================================= */}
 
             {!couponVerifying &&
-              availableCoupons.map(
-                (coupon) => {
-                  const isSelected =
-                    selectedCoupon?.id ===
-                    coupon.id;
+              availableCoupons.map((coupon) => {
+                const isSelected = selectedCoupon?.id === coupon.id;
 
-                  return (
-                    <div
-                      key={coupon.id}
-                      onClick={() =>
-                        applyCoupon(
-                          coupon,
-                        )
-                      }
-                      className={`border text-black border-gray-300 rounded-2xl shadow-xl p-3 mb-3 mt-5 cursor-pointer transition ${
-                        isSelected
-                          ? "bg-green-100 border-green-500"
-                          : "bg-gradient-to-r from-purple-200 via-violet-200 to-indigo-200 hover:bg-gray-100"
-                      }`}
-                    >
+                return (
+                  <div
+                    key={coupon.id}
+                    onClick={() => applyCoupon(coupon)}
+                    className={`border text-black border-gray-300 rounded-2xl shadow-xl p-3 mb-3 mt-5 cursor-pointer transition ${
+                      isSelected
+                        ? "bg-green-100 border-green-500"
+                        : "bg-gradient-to-r from-purple-200 via-violet-200 to-indigo-200 hover:bg-gray-100"
+                    }`}
+                  >
+                    <div className="flex justify-between items-center">
+                      <div className="font-semibold text-sm">{coupon.code}</div>
 
-                      <div className="flex justify-between items-center">
+                      {isSelected && (
+                        <span className="text-xs text-green-700 font-bold">
+                          Applied
+                        </span>
+                      )}
+                    </div>
 
-                        <div className="font-semibold text-sm">
-                          {coupon.code}
-                        </div>
-
-                        {isSelected && (
-                          <span className="text-xs text-green-700 font-bold">
-                            Applied
-                          </span>
-                        )}
-
+                    {coupon.description && (
+                      <div className="text-xs sm:text-sm text-gray-600 mt-1">
+                        {coupon.description}
                       </div>
+                    )}
+                    {/* Coupon category */}
+{coupon.applicable && (
+  <div className="text-xs sm:text-sm text-purple-700 font-medium mt-1 capitalize">
+    Applicable on: {coupon.applicable}
+  </div>
+)}
 
-                      {coupon.description && (
-                        <div className="text-xs sm:text-sm text-gray-600 mt-1">
-                          {
-                            coupon.description
-                          }
+                    <div className="text-xs sm:text-sm text-gray-600 mt-1">
+                      {coupon.type === "DISCOUNT" &&
+                        coupon.flatAmount !== null &&
+                        coupon.flatAmount !== undefined &&
+                        `₹${coupon.flatAmount} OFF`}
+
+                      {coupon.type === "DISCOUNT" &&
+                        coupon.percentage !== null &&
+                        coupon.percentage !== undefined &&
+                        `${coupon.percentage}% OFF`}
+
+                      {coupon.type === "CASHBACK" &&
+                        coupon.percentage !== null &&
+                        coupon.percentage !== undefined &&
+                        `${coupon.percentage}% Cashback`}
+                    </div>
+
+                    {coupon.minOrderAmount !== null &&
+                      coupon.minOrderAmount !== undefined && (
+                        <div className="text-xs text-gray-500 mt-1">
+                          Minimum order: ₹{coupon.minOrderAmount}
                         </div>
                       )}
 
-                      <div className="text-xs sm:text-sm text-gray-600 mt-1">
-
-                        {coupon.type ===
-                          "DISCOUNT" &&
-                          coupon.flatAmount !==
-                            null &&
-                          coupon.flatAmount !==
-                            undefined &&
-                          `₹${coupon.flatAmount} OFF`}
-
-                        {coupon.type ===
-                          "DISCOUNT" &&
-                          coupon.percentage !==
-                            null &&
-                          coupon.percentage !==
-                            undefined &&
-                          `${coupon.percentage}% OFF`}
-
-                        {coupon.type ===
-                          "CASHBACK" &&
-                          coupon.percentage !==
-                            null &&
-                          coupon.percentage !==
-                            undefined &&
-                          `${coupon.percentage}% Cashback`}
-
-                      </div>
-
-                      {coupon.minOrderAmount !==
-                        null &&
-                        coupon.minOrderAmount !==
-                          undefined && (
-                          <div className="text-xs text-gray-500 mt-1">
-                            Minimum order: ₹
-                            {
-                              coupon.minOrderAmount
-                            }
-                          </div>
-                        )}
-
-                      {coupon.type ===
-                        "DISCOUNT" &&
-                        coupon.maxDiscount !==
-                          null &&
-                        coupon.maxDiscount !==
-                          undefined && (
-                          <div className="text-xs text-gray-500 mt-1">
-                            Maximum discount: ₹
-                            {
-                              coupon.maxDiscount
-                            }
-                          </div>
-                        )}
-
-                    </div>
-                  );
-                },
-              )}
-
+                    {coupon.type === "DISCOUNT" &&
+                      coupon.maxDiscount !== null &&
+                      coupon.maxDiscount !== undefined && (
+                        <div className="text-xs text-gray-500 mt-1">
+                          Maximum discount: ₹{coupon.maxDiscount}
+                        </div>
+                      )}
+                  </div>
+                );
+              })}
           </div>
         </div>
       )}
-
     </div>
   );
 }
