@@ -11,6 +11,7 @@ import FAQueLazy from "./Custom/FAQue.lazy";
 import TestimonLazy from "./Custom/Testimon.lazy";
 import AboutUsLazy from "./Custom/AboutUs.lazy";
 import DownappSection from "./Custom/DownappSection";
+import PujaSection from "../app/puja-services/PujaSection"
 // import Consulque from "./Consulque";
 // import ProblembaseClient from "./Custom/ProblembaseClient";
 
@@ -33,6 +34,8 @@ export default function Mainhomecom() {
 
     
       <RemecalcLazy />
+
+      <PujaSection />
 
       <AstrostoreLazy />
 

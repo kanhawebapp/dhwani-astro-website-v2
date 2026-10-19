@@ -179,11 +179,7 @@ const Heal = ({ categorySlug, serviceSlug }) => {
     }
   };
 
-  // =====================================================
-  // ASTROLOGER SELECT
-  // UPDATE BOOKING
-  // THEN REDIRECT TO PAYMENT
-  // =====================================================
+
 
   const handleAstrologerSelect = async (mapping) => {
     const astrologerId = mapping?.astrologer?.id;
