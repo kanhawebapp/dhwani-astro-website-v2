@@ -373,13 +373,13 @@ const availableCoupons = (couponData?.getCoupons || []).filter((coupon) => {
      */
 
     const applicable = coupon.applicable?.trim()?.toLowerCase();
-
-    if (
-      applicable &&
-      applicable !== "service" &&
-      applicable !== "services" &&
-      applicable !== "both"
-    ) {
+if (
+  applicable &&
+  applicable !== "puja" &&
+  applicable !== "service" &&
+  applicable !== "services" &&
+  applicable !== "both"
+) {
       Swal.fire({
         icon: "error",
         title: "Coupon Not Applicable",
