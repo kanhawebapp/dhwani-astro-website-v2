@@ -11,20 +11,7 @@ import {
 import { useState } from "react";
 import Swal from "sweetalert2";
 
-/*
- * =========================================================
- * VERIFY SERVICE COUPON
- * =========================================================
- *
- * Coupon is verified when user clicks Apply.
- *
- * It is NOT verified inside PayOPT during order creation.
- *
- * Required:
- * - bookingId
- * - couponCode
- * =========================================================
- */
+
 
 const VERIFY_SERVICE_COUPON = gql`
   mutation VerifyServiceCoupon(

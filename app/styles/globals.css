@@ -1518,6 +1518,55 @@ body {
   background-color: rgba(0, 0, 0, 0.7); 
 }
 
+
+@keyframes puja-marquee {
+  0% {
+    transform: translateX(-10%);
+  }
+
+  100% {
+    transform: translateX(10%);
+  }
+}
+
+.animate-puja-marquee {
+  animation: puja-marquee 15s linear infinite alternate;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-puja-marquee {
+    animation: none;
+  }
+}
+
+.review-slider {
+  width: 100%;
+}
+
+.review-track {
+  width: max-content;
+  animation: review-infinite-scroll 30s linear infinite;
+}
+
+.review-slider:hover .review-track {
+  animation-play-state: paused;
+}
+
+@keyframes review-infinite-scroll {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .review-track {
+    animation: none;
+  }
+}
 /* media queries ************************************** */
 
 @media (319px <=width <=430px) {
