@@ -1,4 +1,3 @@
-
 "use client";
 
 import Image from "next/image";
@@ -11,7 +10,6 @@ import { gql } from "@apollo/client";
 
 import { CREATE_HEALING_ORDER } from "@/app/graphql/gqlQuery";
 
-
 const CREATE_ORDER = gql`
   mutation CreateOrder($input: CreateOrderInput!) {
     createOrder(input: $input) {
@@ -23,8 +21,7 @@ const CREATE_ORDER = gql`
   }
 `;
 
-
-const CREATE_PUJA_ORDER = gql`
+export const CREATE_PUJA_ORDER = gql`
   mutation CreatePujaOrder($input: CreatePujaOrderInput!) {
     createPujaOrder(input: $input) {
       success
@@ -32,11 +29,12 @@ const CREATE_PUJA_ORDER = gql`
       orderId
       amount
       currency
-      pujaName
+      bookingId
+      pujaTitle
+      totalAmount
     }
   }
 `;
-
 
 export default function PayOPT({
   type,
@@ -49,20 +47,22 @@ export default function PayOPT({
   cashback,
   packid,
   bookingId,
-  pujaName
+  pujaName,
 }) {
-
-  console.log("xxxxxxxxxxxxxxxxxxxxxx",   type,
-  amount,
-  oriamount,
-  coupon_code,
-  coupon_id,
-  couponprice,
-  coupon_type,
-  cashback,
-  packid,
-  bookingId,pujaName);
-  
+  console.log(
+    "xxxxxxxxxxxxxxxxxxxxxx",
+    type,
+    amount,
+    oriamount,
+    coupon_code,
+    coupon_id,
+    couponprice,
+    coupon_type,
+    cashback,
+    packid,
+    bookingId,
+    pujaName,
+  );
 
   const [geoInfo, setGeoInfo] = useState({
     ip: "",
@@ -71,21 +71,16 @@ export default function PayOPT({
     country: "",
   });
 
-
   const [loading, setLoading] = useState(false);
 
- 
   const [user, setUserData] = useState(null);
 
   const route = useRouter();
 
-
   useEffect(() => {
     const getGeo = async () => {
       try {
-        const res = await fetch(
-          "https://ipapi.co/json/",
-        );
+        const res = await fetch("https://ipapi.co/json/");
 
         const data = await res.json();
 
@@ -93,33 +88,23 @@ export default function PayOPT({
           ip: data.ip || "",
           city: data.city || "",
           state: data.region || "",
-          country:
-            data.country_name || "",
+          country: data.country_name || "",
         });
       } catch (err) {
-        console.error(
-          "Geo fetch failed",
-          err,
-        );
+        console.error("Geo fetch failed", err);
       }
     };
 
     getGeo();
   }, []);
 
+  const [createOrder] = useMutation(CREATE_ORDER);
 
-  const [createOrder] =
-    useMutation(CREATE_ORDER);
+  const [createHealingOrder] = useMutation(CREATE_HEALING_ORDER);
 
-  const [createHealingOrder] =
-    useMutation(CREATE_HEALING_ORDER);
-
-const [createPujaOrder] = useMutation(CREATE_PUJA_ORDER);
-  console.log("sssssssssssssssssssssssssssssss",amount,oriamount,);
-  const payAmount = Number(
-    oriamount || 0,
-  )
-
+  const [createPujaOrder] = useMutation(CREATE_PUJA_ORDER);
+  console.log("sssssssssssssssssssssssssssssss", amount, oriamount);
+  const payAmount = Number(oriamount || 0);
 
   const handleCheckout = async () => {
     try {
@@ -127,184 +112,98 @@ const [createPujaOrder] = useMutation(CREATE_PUJA_ORDER);
 
       let order;
 
-
       if (type === "RECHARGE") {
-       
-        const result =
-          await createOrder({
-            variables: {
-              input: {
-                rechargePackId:
-                  packid,
+        const result = await createOrder({
+          variables: {
+            input: {
+              rechargePackId: packid,
 
-                coupan_code:
-                  coupon_code || "",
-              },
+              coupan_code: coupon_code || "",
             },
-          });
+          },
+        });
 
-        order =
-          result?.data?.createOrder;
-        console.log("order------recharge----",order);
-        console.log(
-          "Recharge order result:",
-          result,
-        );
-      }
-
-   
-      else if (
-        type === "PUJA"
-       ) {
-    
-
+        order = result?.data?.createOrder;
+        console.log("order------recharge----", order);
+        console.log("Recharge order result:", result);
+      } else if (type === "PUJA") {
         if (!bookingId) {
-          throw new Error(
-            "Booking ID is required",
-          );
+          throw new Error("Booking ID is required");
         }
 
-        const result =
-          await createPujaOrder({
-            variables: {
-              input: {
-                bookingId:
-                  bookingId,
-
-             
-                amount:
-                  payAmount,
-
-                
-                couponCode:
-                  coupon_code || "",
-              },
+        const result = await createPujaOrder({
+          variables: {
+            input: {
+              bookingId: bookingId,
+              couponCode: coupon_code || "",
             },
-          });
+          },
+        });
 
-        order =
-          result?.data
-            ?.createHealingOrder;
+        order = result?.data?.createPujaOrder;
 
-        console.log(
-          "Healing order result:",
-          result,
-        );
+        console.log("puja order result:", result);
 
-        console.log(
-          "Healing order order:",
-          order,
-        );
-      }
-       else if (
-        type === "SERVICE"
-       ) {
-    
-
+        console.log("puja order order:", order);
+      } else if (type === "SERVICE") {
         if (!bookingId) {
-          throw new Error(
-            "Booking ID is required",
-          );
+          throw new Error("Booking ID is required");
         }
 
-        const result =
-          await createHealingOrder({
-            variables: {
-              input: {
-                bookingId:
-                  bookingId,
+        const result = await createHealingOrder({
+          variables: {
+            input: {
+              bookingId: bookingId,
 
-             
-                amount:
-                  payAmount,
+              amount: payAmount,
 
-                
-                couponCode:
-                  coupon_code || "",
-              },
+              couponCode: coupon_code || "",
             },
-          });
+          },
+        });
 
-        order =
-          result?.data
-            ?.createHealingOrder;
+        order = result?.data?.createHealingOrder;
 
-        console.log(
-          "Healing order result:",
-          result,
-        );
+        console.log("Healing order result:", result);
 
-        console.log(
-          "Healing order order:",
-          order,
-        );
+        console.log("Healing order order:", order);
+      } else {
+        throw new Error(`Unsupported payment type: ${type}`);
       }
 
-
-      else {
-        throw new Error(
-          `Unsupported payment type: ${type}`,
-        );
-      }
-
-  
       if (!order?.success) {
-        toast.error(
-          order?.message ||
-            "Error creating order",
-        );
+        toast.error(order?.message || "Error creating order");
 
         setLoading(false);
 
         return;
       }
 
-
       let razorpayAmount;
 
       if (type === "RECHARGE") {
-        razorpayAmount = Number(
-          order.amount || 0,
-        );
+        razorpayAmount = Number(order.amount || 0);
       } else {
- 
-        razorpayAmount = Number(
-          order.amount || 0,
-        );
+        razorpayAmount = Number(order.amount || 0);
       }
 
-    
-      if (
-        !razorpayAmount ||
-        razorpayAmount <= 0
-      ) {
-        throw new Error(
-          "Invalid payment amount received from server",
-        );
+      if (!razorpayAmount || razorpayAmount <= 0) {
+        throw new Error("Invalid payment amount received from server");
       }
-
 
       const options = {
-        key:
-          process.env
-            .NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
 
-        amount:
-          razorpayAmount,
+        amount: razorpayAmount,
 
-        currency:
-          order.currency || "INR",
+        currency: order.currency || "INR",
 
-        order_id:
-          order.orderId,
+        order_id: order.orderId,
 
-        name:
-          "Dhwani Astro LLP",
+        name: "Dhwani Astro LLP",
 
         description:
-          type === "RECHARGE"
-            ? "Wallet Recharge"
-            : "Healing Service",
+          type === "RECHARGE" ? "Wallet Recharge" : "Healing Service",
 
         prefill: {
           name: "",
@@ -312,190 +211,114 @@ const [createPujaOrder] = useMutation(CREATE_PUJA_ORDER);
           contact: "",
         },
 
-
         notes:
           type === "RECHARGE"
             ? {
-                userId:
-                  user?.id || "",
+                userId: user?.id || "",
 
-                rechargePackId:
-                  packid,
+                rechargePackId: packid,
 
-                couponId:
-                  coupon_id || "",
+                couponId: coupon_id || "",
 
-                couponCode:
-                  coupon_code || "",
+                couponCode: coupon_code || "",
 
-                couponType:
-                  coupon_type || "",
+                couponType: coupon_type || "",
 
-            
-                originalAmount:
-                  Number(
-                    oriamount || 0,
-                  ),
+                originalAmount: Number(oriamount || 0),
 
-                discount:
-                  Number(
-                    couponprice || 0,
-                  ),
+                discount: Number(couponprice || 0),
 
-                cashback:
-                  Number(
-                    cashback || 0,
-                  ),
+                cashback: Number(cashback || 0),
 
-              
-                finalAmount:
-                  razorpayAmount / 100,
+                finalAmount: razorpayAmount / 100,
 
-                ipAddress:
-                  geoInfo.ip,
+                ipAddress: geoInfo.ip,
 
-                state:
-                  geoInfo.state,
+                state: geoInfo.state,
 
-                city:
-                  geoInfo.city,
+                city: geoInfo.city,
 
-                country:
-                  geoInfo.country,
+                country: geoInfo.country,
 
-                platform:
-                  "WEB",
+                platform: "WEB",
               }
             : {
-                userId:
-                  user?.id || "",
+                userId: user?.id || "",
 
-                bookingId:
-                  bookingId,
+                bookingId: bookingId,
 
-                couponId:
-                  coupon_id || "",
+                couponId: coupon_id || "",
 
-                couponCode:
-                  coupon_code || "",
+                couponCode: coupon_code || "",
 
-                couponType:
-                  coupon_type || "",
+                couponType: coupon_type || "",
 
-                discount:
-                  Number(
-                    couponprice || 0,
-                  ),
+                discount: Number(couponprice || 0),
 
-                cashback:
-                  Number(
-                    cashback || 0,
-                  ),
+                cashback: Number(cashback || 0),
 
-                originalAmount:
-                  Number(
-                    oriamount || 0,
-                  ),
+                originalAmount: Number(oriamount || 0),
 
                 /*
                  * Service order amount is assumed
                  * to be returned in paise as well.
                  */
-                finalAmount:
-                  razorpayAmount / 100,
+                finalAmount: razorpayAmount / 100,
 
-                ipAddress:
-                  geoInfo.ip,
+                ipAddress: geoInfo.ip,
 
-                state:
-                  geoInfo.state,
+                state: geoInfo.state,
 
-                city:
-                  geoInfo.city,
+                city: geoInfo.city,
 
-                country:
-                  geoInfo.country,
+                country: geoInfo.country,
 
-                platform:
-                  "WEB",
+                platform: "WEB",
               },
 
-        handler:
-          async function (
-            response,
-          ) {
-            console.log(
-              "Razorpay payment response:",
-              response,
-            );
+        handler: async function (response) {
+          console.log("Razorpay payment response:", response);
 
-            toast.success(
-              "Payment Successful",
-            );
+          toast.success("Payment Successful");
 
-            route.push("/");
-          },
-
-   
-        modal: {
-          ondismiss:
-            function () {
-              setLoading(false);
-
-              toast.error(
-                "Payment Cancelled",
-              );
-            },
+          route.push("/");
         },
 
-     
+        modal: {
+          ondismiss: function () {
+            setLoading(false);
+
+            toast.error("Payment Cancelled");
+          },
+        },
+
         theme: {
           color: "#fff49e",
         },
       };
 
-  
       setLoading(false);
 
-
-      if (
-        typeof window ===
-        "undefined"
-      ) {
-        throw new Error(
-          "Browser window not available",
-        );
+      if (typeof window === "undefined") {
+        throw new Error("Browser window not available");
       }
-
 
       if (!window.Razorpay) {
-        throw new Error(
-          "Razorpay SDK is not loaded yet. Please try again.",
-        );
+        throw new Error("Razorpay SDK is not loaded yet. Please try again.");
       }
 
-      const razor =
-        new window.Razorpay(
-          options,
-        );
+      const razor = new window.Razorpay(options);
 
       razor.open();
     } catch (error) {
-      console.error(
-        "Checkout Error:",
-        error,
-      );
+      console.error("Checkout Error:", error);
 
       setLoading(false);
 
-      toast.error(
-        error?.message ||
-          "Payment failed",
-      );
+      toast.error(error?.message || "Payment failed");
     }
   };
 
-  
   return (
     <div className="col-span-2">
       <Script
@@ -551,32 +374,28 @@ const [createPujaOrder] = useMutation(CREATE_PUJA_ORDER);
             name: "Bhim UPI",
             icon: "/prblm/bh-a.png",
           },
-        ].map(
-          (method, idx) => (
-            <button
-              type="button"
-              aria-label={`Pay with ${method.name}`}
-              disabled={loading}
-              onClick={
-                handleCheckout
-              }
-              key={idx}
-              className="bg-[linear-gradient(to_right,#a65ed677_54%,#ba38cb67_100%)] rounded-lg p-2 flex flex-col gap-1 items-center hover:scale-105 transition-transform shadow disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Image
-                src={method.icon}
-                alt={method.name}
-                width={100}
-                height={100}
-                className="sm:h-8 sm:w-10.5 h-5.7 w-7"
-              />
+        ].map((method, idx) => (
+          <button
+            type="button"
+            aria-label={`Pay with ${method.name}`}
+            disabled={loading}
+            onClick={handleCheckout}
+            key={idx}
+            className="bg-[linear-gradient(to_right,#a65ed677_54%,#ba38cb67_100%)] rounded-lg p-2 flex flex-col gap-1 items-center hover:scale-105 transition-transform shadow disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Image
+              src={method.icon}
+              alt={method.name}
+              width={100}
+              height={100}
+              className="sm:h-8 sm:w-10.5 h-5.7 w-7"
+            />
 
-              <span className="text-xs font-semibold text-center text-white sn:font-bold">
-                {method.name}
-              </span>
-            </button>
-          ),
-        )}
+            <span className="text-xs font-semibold text-center text-white sn:font-bold">
+              {method.name}
+            </span>
+          </button>
+        ))}
       </div>
     </div>
   );
