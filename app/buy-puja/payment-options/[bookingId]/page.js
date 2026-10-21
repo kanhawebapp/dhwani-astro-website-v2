@@ -26,9 +26,9 @@ const GET_PUJA_BOOKING = gql`
   }
 `;
 
-const VERIFY_SERVICE_COUPON = gql`
-  mutation VerifyServiceCoupon($input: VerifyServiceCouponInput!) {
-    verifyServiceCoupon(input: $input) {
+const VERIFY_PUJA_COUPON = gql`
+  mutation VerifyPujaCoupon($input: VerifyServiceCouponInput!) {
+    verifyPujaCoupon(input: $input) {
       success
       message
 
@@ -93,7 +93,7 @@ export default function CartPage() {
    * payableAmount
    * cashback
    *
-   * returned by VERIFY_SERVICE_COUPON.
+   * returned by VERIFY_PUJA_COUPON.
    */
   const [verifiedCouponData, setVerifiedCouponData] = useState(null);
 
@@ -103,7 +103,7 @@ export default function CartPage() {
 
   /*
    * =========================================================
-   * GET SERVICE BOOKING
+   * GET PUJA BOOKING
    * =========================================================
    */
 
@@ -139,7 +139,7 @@ export default function CartPage() {
    * =========================================================
    */
 
-  const [verifyServiceCoupon] = useMutation(VERIFY_SERVICE_COUPON);
+  const [verifyPujaCoupon] = useMutation(VERIFY_PUJA_COUPON);
 
   /*
    * =========================================================
@@ -165,7 +165,7 @@ export default function CartPage() {
 
   /*
    * =========================================================
-   * ORIGINAL SERVICE AMOUNT
+   * ORIGINAL PUJA AMOUNT
    * =========================================================
    */
 
@@ -173,7 +173,7 @@ export default function CartPage() {
 
   /*
    * =========================================================
-   * AVAILABLE SERVICE COUPONS
+   * AVAILABLE PUJA COUPONS
    * =========================================================
    */
 
@@ -200,7 +200,7 @@ const availableCoupons = (couponData?.getCoupons || []).filter((coupon) => {
    * This is only used as a fallback/display
    * before backend verification.
    *
-   * Once VERIFY_SERVICE_COUPON succeeds,
+   * Once VERIFY_PUJA_COUPON succeeds,
    * backend values are preferred.
    * =========================================================
    */
@@ -306,12 +306,12 @@ const availableCoupons = (couponData?.getCoupons || []).filter((coupon) => {
    *
    * IMPORTANT:
    *
-   * VERIFY_SERVICE_COUPON is called HERE.
+   * VERIFY_PUJA_COUPON is called HERE.
    *
    * Flow:
    *
    * 1. Frontend basic validation
-   * 2. VERIFY_SERVICE_COUPON
+   * 2. VERIFY_PUJA_COUPON
    * 3. Backend validates coupon
    * 4. Backend calculates discount
    * 5. Backend calculates GST
@@ -383,7 +383,7 @@ if (
       Swal.fire({
         icon: "error",
         title: "Coupon Not Applicable",
-        text: "This coupon cannot be used for services.",
+        text: "This coupon cannot be used for Puja bookings.",
         confirmButtonColor: "#7c3aed",
       });
 
@@ -487,19 +487,14 @@ if (
 
     /*
      * =======================================================
-     * CALL VERIFY_SERVICE_COUPON
+     * CALL VERIFY_PUJA_COUPON
      * =======================================================
      */
 
     try {
       setCouponVerifying(true);
 
-      /*
-       * Clear previous verification first.
-       */
-      setVerifiedCouponData(null);
-
-      const result = await verifyServiceCoupon({
+      const result = await verifyPujaCoupon({
         variables: {
           input: {
             bookingId: bookingId,
@@ -508,7 +503,7 @@ if (
         },
       });
 
-      const verification = result?.data?.verifyServiceCoupon;
+      const verification = result?.data?.verifyPujaCoupon;
 
       /*
        * =====================================================
@@ -567,21 +562,17 @@ if (
         });
       }
     } catch (error) {
-      console.error("VERIFY_SERVICE_COUPON error:", error);
+      console.error("VERIFY_PUJA_COUPON error:", error);
 
       /*
-       * IMPORTANT:
-       *
-       * Do NOT apply coupon if verification fails.
+       * Do not replace the currently applied coupon if this
+       * coupon verification fails.
        */
-
-      setSelectedCoupon(null);
-      setVerifiedCouponData(null);
 
       Swal.fire({
         icon: "error",
         title: "Coupon Not Applied",
-        text: error?.message || "Unable to verify coupon.",
+        text: error?.message || "Unable to verify Puja coupon.",
         confirmButtonColor: "#7c3aed",
       });
     } finally {
@@ -672,7 +663,7 @@ if (
 
         <div className="p-4 shadow-xl w-full mb-5 sm:mb-0 rounded-xl bg-white">
           <h3 className="bg-gradient-to-r text-sm sm:text-md text-center from-purple-400 to-purple-600 py-2 px-3 text-white rounded-lg font-bold mb-4">
-            Dhwani Services Payment
+            Dhwani Puja Payment
           </h3>
 
           <div className="sm:space-y-3 space-y-2 text-sm sm:text-md w-full text-black">
@@ -773,10 +764,7 @@ if (
                 <span>Cashback</span>
 
                 <span>
-                  {verifiedCouponData?.cashback ??
-                    selectedCoupon.percentage ??
-                    0}
-                  %
+                  ₹{Number(verifiedCouponData?.cashback ?? 0).toFixed(2)}
                 </span>
               </div>
             )}
@@ -800,7 +788,7 @@ if (
           pujaName={title}
           bookingId={booking.id}
           amount={finalAmount}
-          oriamount={booking.amount}
+          oriamount={booking.totalAmount}
           coupon_id={selectedCoupon?.id ?? null}
           couponprice={discountAmount}
           coupon_code={selectedCoupon?.code ?? null}
@@ -907,7 +895,7 @@ if (
               !couponError &&
               availableCoupons.length === 0 && (
                 <div className="text-center text-sm text-gray-500 mt-5">
-                  No coupons available for this service.
+                  No coupons available for Puja.
                 </div>
               )}
 
@@ -945,11 +933,11 @@ if (
                       </div>
                     )}
                     {/* Coupon category */}
-{coupon.applicable && (
-  <div className="text-xs sm:text-sm text-purple-700 font-medium mt-1 capitalize">
-    Applicable on: {coupon.applicable}
-  </div>
-)}
+                    {coupon.applicable && (
+                      <div className="text-xs sm:text-sm text-purple-700 font-medium mt-1 capitalize">
+                        Applicable on: {coupon.applicable}
+                      </div>
+                    )}
 
                     <div className="text-xs sm:text-sm text-gray-600 mt-1">
                       {coupon.type === "DISCOUNT" &&
