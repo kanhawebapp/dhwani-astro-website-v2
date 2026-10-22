@@ -25,7 +25,7 @@ const GET_PUJA_SERVICES = gql`
       price
       mrp
       discount
-      customersCount
+      rating
     }
   }
 `;
@@ -219,7 +219,7 @@ const hideHeading = pathname.includes("puja-services");
                   {/* Stars based on customer count */}
                   <div className="mt-1 flex items-center gap-1">
                     {Array.from({
-                      length: Math.max(0, Math.floor(puja.customersCount || 0)),
+                      length: Math.max(0, Math.floor(puja.rating || 0)),
                     }).map((_, index) => (
                       <svg
                         key={`${puja.id}-star-${index}`}
