@@ -9,11 +9,13 @@ import { useRouter } from "next/navigation";
 const GET_RECHARGE_PACKS = gql`
   query GetRechargePacks {
     getRechargePacks {
+      isFirstRecharge
       data {
         id
         name
         description
         price
+        coins
         talktime
       }
       totalCount
@@ -23,7 +25,7 @@ const GET_RECHARGE_PACKS = gql`
 
 const RechargePackSkeleton = () => {
   return (
-    <div className="relative flex flex-col justify-between overflow-hidden rounded-xl border border-gray-200 bg-white p-4 shadow-lg animate-pulse">
+    <div className="relative flex animate-pulse flex-col justify-between overflow-hidden rounded-xl border border-gray-200 bg-white p-4 shadow-lg">
       <span className="absolute top-[8px] left-[-32px] h-5 w-28 rotate-[-42deg] rounded-tr-lg rounded-bl-lg bg-gray-200" />
 
       <div className="text-center">
@@ -47,7 +49,9 @@ const RePack = () => {
     fetchPolicy: "network-only",
   });
 
-  const packData = data?.getRechargePacks?.data || [];
+  const rechargeResponse = data?.getRechargePacks;
+  const packData = rechargeResponse?.data ?? [];
+  const isFirstRecharge = rechargeResponse?.isFirstRecharge;
 
   const handleSelect = (id) => {
     router.push(`/add-wallet-money/cart/${id}`);
@@ -57,7 +61,7 @@ const RePack = () => {
     return (
       <div className="w-full p-6">
         <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-center">
-          <div className="relative flex w-full items-center justify-center overflow-hidden rounded-lg bg-white p-6 shadow-lg animate-pulse">
+          <div className="relative flex w-full animate-pulse items-center justify-center overflow-hidden rounded-lg bg-white p-6 shadow-lg">
             <div className="flex w-full items-center justify-between">
               <div className="h-6 w-52 rounded bg-gray-200" />
             </div>
@@ -81,8 +85,24 @@ const RePack = () => {
     );
   }
 
+    if (typeof isFirstRecharge !== "boolean") {
+    return (
+      <div className="p-6 text-center text-red-500">
+        Unable to determine your recharge status. Please try again.
+      </div>
+    );
+  }
+
+  if (packData.length === 0) {
+    return (
+      <div className="p-6 text-center text-gray-500">
+        No recharge packs are currently available.
+      </div>
+    );
+  }
+
   return (
-    <div className="w-7xl p-6">
+    <div className="w-full p-6">
       <div>
         <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div className="relative flex w-full items-center justify-center overflow-hidden rounded-lg bg-white p-6 shadow-lg">
@@ -96,39 +116,67 @@ const RePack = () => {
           </div>
         </div>
 
+        <div className="mb-6 rounded-lg border border-purple-200 bg-purple-50 p-4">
+          <p className="font-semibold text-purple-800">
+            {isFirstRecharge
+              ? "Welcome! Enjoy your first recharge."
+              : "Welcome back! Choose your recharge pack."}
+          </p>
+
+          <p className="mt-1 text-sm text-purple-700">
+            {isFirstRecharge
+              ? "Your first successful recharge will be credited according to the coins value of the selected pack."
+              : "Your selected pack will provide talktime according to the pack details."}
+          </p>
+        </div>
+
         <div className="grid grid-cols-2 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-          {packData.map((pack) => (
-            <div
-              key={pack.id}
-              className="relative flex flex-col justify-between overflow-hidden rounded-xl border border-gray-200 bg-white p-4 shadow-lg"
-            >
-              <span className="absolute top-[8px] left-[-32px] w-28 rotate-[-42deg] rounded-tr-lg rounded-bl-lg bg-gradient-to-r from-yellow-400 to-orange-400 px-2 py-1 text-center text-[8px] text-white shadow">
-                {t?.astrocard?.offer || "Special Offer"}
-              </span>
+          {packData.map((pack) => {
+            const displayAmount = isFirstRecharge
+              ? pack.coins
+              : pack.talktime;
 
-              <div className="text-center">
-                <h3 className="mb-1 text-lg font-semibold text-purple-700">
-                  {pack.name}
-                </h3>
+            const displayLabel = isFirstRecharge ? "Talktime" : "Talktime";
 
-                <p className="text-2xl font-bold text-gray-900">
-                  ₹ {pack.price}
-                </p>
-
-                <p className="mt-1 text-sm text-gray-500">
-                  Talktime : {pack.talktime}
-                </p>
-              </div>
-
-              <CustomButton
-                aria-label={`Select Pack ${pack.name}`}
-                className="mt-2 w-full rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 px-4 py-2 text-xs font-medium text-white hover:from-purple-700 hover:to-indigo-700 sm:text-sm"
-                onClick={() => handleSelect(pack.id)}
+            return (
+              <div
+                key={pack.id}
+                className="relative flex flex-col justify-between overflow-hidden rounded-xl border border-gray-200 bg-white p-4 shadow-lg"
               >
-                {t?.astrocard?.pack || "Select Pack"}
-              </CustomButton>
-            </div>
-          ))}
+                <span className="absolute top-[8px] left-[-32px] w-28 rotate-[-42deg] rounded-tr-lg rounded-bl-lg bg-gradient-to-r from-yellow-400 to-orange-400 px-2 py-1 text-center text-[8px] text-white shadow">
+                  {t?.astrocard?.offer || "Special Offer"}
+                </span>
+
+                <div className="text-center">
+                  <h3 className="mb-1 text-lg font-semibold text-purple-700">
+                    {pack.name}
+                  </h3>
+
+                  <p className="text-2xl font-bold text-gray-900">
+                    ₹ {pack.price}
+                  </p>
+
+                  <p className="mt-1 text-sm font-medium text-gray-600">
+                    {displayLabel}: {displayAmount}
+                  </p>
+
+                  {isFirstRecharge && (
+                    <p className="mt-1 text-xs text-purple-600">
+                      First Recharge Offer
+                    </p>
+                  )}
+                </div>
+
+                <CustomButton
+                  aria-label={`Select Pack ${pack.name}`}
+                  className="mt-2 w-full rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 px-4 py-2 text-xs font-medium text-white hover:from-purple-700 hover:to-indigo-700 sm:text-sm"
+                  onClick={() => handleSelect(pack.id)}
+                >
+                  {t?.astrocard?.pack || "Select Pack"}
+                </CustomButton>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

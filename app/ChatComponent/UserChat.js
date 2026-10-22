@@ -30,11 +30,13 @@ const CREATE_ORDER = gql`
 const GET_RECHARGE_PACKS = gql`
   query GetRechargePacks {
     getRechargePacks {
+      isFirstRecharge
       data {
         id
         name
         description
         price
+        coins
         talktime
       }
       totalCount
@@ -102,7 +104,7 @@ const UserChat = ({
   astro_price,
   userIntakeId,
 }) => {
-    const [geoInfo, setGeoInfo] = useState({
+  const [geoInfo, setGeoInfo] = useState({
     ip: "",
     city: "",
     state: "",
@@ -142,7 +144,7 @@ const UserChat = ({
     if (savedRoom) {
       try {
         const parsedRoom = JSON.parse(savedRoom);
-         const parsedName = JSON.parse(savedName);
+        const parsedName = JSON.parse(savedName);
 
         setStoredAstroName(parsedName?.astro_Name || "");
       } catch (error) {
@@ -180,10 +182,20 @@ const UserChat = ({
     astroid = parsed.astroid;
     astro_price = parsed.astro_price;
   }
-  const { data: rechargeData, loading: rechargePackLoading } =
-    useQuery(GET_RECHARGE_PACKS);
 
-  const rechargePacks = rechargeData?.getRechargePacks?.data || [];
+  const {
+    data: rechargeData,
+    loading: rechargePackLoading,
+    error: rechargePackError,
+  } = useQuery(GET_RECHARGE_PACKS, {
+    fetchPolicy: "network-only",
+  });
+
+  const rechargeResponse = rechargeData?.getRechargePacks;
+
+  const rechargePacks = rechargeResponse?.data || [];
+  const isFirstRecharge = rechargeResponse?.isFirstRecharge ?? false;
+  const totalRechargePacks = rechargeResponse?.totalCount ?? 0;
 
   const getintake = intakeRes?.getIntakeById;
 
@@ -415,8 +427,7 @@ const UserChat = ({
       }
 
       const options = {
-        key:
-          process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ,
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
 
         // Backend ke Razorpay order se aaya amount
         amount: order.amount,
@@ -430,10 +441,10 @@ const UserChat = ({
         notes: {
           userId: user?.id ?? "guest",
           rechargePackId: packId,
-              ipAddress: geoInfo.ip,
-                state: geoInfo.state,
-                city: geoInfo.city,
-                country: geoInfo.country,
+          ipAddress: geoInfo.ip,
+          state: geoInfo.state,
+          city: geoInfo.city,
+          country: geoInfo.country,
           platform: "WEB",
         },
 
@@ -447,7 +458,10 @@ const UserChat = ({
               localStorage.getItem(`activeRequests`) || "null",
             );
 
-            const newTime = timeLeft + selectedPack.talktime * 60/requestData?.[0]?.astrologer?.pricePerMin;
+            const newTime =
+              timeLeft +
+              (selectedPack.talktime * 60) /
+                requestData?.[0]?.astrologer?.pricePerMin;
 
             customer_recharge_completed(newTime);
 
@@ -665,7 +679,7 @@ const UserChat = ({
           `activeChatRoom_${room_Id}`,
           "activeChatSession",
           `queue_${room_Id}`,
-`timer_${room_Id}`
+          `timer_${room_Id}`,
         ].forEach((key) => {
           localStorage.removeItem(key);
         });
@@ -911,11 +925,7 @@ const UserChat = ({
         <div className="bg-gradient-to-r text-black from-purple-900 to-purple-700 rounded-full text-white px-4 py-2 flex justify-between items-center">
           <div className="flex items-center gap-3">
             <Image
-              src={
-                astro_Image
-                  ? `${BASE_URL}${astro_Image}`
-                  : "/man.png"
-              }
+              src={astro_Image ? `${BASE_URL}${astro_Image}` : "/man.png"}
               width={45}
               height={45}
               alt="astro"
@@ -950,29 +960,60 @@ const UserChat = ({
             </button>
           </div>
         </div>
-        {/* =================  RECHARGE SECTION ================= */}
+        {/* ================= RECHARGE SECTION ================= */}
+
         {timeLeft <= 60 && (
           <div className="bg-yellow-100 px-4 py-3">
             <p className="text-center text-red-500 text-xs font-semibold mb-2">
-              Your time is running low. Recharge now
+              Your time is running low. Recharge now!
             </p>
 
+            {isFirstRecharge && (
+              <p className="text-center text-green-700 text-xs font-semibold mb-2">
+                Welcome! Check out your available recharge packs.
+              </p>
+            )}
+
             {rechargePackLoading ? (
-              <p className="text-center text-xs">Loading packs...</p>
+              <p className="text-center text-xs">Loading recharge packs...</p>
+            ) : rechargePackError ? (
+              <p className="text-center text-red-600 text-xs">
+                Failed to load recharge packs. Please try again.
+              </p>
+            ) : rechargePacks.length === 0 ? (
+              <p className="text-center text-xs">
+                No recharge packs available.
+              </p>
             ) : (
               <div className="flex flex-wrap justify-center gap-3">
                 {rechargePacks.map((pack) => (
                   <button
                     key={pack.id}
+                    type="button"
                     onClick={() => handleCheckout(pack.price, pack.id)}
-                    id={pack.id}
-                    className="bg-red-500 text-white px-3 py-2 rounded-lg flex flex-col items-center text-xs"
+                    disabled={isPaused}
+                    className="bg-red-500 hover:bg-red-600 disabled:opacity-50
+              text-white px-4 py-2 rounded-lg flex flex-col
+              items-center text-xs transition"
                   >
-                    <span>₹ {pack.price}</span>
-                    <span>{pack.talktime} min</span>
+                    <span className="font-semibold">₹{pack.price}</span>
+
+                    <span>{pack.coins} Coins</span>
+
+                    <span>{pack.talktime} Minutes</span>
+
+                    {pack.name && (
+                      <span className="mt-1 text-[10px]">{pack.name}</span>
+                    )}
                   </button>
                 ))}
               </div>
+            )}
+
+            {totalRechargePacks > 0 && (
+              <p className="text-center text-gray-600 text-[10px] mt-2">
+                {totalRechargePacks} recharge packs available
+              </p>
             )}
           </div>
         )}
@@ -996,15 +1037,17 @@ const UserChat = ({
                     <strong>{msg.replyTo.sender}</strong>:{" "}
                     {msg.replyTo.message?.slice(0, 40)}
                     {msg.replyTo.image && (
-                    <span>
-                              <Zoom>
-                                <Image width={100} height={100} 
-                                  src={msg.replyTo.image}
-                                  alt="reply-img"
-                                  className="inline-block object-cover w-8 h-8 align-middle border border-gray-300 rounded-md"
-                                />
-                              </Zoom>
-                            </span>
+                      <span>
+                        <Zoom>
+                          <Image
+                            width={100}
+                            height={100}
+                            src={msg.replyTo.image}
+                            alt="reply-img"
+                            className="inline-block object-cover w-8 h-8 align-middle border border-gray-300 rounded-md"
+                          />
+                        </Zoom>
+                      </span>
                     )}
                   </div>
                 )}
@@ -1014,13 +1057,15 @@ const UserChat = ({
 
                 {msg.image && (
                   <div className="relative">
-                       <Zoom>
-                             <Image width={100} height={100} 
-                              src={msg.image}
-                              alt="uploaded"
-                              className="object-cover w-32 h-32 rounded-lg cursor-zoom-in"
-                            />
-                          </Zoom>
+                    <Zoom>
+                      <Image
+                        width={100}
+                        height={100}
+                        src={msg.image}
+                        alt="uploaded"
+                        className="object-cover w-32 h-32 rounded-lg cursor-zoom-in"
+                      />
+                    </Zoom>
                   </div>
                 )}
 
@@ -1069,12 +1114,14 @@ const UserChat = ({
 
               {replyTo.image && (
                 <Zoom>
-                          <Image width={100} height={100} 
-                          src={replyTo.image}
-                          alt="reply-img"
-                          className="inline-block object-cover w-8 h-8 align-middle border border-gray-300 rounded-md"
-                        />
-                      </Zoom>
+                  <Image
+                    width={100}
+                    height={100}
+                    src={replyTo.image}
+                    alt="reply-img"
+                    className="inline-block object-cover w-8 h-8 align-middle border border-gray-300 rounded-md"
+                  />
+                </Zoom>
               )}
             </div>
 
@@ -1090,7 +1137,10 @@ const UserChat = ({
         {/*  IMAGE PREVIEW */}
         {imagePreview && (
           <div className="px-3 py-2 flex items-start gap-0">
-             <Image width={100} height={100} alt="hello"
+            <Image
+              width={100}
+              height={100}
+              alt="hello"
               src={imagePreview}
               className="w-16 h-16 object-cover rounded"
             />
