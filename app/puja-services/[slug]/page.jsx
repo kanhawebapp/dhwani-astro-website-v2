@@ -24,6 +24,7 @@ const CREATE_PUJA_BOOKING = gql`
     }
   }
 `;
+
 const GET_PUJA_DETAILS = gql`
   query GetPujaDetails($slug: String!) {
     pujaService(slug: $slug) {
@@ -37,20 +38,29 @@ const GET_PUJA_DETAILS = gql`
       benefits
       howToPerform
       packaging
+
+      # Default pricing (first sorted mantra option)
       price
       mrp
       discount
+
       customersCount
       rating
+
       mantraOptions {
         id
         name
+        originalPrice
+        offerPrice
+        sortOrder
       }
+
       faqs {
         id
         question
         answer
       }
+
       reviews {
         id
         userName
@@ -61,6 +71,7 @@ const GET_PUJA_DETAILS = gql`
     }
   }
 `;
+
 const backendUrl = new URL(process.env.NEXT_PUBLIC_BASE_URL).origin;
 
 function Accordion({ title, children, defaultOpen = false }) {
@@ -136,13 +147,27 @@ export default function PujaDetailsPage() {
   const [createPujaBooking, { loading: bookingLoading }] =
     useMutation(CREATE_PUJA_BOOKING);
 
-const mantraOptionId =
-  selectedMantra || puja?.mantraOptions?.[0]?.id || null;
+// Always display mantra options in admin-defined order.
+  const sortedMantraOptions = [...(puja?.mantraOptions ?? [])].sort(
+    (a, b) => Number(a.sortOrder ?? 0) - Number(b.sortOrder ?? 0),
+  );
+
+  // The first sorted mantra option is selected by default.
+  const selectedMantraOption =
+    sortedMantraOptions.find((option) => option.id === selectedMantra) ??
+    sortedMantraOptions[0] ??
+    null;
+
+  const mantraOptionId = selectedMantraOption?.id ?? null;
 
   async function handleBuyNow() {
     setMessage("");
 
     try {
+      if (!mantraOptionId) {
+        throw new Error("Please select a Mantra Jaap option.");
+      }
+
       const { data } = await createPujaBooking({
         variables: {
           input: {
@@ -171,15 +196,19 @@ const mantraOptionId =
   //       : `${API_BASE}${puja.image.startsWith("/") ? "" : "/"}${puja.image}`
   //     : null;
 
-  const price = Number(puja?.price ?? 0);
-  const mrp = Number(puja?.mrp ?? 0);
+  // The selected mantra option controls the displayed puja price.
+  // Puja-level pricing is only a fallback for legacy records without options.
+  const price = Number(
+    selectedMantraOption?.offerPrice ?? puja?.price ?? 0,
+  );
+  const mrp = Number(
+    selectedMantraOption?.originalPrice ?? puja?.mrp ?? 0,
+  );
 
   const discount =
-    puja?.discount != null
-      ? Number(puja.discount)
-      : mrp > price && mrp > 0
-        ? Math.round(((mrp - price) / mrp) * 100)
-        : 0;
+    mrp > price && mrp > 0
+      ? Math.round(((mrp - price) / mrp) * 100)
+      : 0;
 
   // function handleAddToCart() {
   //   // Connect your existing cart API/context here.
@@ -342,26 +371,70 @@ const mantraOptionId =
                 : "A meaningful ritual for your spiritual journey"}
             </div>
 
-            {/* Mantra options */}
-            {puja.mantraOptions?.length > 0 && (
+            {/* Mantra options with their individual pricing */}
+            {sortedMantraOptions.length > 0 && (
               <div className="mt-6">
                 <h2 className="font-bold text-gray-950">Mantra Jaap</h2>
 
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {puja.mantraOptions.map((option) => (
-                    <button
-                      key={option.id}
-                      type="button"
-                      onClick={() => setSelectedMantra(option.id)}
-                      className={`rounded-lg border px-3 py-2 text-sm transition ${
-                        selectedMantra === option.id
-                          ? "border-[#b99b98] bg-[#b99b98] text-white"
-                          : "border-gray-200 text-gray-800 hover:border-[#b99b98]"
-                      }`}
-                    >
-                      {option.name}
-                    </button>
-                  ))}
+                <div className="mt-3 grid gap-3">
+                  {sortedMantraOptions.map((option) => {
+                    const isSelected = selectedMantraOption?.id === option.id;
+                    const optionPrice = Number(option.offerPrice ?? 0);
+                    const optionMrp = Number(option.originalPrice ?? 0);
+                    const optionDiscount =
+                      optionMrp > optionPrice && optionMrp > 0
+                        ? Math.round(
+                            ((optionMrp - optionPrice) / optionMrp) * 100,
+                          )
+                        : 0;
+
+                    return (
+                      <button
+                        key={option.id}
+                        type="button"
+                        aria-pressed={isSelected}
+                        onClick={() => setSelectedMantra(option.id)}
+                        className={`flex w-full items-center justify-between gap-3 rounded-full border px-4 py-2 text-left transition ${
+                          isSelected
+                            ? "border-purple-300 bg-purple-200 ring-1 ring-purple-300"
+                            : "border-purple-100 bg-white hover:border-purple-100"
+                        }`}
+                      >
+                        <span className="flex min-w-0 items-start gap-3">
+                          {/* <span
+                            className={`mt-1 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
+                              isSelected
+                                ? "border-[#9f7773]"
+                                : "border-gray-400"
+                            }`}
+                          >
+                            {isSelected && (
+                              <span className="h-2 w-2 rounded-full bg-[#9f7773]" />
+                            )}
+                          </span> */}
+                          <span className="font-medium text-gray-900">
+                            {option.name}
+                          </span>
+                        </span>
+
+                        {/* <span className="shrink-0 text-right">
+                          <span className="block font-bold text-gray-950">
+                            ₹{optionPrice.toLocaleString("en-IN")}
+                          </span>
+                          {optionMrp > optionPrice && (
+                            <span className="mt-1 block text-xs text-gray-400 line-through">
+                              ₹{optionMrp.toLocaleString("en-IN")}
+                            </span>
+                          )}
+                          {optionDiscount > 0 && (
+                            <span className="mt-1 block text-xs font-semibold text-green-700">
+                              {optionDiscount}% off
+                            </span>
+                          )}
+                        </span> */}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
