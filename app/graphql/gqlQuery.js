@@ -650,7 +650,30 @@ export const GET_ASTROLOGER_CATEGORIES = gql`
     }
   }
 `;
-
+export const GET_SERVICES_BANK_PAYMENT_LOGS = gql`
+ query {
+  getServicesBankPaymentLogs(page: 1, limit: 10) {
+    success
+    message
+    data {
+      id
+      invoiceNo
+      serviceType
+      serviceName
+      amount
+      taxableAmount
+      totalTax
+      createdAt
+    }
+    pagination {
+      totalRecords
+      totalPages
+      currentPage
+      limit
+    }
+  }
+}
+`;
 export const GET_PAYMENT_INVOICE = gql`
   query GetPaymentInvoice($transactionId: ID!) {
     getPaymentInvoice(transactionId: $transactionId) {
@@ -699,6 +722,66 @@ export const GET_PAYMENT_INVOICE = gql`
       hsnSac
       reverseCharge
       panNumber
+
+      createdAt
+    }
+  }
+`;
+
+
+
+export const GET_SERVICES_INVOICE = gql`
+  query GetServicesInvoice($transactionId: ID!) {
+    getServicesInvoice(transactionId: $transactionId) {
+      id
+      invoiceNo
+
+      transactionId
+      razorpayOrderId
+      razorpayPaymentId
+
+      amount
+      discount
+      taxableAmount
+
+      sgst
+      cgst
+      igst
+
+      sgstRate
+      cgstRate
+      igstRate
+      gstRate
+
+      totalTax
+      totalAmount
+      amountReceived
+      amountInWords
+
+      userName
+      city
+      state
+      pincode
+      country
+
+      placeOfSupply
+
+      supplierGSTIN
+      supplierAddress
+      website
+      email
+
+      recipientGSTIN
+
+      transactionHistoryUrl
+
+      hsnSac
+      reverseCharge
+      panNumber
+
+      serviceType
+      serviceId
+      serviceName
 
       createdAt
     }
