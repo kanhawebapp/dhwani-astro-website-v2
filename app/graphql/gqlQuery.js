@@ -787,6 +787,101 @@ export const GET_SERVICES_INVOICE = gql`
     }
   }
 `;
+export const GET_RECHARGE_INVOICE = gql`
+query GetRechargeInvoice($transactionId: ID!) {
+  getRechargeInvoice(transactionId: $transactionId) {
+    id
+    invoiceNo
+    transactionId
+
+    paymentOrderId
+    razorpayOrderId
+    razorpayPaymentId
+
+    rechargePackId
+    rechargePackName
+    rechargePackDescription
+    coins
+
+    amount
+    taxableAmount
+    discount
+
+    gstRate
+    sgstRate
+    cgstRate
+    igstRate
+
+    sgst
+    cgst
+    igst
+    totalTax
+    totalAmount
+
+    pgChargeRate
+    pgCharge
+    pgIgst
+    pgTotal
+    amountReceived
+    amountInWords
+
+    userName
+    city
+    state
+    country
+    placeOfSupply
+    pincode
+    recipientGSTIN
+
+    supplierGSTIN
+    supplierAddress
+    website
+    email
+    hsnSac
+    reverseCharge
+    panNumber
+    transactionHistoryUrl
+
+    provider
+    status
+    platform
+    createdAt
+  }
+}
+`
+export const GET_RECHARGE_PAYMENT_LOGS = gql`
+  query GetRechargePaymentLogs(
+    $page: Int!
+    $limit: Int!
+    $startDate: String
+    $endDate: String
+  ) {
+    getRechargePaymentLogs(
+      page: $page
+      limit: $limit
+      startDate: $startDate
+      endDate: $endDate
+    ) {
+      success
+      message
+      data {
+        id
+        rechargePackName
+        amount
+        coins
+        status
+        invoiceNo
+        createdAt
+      }
+      pagination {
+        totalRecords
+        totalPages
+        currentPage
+        limit
+      }
+    }
+  }
+`;
 
 export const GET_LIVE_GIFTS = gql`
   query GetLiveGifts {
