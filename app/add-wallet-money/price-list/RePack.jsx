@@ -77,9 +77,7 @@ const RePack = () => {
 
   if (error) {
     return (
-      <div className="p-6 text-center text-red-500">
-        Error: {error.message}
-      </div>
+      <div className="p-6 text-center text-red-500">Error: {error.message}</div>
     );
   }
 
@@ -110,16 +108,13 @@ const RePack = () => {
           <p className="font-semibold text-purple-800">
             Choose your recharge pack
           </p>
-
-         
         </div>
 
         <div className="grid grid-cols-2 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {packData.map((pack) => {
             const isFirstTimeOffer = pack.isFirstTimeOffer === true;
 
-            const isFirstTimeOfferUsed =
-              pack.isFirstTimeOfferUsed === true;
+            const isFirstTimeOfferUsed = pack.isFirstTimeOfferUsed === true;
 
             const isAvailableFirstTimeOffer =
               isFirstTimeOffer && !isFirstTimeOfferUsed;
@@ -137,20 +132,14 @@ const RePack = () => {
                 key={pack.id}
                 className="relative flex flex-col justify-between overflow-hidden rounded-xl border border-gray-200 bg-white p-4 shadow-lg"
               >
-                {isFirstTimeOffer && (
-                  <span
-                    className={`absolute top-[8px] left-[-32px] w-28 rotate-[-42deg] rounded-tr-lg rounded-bl-lg px-2 py-1 text-center text-[8px] text-white shadow ${
-                      isFirstTimeOfferUsed
-                        ? "bg-gray-500"
-                        : "bg-gradient-to-r from-yellow-400 to-orange-400"
-                    }`}
-                  >
-                    {isFirstTimeOfferUsed
-                      ? "Used Offer"
-                      : t?.astrocard?.offer || "Special Offer"}
-                  </span>
-                )}
-
+               
+                {isFirstTimeOffer === true &&
+                  isFirstTimeOfferUsed === false && (
+                    <span className="absolute top-[8px] left-[-32px] w-28 rotate-[-42deg] rounded-tr-lg rounded-bl-lg bg-gradient-to-r from-yellow-400 to-orange-400 px-2 py-1 text-center text-[8px] text-white shadow">
+                      {t?.astrocard?.offer || "Special Offer"}
+                    </span>
+                  )}
+                
                 <div className="text-center">
                   <h3 className="mb-1 text-lg font-semibold text-purple-700">
                     {pack.name}
@@ -163,12 +152,7 @@ const RePack = () => {
                   <p className="mt-1 text-sm font-medium text-gray-600">
                     {displayLabel}: {displayAmount}
                   </p>
-
-                 
-
-                  
                 </div>
-
                 <CustomButton
                   aria-label={`Select Pack ${pack.name}`}
                   className="mt-2 w-full rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 px-4 py-2 text-xs font-medium text-white hover:from-purple-700 hover:to-indigo-700 sm:text-sm"
