@@ -14,11 +14,28 @@ const money = (value) =>
   })}`;
 
 const formatDate = (value) => {
-  if (!value) return "-";
+  if (value === null || value === undefined || value === "") {
+    return "-";
+  }
 
-  const date = new Date(Number(value));
+  let date;
 
-  if (Number.isNaN(date.getTime())) return "-";
+  if (typeof value === "number" || /^\d+$/.test(String(value))) {
+    let timestamp = Number(value);
+
+    // Convert Unix seconds to milliseconds
+    if (timestamp < 1e12) {
+      timestamp *= 1000;
+    }
+
+    date = new Date(timestamp);
+  } else {
+    date = new Date(value);
+  }
+
+  if (Number.isNaN(date.getTime())) {
+    return "-";
+  }
 
   return date.toLocaleString("en-IN", {
     day: "2-digit",
@@ -75,7 +92,7 @@ export default function ServicesBankPaymentLogs() {
         fetchPolicy: "network-only",
       });
 
-      const invoice = invoiceResponse?.getPaymentInvoice;
+   const invoice = invoiceResponse?.getServicesInvoice;
 
       if (!invoice) {
         throw new Error("Invoice not found");
@@ -124,7 +141,7 @@ export default function ServicesBankPaymentLogs() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-3 sm:p-6">
+    <div className="min-h-screen text-black bg-gray-100 p-3 sm:p-6">
       <div className="rounded-2xl bg-white p-4 shadow-sm sm:p-6">
         <div className="mb-6 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
           <div>
@@ -172,7 +189,7 @@ export default function ServicesBankPaymentLogs() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[850px] text-left text-sm">
-              <thead className="bg-gray-50 text-gray-600">
+              <thead className="bg-purple-100 rounded-xl text-gray-600">
                 <tr>
                   <th className="px-4 py-3">Date</th>
                   <th className="px-4 py-3">Invoice No.</th>
@@ -189,7 +206,7 @@ export default function ServicesBankPaymentLogs() {
                 {logs.map((row, index) => (
                   <tr
                     key={row.id || `${row.invoiceNo}-${index}`}
-                    className="hover:bg-gray-50"
+                    className="hover:bg-gray-50 text-sm"
                   >
                     <td className="whitespace-nowrap px-4 py-3">
                       {formatDate(row.createdAt)}
@@ -233,7 +250,7 @@ export default function ServicesBankPaymentLogs() {
                         onClick={() => downloadInvoice(row)}
                         disabled={invoiceLoading !== null}
                         title="Download invoice PDF"
-                        className="inline-flex items-center gap-2 rounded-lg border border-indigo-200 px-3 py-2 text-xs font-medium text-indigo-700 hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 transition disabled:opacity-50"
                       >
                         {invoiceLoading === row.id ? (
                           "Generating..."
@@ -254,7 +271,7 @@ export default function ServicesBankPaymentLogs() {
                               <path d="m7 10 5 5 5-5" />
                               <path d="M12 15V3" />
                             </svg>
-                            Download
+                       
                           </>
                         )}
                       </button>
