@@ -111,10 +111,7 @@ const RePack = () => {
             Choose your recharge pack
           </p>
 
-          <p className="mt-1 text-sm text-purple-700">
-            Explore our available recharge packs and select the one that
-            suits you. First-time offers are available on eligible packs.
-          </p>
+         
         </div>
 
         <div className="grid grid-cols-2 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
@@ -167,17 +164,9 @@ const RePack = () => {
                     {displayLabel}: {displayAmount}
                   </p>
 
-                  {isAvailableFirstTimeOffer && (
-                    <p className="mt-1 text-xs font-medium text-purple-600">
-                      First Recharge Offer
-                    </p>
-                  )}
+                 
 
-                  {isFirstTimeOffer && isFirstTimeOfferUsed && (
-                    <p className="mt-1 text-xs font-medium text-gray-500">
-                      Offer Already Used
-                    </p>
-                  )}
+                  
                 </div>
 
                 <CustomButton
