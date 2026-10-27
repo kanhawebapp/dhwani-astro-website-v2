@@ -651,19 +651,35 @@ export const GET_ASTROLOGER_CATEGORIES = gql`
   }
 `;
 export const GET_SERVICES_BANK_PAYMENT_LOGS = gql`
- query {
-  getServicesBankPaymentLogs(page: 1, limit: 10) {
+
+query GetServicesBankPaymentLogs(
+  $page: Int
+  $limit: Int
+  $serviceType: String
+  $startDate: String
+  $endDate: String
+) {
+  getServicesBankPaymentLogs(
+    page: $page
+    limit: $limit
+    serviceType: $serviceType
+    startDate: $startDate
+    endDate: $endDate
+  ) {
     success
     message
     data {
       id
-      invoiceNo
+      userId
       serviceType
-      serviceName
-      amount
+      serviceId
+      bookingId
+      invoiceNo
       taxableAmount
       totalTax
       createdAt
+      amount
+      serviceName
     }
     pagination {
       totalRecords
@@ -673,6 +689,7 @@ export const GET_SERVICES_BANK_PAYMENT_LOGS = gql`
     }
   }
 }
+
 `;
 export const GET_PAYMENT_INVOICE = gql`
   query GetPaymentInvoice($transactionId: ID!) {

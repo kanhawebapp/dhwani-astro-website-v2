@@ -7,8 +7,8 @@ import RechargePaymentLogs from "./RechargeLogs";
 
 
 const tabs = [
-  { id: "services", label: "Service Bank Payments" },
-  { id: "recharge", label: "Recharge Payments" },
+  { id: "services", label: "Services Bank Payments" },
+  { id: "recharge", label: "Recharge Bank Payments" },
 ];
 
 export default function PaymentLogsTabs() {
