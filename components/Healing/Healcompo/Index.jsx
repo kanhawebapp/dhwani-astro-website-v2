@@ -125,11 +125,7 @@ const Heal = ({ categorySlug, serviceSlug }) => {
     ? `${BASE_URL}${service.image}`
     : "/placeholder.webp";
 
-  // =====================================================
-  // BOOK NOW
-  // CREATE BOOKING FIRST
-  // THEN OPEN ASTROLOGER SELECTION
-  // =====================================================
+ 
 
   const handleBooking = async () => {
     if (!service?.id) {

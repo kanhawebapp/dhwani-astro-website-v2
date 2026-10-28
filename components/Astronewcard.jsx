@@ -4,10 +4,9 @@ import Image from "next/image";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import "swiper/css/navigation";
-import "swiper/css/pagination";
 import { useRouter } from "next/navigation";
 
-import { Navigation, Pagination, Autoplay } from "swiper/modules";
+import { Navigation } from "swiper/modules";
 import CustomButton from "./Custom/CustomButton";
 
 import { useEffect, useState, useContext } from "react";
@@ -17,7 +16,10 @@ import { useLanguage } from "../app/context/LangContext";
 import useScrollZoom from "@/Hooks/scrollZoom";
 
 import { useQuery } from "@apollo/client/react";
-import { GET_ASTROLOGERS_GUEST, GET_ASTROLOGERS_USER } from "@/app/graphql/gqlQuery";
+import {
+  GET_ASTROLOGERS_GUEST,
+  GET_ASTROLOGERS_USER,
+} from "@/app/graphql/gqlQuery";
 import RecentRequestPopup from "./Custom/RecentRequestPopUp";
 import { useAuth } from "@/app/context/authContext";
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
@@ -27,8 +29,8 @@ export default function Astronewcard() {
   const [showRecentPopup, setShowRecentPopup] = useState(false);
   const { isLoggedIn, authLoading } = useAuth();
   const selectedQuery = isLoggedIn
-      ? GET_ASTROLOGERS_USER
-      : GET_ASTROLOGERS_GUEST;
+    ? GET_ASTROLOGERS_USER
+    : GET_ASTROLOGERS_GUEST;
 
   const [selectedAstroData, setSelectedAstroData] = useState(null);
 
@@ -73,39 +75,29 @@ export default function Astronewcard() {
   //   fetchPolicy: "network-only",
   // });
 
-  const {
-  data,
-  loading,
-  error,
-  fetchMore,
-  refetch,
-  networkStatus,
- } = useQuery(selectedQuery, {
-  skip: authLoading,
-  variables: {
-    searchInput: {
-      limit: 12,
-      page: 1,
-      sortField: "RATING",
-      sortOrder: "DESC",
-      // type: mode?.toUpperCase() || "CHAT",
+  const { data, loading, error } = useQuery(selectedQuery, {
+    skip: authLoading,
+    variables: {
+      searchInput: {
+        limit: 12,
+        page: 1,
+        sortField: "RATING",
+        sortOrder: "DESC",
+      },
     },
-  },
-  fetchPolicy: "network-only",
-  notifyOnNetworkStatusChange: true,
-});
-
-
+    fetchPolicy: "cache-first",
+    nextFetchPolicy: "cache-first",
+  });
 
   const { socket } = useContext(SocketContext);
-  
-const astrologerData = isLoggedIn
-  ? data?.getAstrologerListForUser
-  : data?.getAstrologerListBySearch;
 
-const astrologerlist = isLoggedIn
-  ? astrologerData?.data?.filter((item) => item.isOnline) || []
-  : astrologerData?.data || [];
+  const astrologerData = isLoggedIn
+    ? data?.getAstrologerListForUser
+    : data?.getAstrologerListBySearch;
+
+  const astrologerlist = isLoggedIn
+    ? astrologerData?.data?.filter((item) => item.isOnline) || []
+    : astrologerData?.data || [];
 
   useEffect(() => {
     if (!socket) {
@@ -140,7 +132,7 @@ const astrologerlist = isLoggedIn
 
   const astrologeroffline = () => {
     toast.error(
-      "Astrologer selected by you is offline now so please choose another astrologer."
+      "Astrologer selected by you is offline now so please choose another astrologer.",
     );
   };
 
@@ -224,20 +216,17 @@ const astrologerlist = isLoggedIn
   return (
     <section className="flex-col items-center self-center w-full sm:max-w-7xl">
       <div className="flex flex-col items-center justify-center rounded-full px-4 sm:py-4 py-0 sm:max-w-7xl">
-
         {/* Homepage section heading */}
         <h2
           dangerouslySetInnerHTML={{
             __html:
-              t?.consult?.heading ||
-              "Consult with our Top Premium Astrologers",
+              t?.consult?.heading || "Consult with our Top Premium Astrologers",
           }}
           className="text-[#2f1254] text-[15px] sm:text-xl lg:text-2xl py-3 text-center font-semibold"
         ></h2>
 
         <div className="setup-wrap w-full">
           <div className="relative rounded-xl md:rounded-full z-10 grid items-start justify-center w-full grid-cols-4 gap-1 py-2 mt-3 shadow-lg user-sign-up sm:grid-cols-4 lg:grid-cols-4 sm:gap-6">
-
             <div className="flex flex-col items-center justify-center gap-2 p-1 text-center service-card-sign rounded-xl sm:p-3">
               <svg
                 fill="#000000"
@@ -279,8 +268,7 @@ const astrologerlist = isLoggedIn
               <p
                 dangerouslySetInnerHTML={{
                   __html:
-                    t?.consult?.tag2 ||
-                    "Put Money in Dhwani Astro Wallet",
+                    t?.consult?.tag2 || "Put Money in Dhwani Astro Wallet",
                 }}
                 className="text-[9px] sm:text-xs text-[#2f1254] sm:font-semibold"
               ></p>
@@ -325,8 +313,7 @@ const astrologerlist = isLoggedIn
               <p
                 dangerouslySetInnerHTML={{
                   __html:
-                    t?.consult?.tag4 ||
-                    "Rate & Review after consultation",
+                    t?.consult?.tag4 || "Rate & Review after consultation",
                 }}
                 className="text-[9px] sm:text-xs text-[#2f1254] sm:font-semibold"
               ></p>
@@ -355,48 +342,23 @@ const astrologerlist = isLoggedIn
         </div>
 
         <Swiper
-          modules={[Navigation, Pagination, Autoplay]}
-          spaceBetween={20}
+          modules={[Navigation]}
           slidesPerView={2}
+          spaceBetween={10}
           navigation={{
             nextEl: ".swiper-button-next-astro",
             prevEl: ".swiper-button-prev-astro",
           }}
-          resizeObserver={false}
-          observer={false}
-          observeParents={false}
-          autoplay={false}
-          loop={true}
-          className="mySwiperhoro"
-          style={{
-            "--swiper-navigation-color": "#fff",
-            "--swiper-navigation-size": "25px",
-          }}
+          loop={astrologerlist.length > 1}
           breakpoints={{
-            320: {
-              slidesPerView: 2,
-              spaceBetween: 10,
-            },
-            480: {
-              slidesPerView: 2,
-              spaceBetween: 15,
-            },
-            768: {
-              slidesPerView: 3,
-              spaceBetween: 15,
-            },
-            1024: {
-              slidesPerView: 4,
-              spaceBetween: 20,
-            },
-            1280: {
-              slidesPerView: 4,
-              spaceBetween: 20,
-            },
+            480: { slidesPerView: 2, spaceBetween: 15 },
+            768: { slidesPerView: 3, spaceBetween: 15 },
+            1024: { slidesPerView: 4, spaceBetween: 20 },
           }}
+          className="mySwiperhoro"
         >
           {astrologerlist?.map((astro, index) => (
-            <SwiperSlide key={index}>
+            <SwiperSlide key={astro.id}>
               <div>
                 <div
                   className="relative w-full p-1 overflow-hidden bg-center bg-cover rounded-lg shadow-lg md:h-77 h-68 lg:h-80 sm:h-88 sm:p-1 back-astro-image"
@@ -415,20 +377,16 @@ const astrologerlist = isLoggedIn
                               ? `${BASE_URL}${astro.profilePic}`
                               : "/man.png"
                           }
-                          className="object-cover w-16 h-16 border-4 border-yellow-400 rounded-full shadow-md sm:w-22 sm:h-22"
-                          width={80}
-                          height={80}
-                          priority={index === 0}
-                          loading={index === 0 ? "eager" : "lazy"}
+                          width={88}
+                          height={88}
+                          sizes="(max-width: 639px) 64px, 88px"
+                          loading="lazy"
                           alt={
-                            astro?.displayName ||
-                            astro?.name ||
-                            "Astrologer"
+                            astro?.displayName || astro?.name || "Astrologer"
                           }
+                          className="w-16 h-16 sm:w-[88px] sm:h-[88px] object-cover rounded-full border-4 border-yellow-400 shadow-md"
                           onClick={() =>
-                            router.push(
-                              `/astrologerprofile/${astro?.id}`
-                            )
+                            router.push(`/astrologerprofile/${astro.id}`)
                           }
                         />
                       </div>
@@ -438,9 +396,7 @@ const astrologerlist = isLoggedIn
                           <h2
                             className="text-sm font-bold text-black sm:text-base"
                             onClick={() =>
-                              router.push(
-                                `/astrologerprofile/${astro?.id}`
-                              )
+                              router.push(`/astrologerprofile/${astro?.id}`)
                             }
                           >
                             {astro?.displayName || astro?.name}
@@ -451,11 +407,7 @@ const astrologerlist = isLoggedIn
                           </p>
 
                           <div className="flex sm:w-57.5 w-35 items-center justify-center gap-2 lang-bar">
-                            <svg
-                              width={10}
-                              height={10}
-                              viewBox="0 -64 640 640"
-                            >
+                            <svg width={10} height={10} viewBox="0 -64 640 640">
                               <path d="M152.1 236.2c-3.5-12.1-7.8-33.2-7.8-33.2h-.5s-4.3 21.1-7.8 33.2l-11.1 37.5H163zM616 96H336v320h280c13.3 0 24-10.7 24-24V120c0-13.3-10.7-24-24-24zm-24 120c0 6.6-5.4 12-12 12h-11.4c-6.9 23.6-21.7 47.4-42.7 69.9 8.4 6.4 17.1 12.5 26.1 18 5.5 3.4 7.3 10.5 4.1 16.2l-7.9 13.9c-3.4 5.9-10.9 7.8-16.7 4.3-12.6-7.8-24.5-16.1-35.4-24.9-10.9 8.7-22.7 17.1-35.4 24.9-5.8 3.5-13.3 1.6-16.7-4.3l-7.9-13.9c-3.2-5.6-1.4-12.8 4.2-16.2 9.3-5.7 18-11.7 26.1-18-7.9-8.4-14.9-17-21-25.7-4-5.7-2.2-13.6 3.7-17.1l6.5-3.9 7.3-4.3c5.4-3.2 12.4-1.7 16 3.4 5 7 10.8 14 17.4 20.9 13.5-14.2 23.8-28.9 30-43.2H412c-6.6 0-12-5.4-12-12v-16c0-6.6 5.4-12 12-12h64v-16c0-6.6 5.4-12 12-12h16c6.6 0 12 5.4 12 12v16h64c6.6 0 12 5.4 12 12zM0 120v272c0 13.3 10.7 24 24 24h280V96H24c-13.3 0-24 10.7-24 24zm58.9 216.1L116.4 167c1.7-4.9 6.2-8.1 11.4-8.1h32.5c5.1 0 9.7 3.3 11.4 8.1l57.5 169.1c2.6 7.8-3.1 15.9-11.4 15.9h-22.9a12 12 0 0 1-11.5-8.6l-9.4-31.9h-60.2l-9.1 31.8c-1.5 5.1-6.2 8.7-11.5 8.7H70.3c-8.2 0-14-8.1-11.4-15.9z" />
                             </svg>
 
@@ -494,9 +446,7 @@ const astrologerlist = isLoggedIn
                           <div className="sm:mt-2 text-[10px] sm:text-xs font-semibold flex gap-1 items-center justify-center">
                             {(() => {
                               const chatPrice = astro?.pricing?.find(
-                                (item) =>
-                                  item.type === "CHAT" &&
-                                  item.isActive
+                                (item) => item.type === "CHAT" && item.isActive,
                               );
 
                               return (
@@ -530,8 +480,7 @@ const astrologerlist = isLoggedIn
                         const callStatus = getAstroStatus(astro, "call");
 
                         const callPrice = astro?.pricing?.find(
-                          (item) =>
-                            item.type === "CALL" && item.isActive
+                          (item) => item.type === "CALL" && item.isActive,
                         );
 
                         return (
@@ -586,8 +535,7 @@ const astrologerlist = isLoggedIn
                         const chatStatus = getAstroStatus(astro, "chat");
 
                         const chatPrice = astro?.pricing?.find(
-                          (item) =>
-                            item.type === "CHAT" && item.isActive
+                          (item) => item.type === "CHAT" && item.isActive,
                         );
 
                         return (

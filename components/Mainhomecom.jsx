@@ -1,7 +1,7 @@
-import Banner from "./Banner";
-import Astronewcard from "./Astronewcard";
+// import Astronewcard from "./Astronewcard";
+import AstrologerSection from "./Custom/AstrologerSection"
 import SpinnerHome from "./Custom/SpinnerHome";
-
+import Banner from "./Custom/Banner"
 import RemecalcLazy from "./Custom/Remecalc.lazy";
 import AstrostoreLazy from "./Custom/AstrostoreSection";
 import AboutdirectLazy from "./Custom/AboutDirectorSection";
@@ -24,7 +24,8 @@ export default function Mainhomecom() {
 
       <Banner />
 
-      <Astronewcard />
+      {/* <Astronewcard /> */}
+      <AstrologerSection />
       {/* <Consulque /> */}
 
      
