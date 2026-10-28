@@ -16,7 +16,7 @@ import { createKundliAction } from "@/app/actions/createKundliAction";
 import Select from "react-select";
 import { useAuth } from "@/app/context/authContext";
 import { useRouter } from "next/navigation";
-import { ASTRO_CONTENT } from "./remedy-content/index";
+import { loadAstroContent } from "./remedy-content/index";
 import RemedyContent from "./RemedyContent";
 import LocationSelector from "@/app/common/LocationSelector";
 const CURRENT_YEAR = new Date().getFullYear();
@@ -439,7 +439,39 @@ export default function Formremedies({ slug }) {
   const [progress, setProgress] = useState(0);
   const content = FORM_CONTENT[slug] || FORM_CONTENT.gemfol;
 
-  const pageContent = ASTRO_CONTENT[slug] || ASTRO_CONTENT.gemfol;
+
+const [pageContent, setPageContent] = useState(null);
+const [contentLoading, setContentLoading] = useState(true);
+
+useEffect(() => {
+  let cancelled = false;
+
+  async function fetchContent() {
+    setPageContent(null);
+    setContentLoading(true);
+
+    try {
+      const result = await loadAstroContent(slug);
+
+      if (!cancelled) {
+        setPageContent(result);
+      }
+    } catch (error) {
+      console.error("Failed to load remedy content:", error);
+    } finally {
+      if (!cancelled) {
+        setContentLoading(false);
+      }
+    }
+  }
+
+  fetchContent();
+
+  return () => {
+    cancelled = true;
+  };
+}, [slug]);
+
   const analysisContent = ANALYSIS_CONTENT[slug] || ANALYSIS_CONTENT.gemfol;
   const [formData, setFormData] = useState({
     name: "",
@@ -1183,7 +1215,13 @@ export default function Formremedies({ slug }) {
           </div>
         </div>
 
-        <RemedyContent content={pageContent} />
+    {contentLoading ? (
+  <div className="mx-auto max-w-7xl px-4 py-10">
+    <div className="h-32 animate-pulse rounded-2xl bg-purple-100" />
+  </div>
+) : pageContent ? (
+  <RemedyContent content={pageContent} />
+) : null}
         <div className="mt-10">
           <Kundlioth />
         </div>

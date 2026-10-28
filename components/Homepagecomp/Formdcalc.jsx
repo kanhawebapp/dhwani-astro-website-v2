@@ -7,13 +7,13 @@ import { useDispatch, useSelector } from "react-redux";
 import { setMatchData } from "../../app/redux/services/daUserFormSlice";
 import Image from "next/image";
 import { useLanguage } from "@/app/context/LangContext";
-import { ASTRO_CONTENT } from "./remedy-content";
+import { loadAstroContent } from "./remedy-content/index";
 import KundaliMilanContent from "./KundaliMilanContent";
 export default function Formdcalc({ slug = "kundlislug" }) {
   const { messages: t } = useLanguage();
   const router = useRouter();
   const dispatch = useDispatch();
-const content = ASTRO_CONTENT[slug] || ASTRO_CONTENT.kundlislug;
+const content = loadAstroContent[slug] || loadAstroContent.kundlislug;
   const matchData = useSelector((state) => state.daUserForm.matchForm);
 
   const handleBoyChange = (e) => {

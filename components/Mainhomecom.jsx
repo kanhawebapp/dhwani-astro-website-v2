@@ -2,7 +2,6 @@
 import AstrologerSection from "./Custom/AstrologerSection"
 import SpinnerHome from "./Custom/SpinnerHome";
 import Banner from "./Custom/Banner"
-import RemecalcLazy from "./Custom/Remecalc.lazy";
 import AstrostoreLazy from "./Custom/AstrostoreSection";
 import AboutdirectLazy from "./Custom/AboutDirectorSection";
 import CredentLazy from "./Custom/Credent.lazy";
@@ -11,7 +10,8 @@ import FAQueLazy from "./Custom/FAQue.lazy";
 import TestimonLazy from "./Custom/Testimon.lazy";
 import AboutUsLazy from "./Custom/AboutUs.lazy";
 import DownappSection from "./Custom/DownappSection";
-import PujaSection from "../app/puja-services/PujaSection"
+import PujaSection from "../components/Homepagecomp/PujaSection.lazy"
+import RemedyCalculatorLazy from "./Custom/RemedyCalculator.lazy"
 // import Consulque from "./Consulque";
 // import ProblembaseClient from "./Custom/ProblembaseClient";
 
@@ -24,7 +24,7 @@ export default function Mainhomecom() {
 
       <Banner />
 
-      {/* <Astronewcard /> */}
+      
       <AstrologerSection />
       {/* <Consulque /> */}
 
@@ -34,7 +34,7 @@ export default function Mainhomecom() {
       <SpinnerHome />
 
     
-      <RemecalcLazy />
+      <RemedyCalculatorLazy />
 
       <PujaSection />
 

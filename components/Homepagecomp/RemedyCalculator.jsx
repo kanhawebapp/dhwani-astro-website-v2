@@ -2,10 +2,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useLanguage } from "../app/context/LangContext";
-import useScrollZoom from "@/Hooks/scrollZoom";
 
-export default function Remecalc() {
+import useScrollZoom from "@/Hooks/scrollZoom";
+import { useLanguage } from "@/app/context/LangContext";
+
+export default function RemedyCalculator() {
   useScrollZoom(".head-wrap");
   const { messages: t } = useLanguage();
   const remedbox = [
@@ -128,6 +129,7 @@ export default function Remecalc() {
                         pathname: rembx.link,
                         query: { slug: rembx.slug },
                       }}
+                       prefetch={false}
                       className="remedies-card-top hover:scale-105 head-wrap rounded-xl   text-center flex flex-col items-center justify-center gap-2"
                     >
                       <Image
@@ -166,6 +168,7 @@ export default function Remecalc() {
                         pathname: remd.link,
                         query: { slug: remd.slug },
                       }}
+                       prefetch={false}
                       className="remedies-card-top hover:scale-105 head-wrap rounded-xl text-center flex flex-col items-center justify-center"
                     >
                       <Image
@@ -202,6 +205,7 @@ export default function Remecalc() {
                         }
                       : `/${calcu.slug}`
                   }
+                   prefetch={false}
                   className="remedies-card-top hover:scale-105 head-wrap rounded-xl  text-center flex flex-col items-center justify-center"
                 >
                   <Image
