@@ -55,7 +55,7 @@ export default function AstrostoreSection() {
         id="dhwani-shop-heading"
         className="text-[#2f1254] text-[15px] sm:text-xl lg:text-2xl py-3 text-center font-semibold"
       >
-        Astrology Products & Spiritual Shop
+       • Astrology Products & Spiritual Shop •
       </h2>
 
       <AstrostoreSlider items={astrostorepro} />

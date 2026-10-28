@@ -11,17 +11,17 @@ export default function Selectastro({ open, astrologers, onSelect, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="relative bg-white rounded-xl max-w-7xl w-full max-h-[90vh] overflow-y-auto p-4">
+      <div className="relative bg-white rounded-3xl max-w-7xl w-full max-h-[90vh] shadow-xl overflow-y-auto p-4">
 
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 flex items-center justify-center w-4 h-4 text-xs sm:text-md sm:w-8 sm:h-8 rounded-full bg-red-500 text-white hover:bg-red-600"
+          className="absolute cursor-pointer top-3 right-3 flex items-center justify-center w-4 h-4 text-xs sm:text-md sm:w-8 sm:h-8 rounded-full bg-red-500 text-white hover:bg-red-600"
         >
-          ✕
+       <svg width={18} height={18} viewBox="0 0 640 640"><path fill="#fff" d="M183.1 137.4C170.6 124.9 150.3 124.9 137.8 137.4C125.3 149.9 125.3 170.2 137.8 182.7L275.2 320L137.9 457.4C125.4 469.9 125.4 490.2 137.9 502.7C150.4 515.2 170.7 515.2 183.2 502.7L320.5 365.3L457.9 502.6C470.4 515.1 490.7 515.1 503.2 502.6C515.7 490.1 515.7 469.8 503.2 457.3L365.8 320L503.1 182.6C515.6 170.1 515.6 149.8 503.1 137.3C490.6 124.8 470.3 124.8 457.8 137.3L320.5 274.7L183.1 137.4z"/></svg>
         </button>
 
-        <h2 className="text-sm sm:text-xl font-bold text-center mb-5">
+        <h2 className="text-sm sm:text-xl text-black font-bold text-center mb-5">
           Select Astrologer
         </h2>
 
@@ -32,9 +32,9 @@ export default function Selectastro({ open, astrologers, onSelect, onClose }) {
             return (
               <div
                 key={astro.id}
-                className="bg-[#e0e5ec8d] rounded-lg sm:p-2 shadow-lg"
+                className="bg-[#e0e5ec8d] text-black rounded-2xl sm:p-2 shadow-lg"
               >
-                <div className="bg-white flex flex-col pt-3 border border-purple-50 rounded-lg justify-center p-3">
+                <div className="bg-white flex flex-col pt-3 border border-purple-50 rounded-xl justify-center p-3">
 
                   <div className="sm:w-1/3 place-self-center">
                     <div className="relative rounded-full  overflow-hidden">
@@ -72,7 +72,7 @@ export default function Selectastro({ open, astrologers, onSelect, onClose }) {
                         <span>⭐ {astro.rating || 0}</span>
                         <span>{astro.experience} Years</span>
                       </div>
-                      <p className="text-green-600 text-[10px] sm:text-md font-semibold sm:mt-2">
+                      <p className="text-green-600 text-[12px] sm:text-md font-semibold sm:mt-2">
                         ₹ {mapping.price} / Session
                       </p>
 

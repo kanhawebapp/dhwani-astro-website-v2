@@ -1517,7 +1517,10 @@ body {
 .remove-image-preview:hover {
   background-color: rgba(0, 0, 0, 0.7); 
 }
-
+.slider-banner-home .swiper-button-next,
+.slider-banner-home .swiper-button-prev {
+  color: #ffffff !important; 
+}
 
 @keyframes puja-marquee {
   0% {
