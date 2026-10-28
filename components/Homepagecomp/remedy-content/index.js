@@ -17,6 +17,6 @@ export async function loadAstroContent(slug) {
 
   if (!loader) return null;
 
-  const module = await loader();
-  return module.default;
+  const remedyModule = await loader();
+  return remedyModule.default;
 }
