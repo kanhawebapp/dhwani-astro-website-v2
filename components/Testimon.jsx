@@ -7,7 +7,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
-import { Navigation, Pagination, Autoplay } from "swiper/modules";
+import { Navigation} from "swiper/modules";
 import { useLanguage } from "@/app/context/LangContext";
 import useScrollZoom from "@/Hooks/scrollZoom";
 import { GET_TESTIMONIALS } from "@/app/graphql/gqlQuery";
@@ -47,6 +47,10 @@ export default function Testimon() {
       year: "numeric",
     });
   };
+    const maxSlidesPerView = 4;
+
+const canLoop =
+  testim.length > maxSlidesPerView;
   return (
     <section className="flex w-full flex-col items-center self-center sm:max-w-7xl pt-2  px-3">
       <div className="sm:py-3 py-1">
@@ -75,16 +79,15 @@ export default function Testimon() {
           </button>
         </div>
         <Swiper
-          modules={[Navigation, Pagination, Autoplay]}
+          modules={[Navigation]}
           spaceBetween={20}
           slidesPerView={2}
           navigation={{
             nextEl: ".swiper-button-next-tst",
             prevEl: ".swiper-button-prev-tst",
           }}
-          // pagination={{ clickable: true }}
-          autoplay={false}
-          loop={true}
+         
+       loop={canLoop}
           resizeObserver={false}
           observer={false}
           observeParents={false}

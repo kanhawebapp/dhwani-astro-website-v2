@@ -7,7 +7,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import "swiper/css/navigation";
 
-import { Navigation, Autoplay } from "swiper/modules";
+import { Navigation } from "swiper/modules";
 import { useLanguage } from "@/app/context/LangContext";
 import CustomButton from "./Custom/CustomButton";
 import useScrollZoom from "@/Hooks/scrollZoom";
@@ -47,6 +47,10 @@ export default function Blogsection() {
       </section>
     );
   }
+  const maxSlidesPerView = 4;
+
+const canLoop =
+  blogs.length > maxSlidesPerView;
   return (
     <section className="flex flex-col gap-4 w-full items-center self-center sm:max-w-7xl sm:my-4 p-3 ">
       <div className="py-3 flex flex-col gap-2">
@@ -71,16 +75,15 @@ export default function Blogsection() {
           </button>
         </div>
         <Swiper
-          modules={[Navigation, Autoplay]}
+          modules={[Navigation]}
           spaceBetween={20}
           slidesPerView={2}
           navigation={{
             nextEl: ".swiper-button-next-blg",
             prevEl: ".swiper-button-prev-blg",
           }}
-          // pagination={{ clickable: true }}
-          autoplay={false}
-          loop={true}
+         loop={canLoop}
+       
           resizeObserver={false}
           observer={false}
           observeParents={false}

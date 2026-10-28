@@ -11,31 +11,36 @@ async function getBanners() {
     throw new Error("GRAPHQL_API_URL is not configured");
   }
 
-  const response = await fetch(GRAPHQL_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      query: print(GET_BANNERS),
-      variables: { language: "en" },
-    }),
-    next: {
-      revalidate: 30000,
-    },
-  });
+  const start = performance.now();
 
-  if (!response.ok) {
-    throw new Error(`Banner request failed: ${response.status}`);
+  try {
+    const response = await fetch(GRAPHQL_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        query: print(GET_BANNERS),
+        variables: { language: "en" },
+      }),
+      next: { revalidate: 30000 },
+    });
+
+    const result = await response.json();
+
+//     console.log(
+//       `[Banner] GraphQL request: ${Math.round(performance.now() - start)} ms`
+//     );
+
+    if (!response.ok || result.errors?.length) {
+      throw new Error("Banner request failed");
+    }
+
+    return result.data?.getBanners?.data ?? [];
+  } catch (error) {
+    console.error("[Banner] Fetch failed:", error);
+    throw error;
   }
-
-  const result = await response.json();
-
-  if (result.errors?.length) {
-    throw new Error("GraphQL banner query failed");
-  }
-
-  return result.data?.getBanners?.data ?? [];
 }
 
 export default async function Banner() {
