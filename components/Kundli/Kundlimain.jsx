@@ -408,8 +408,7 @@ const Kundlimain = () => {
 
       <AlertLoading show={alert} title="Generating Kundli..." />
 
-      {/* <Freereport /> */}
-      {/* <Recastro /> */}
+    
       <FAQue />
       <Callchatsec />
     </section>

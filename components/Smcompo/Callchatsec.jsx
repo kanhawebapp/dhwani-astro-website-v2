@@ -3,8 +3,10 @@ import Link from "next/link";
 import CustomButton from "../Custom/CustomButton";
 import { useLanguage } from "@/app/context/LangContext";
 import useScrollZoom from "@/Hooks/scrollZoom";
+import { useRouter } from "next/navigation";
 
 export default function Callchatsec() {
+  const router = useRouter();
   const { messages: t } = useLanguage();
   useScrollZoom(".head-wrap");
   return (
@@ -20,12 +22,12 @@ export default function Callchatsec() {
         </h3>
       </div>
       <div className="flex items-center justify-center gap-5">
-        <CustomButton
+        <button
           onClick={() => router.push("/astrologer/chat")}
           aria-label="Chat With Astrologers"
           type="button"
           variant={"red"}
-          className=" flex items-center gap-4 text-[10px] py-1 rounded-full bg-green-500 px-4 sm:py-2 text-md hover:scale-104 "
+          className=" flex items-center cursor-pointer gap-4 text-[10px] py-1 rounded-full bg-green-500 px-4 sm:py-2 text-md hover:scale-104 "
         >
           <svg width={18}
             height={18} viewBox="0 0 16 16" version="1.1">
@@ -38,14 +40,14 @@ export default function Callchatsec() {
             {" "}
             {t?.comfree?.btn1 || "Chat With Astrologers"}
           </span>
-        </CustomButton>
+        </button>
 
-        <CustomButton
+        <button
           onClick={() => router.push("/astrologer/call")}
           aria-label="Talk To Astrologers"
           type="button"
           variant={"red"}
-          className="flex items-center gap-4 rounded-full bg-rose-500 hover:scale-104 px-4 text-[10px] py-1 text-md sm:py-2 "
+          className="flex items-center cursor-pointer gap-4 rounded-full bg-rose-500 hover:scale-104 px-4 text-[10px] py-1 text-md sm:py-2 "
         >
           <svg
             width={18}
@@ -66,7 +68,7 @@ export default function Callchatsec() {
           
             {t?.comfree?.btn2 || "Talk To Astrologers"}
           </span>
-        </CustomButton>
+        </button>
       </div>
     </div>
   );
