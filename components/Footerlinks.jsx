@@ -9,8 +9,10 @@ import {
 } from "react-icons/fa";
 import Link from "next/link";
 import { useLanguage } from "../app/context/LangContext";
+import { useState } from "react";
 
 export default function Footerlinks() {
+  const [showAppBanner, setShowAppBanner] = useState(true);
   const { messages: t } = useLanguage();
   const footlink = [
     { id: 1, ulname: `${t.footer.horo1}`, link: "/freeservices/horoscope" },
@@ -575,31 +577,52 @@ export default function Footerlinks() {
         </div>
       </section>
 
-      <div className="foot-down-app" id="foot-down-app">
-        <div className="download-app">
-          <div className="flex items-center justify-between dwn-app-img">
-            <Image
-              className="dwn-app-image"
-              src="/ds-img/logo.webp"
-              loading="lazy"
-              height={120}
-              width={120}
-              alt="logo-2 image"
-            />
-            <h3 className="dwn-span">
-              Unlock more features by downloading the Dhwani Astro app today!
-            </h3>
-            <div className="dwn-btn-open">
-              <button aria-label="Open App" className="open-btn">
-                App
-              </button>
+      {showAppBanner && (
+        <div
+          className="foot-down-app  md:hidden fixed w-full bottom-0 z-[9999]"
+          id="foot-down-app"
+        >
+          <div className="download-app relative">
+            <div
+              onClick={() => setShowAppBanner(false)}
+              className="absolute bottom-12 bg-black/70 rounded-full p-1 right-1 cursor-pointer"
+              role="button"
+              aria-label="Close download app banner"
+            >
+              <svg width={15} height={15} viewBox="0 0 640 640">
+                <path
+                  fill="#fff"
+                  d="M183.1 137.4C170.6 124.9 150.3 124.9 137.8 137.4C125.3 149.9 125.3 170.2 137.8 182.7L275.2 320L137.9 457.4C125.4 469.9 125.4 490.2 137.9 502.7C150.4 515.2 170.7 515.2 183.2 502.7L320.5 365.3L457.9 502.6C470.4 515.1 490.7 515.1 503.2 502.6C515.7 490.1 515.7 469.8 503.2 457.3L365.8 320L503.1 182.6C515.6 170.1 515.6 149.8 503.1 137.3C490.6 124.8 470.3 124.8 457.8 137.3L320.5 274.7L183.1 137.4z"
+                />
+              </svg>
             </div>
-            <span className="dwn-icon">
-              <i className="text-white fa-regular fa-circle-xmark"></i>
-            </span>
+
+            <div className="flex items-center rounded-t-2xl bg-gradient-to-r from-purple-600 via-purple-500 to-purple-600 justify-around py-1 px-2">
+              <Image
+                className="dwn-app-image"
+                src="/favicon.png"
+                loading="lazy"
+                height={50}
+                width={50}
+                alt="logo-2 image"
+              />
+
+              <div className="flex flex-col items-center justify-center gap-1">
+                <h3 className="text-sm italic text-yellow-400">
+                  "Unlock your destiny with Dhwani Astro"
+                </h3>
+
+                <button
+                  aria-label="Open App"
+                  className="bg-green-600 shadow-xl text-white text-xs px-4 py-1.5 border border-green-500 rounded-full"
+                >
+                  Talk to Expert Astrologer
+                </button>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </footer>
   );
 }
