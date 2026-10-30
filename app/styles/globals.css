@@ -932,7 +932,7 @@ body {
 }
 
 .foot-down-app {
-  display: none;
+  /* display: none; */
 }
 
 .foot-horo-link li a:hover {

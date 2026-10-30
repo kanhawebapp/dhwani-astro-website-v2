@@ -10,54 +10,47 @@ export default function SpinnerHome() {
 
   const slices = ["Free Chat", "Cashback", "Try Again"];
   const centers = [60, 180, 300];
-const spinWheel = () => {
-  if (spinning) return;
+  const spinWheel = () => {
+    if (spinning) return;
 
-  setSpinning(true);
+    setSpinning(true);
 
-  const sliceCount = slices.length; 
-  const sliceAngle = 360 / sliceCount; 
+    const sliceCount = slices.length;
+    const sliceAngle = 360 / sliceCount;
 
-  
-  const randomIndex = Math.floor(Math.random() * sliceCount) ;
+    const randomIndex = Math.floor(Math.random() * sliceCount);
 
+    const randomOffset = Math.random() * sliceAngle;
 
-  const randomOffset = Math.random() * sliceAngle;
+    const sliceStart = randomIndex * sliceAngle;
 
+    const landingAngle = sliceStart + randomOffset;
 
-  const sliceStart = randomIndex * sliceAngle;
+    const fullRotations = 360 * (10 + Math.floor(Math.random() * 6));
 
- 
-  const landingAngle = sliceStart + randomOffset;
+    setAngle((prev) => prev + fullRotations + landingAngle);
 
- 
-  const fullRotations = 360 * (10 + Math.floor(Math.random() * 6));
-
-
-  setAngle((prev) => prev + fullRotations + landingAngle);
-
-  setTimeout(() => {
-    setSpinning(false);
-  }, 5200);
-};
-
+    setTimeout(() => {
+      setSpinning(false);
+    }, 5200);
+  };
 
   return (
-    <> 
-<div
-  onClick={() => window.open("https://wa.me/919319490827", "_blank")}
-  className="cursor-pointer z-999"
->
-  <img
-    src="/ds-img/watsapp.gif"
-    alt="Gift"
-    className="sm:w-17 sm:h-17 w-13 h-13 object-contain fixed bottom-0 right-1 sm:right-5 z-10"
-  />
-</div>
+    <>
+      <div
+        onClick={() => window.open("https://wa.me/919319490827", "_blank")}
+        className="cursor-pointer z-999"
+      >
+        <img
+          src="/ds-img/watsapp.gif"
+          alt="Gift"
+          className="sm:w-17 sm:h-17 w-13 h-13 object-contain fixed bottom-20 right-0 sm:right-5 z-10"
+        />
+      </div>
       <div
         className="fixed hidden bottom-0 right-5 z-10 shake-cycle cursor-pointer"
         onClick={() => setOpen(true)}
-       >
+      >
         <Image
           src="/ds-img/spinnn.png"
           alt="spinner"
@@ -69,10 +62,7 @@ const spinWheel = () => {
 
       {open && (
         <div className="popup-overlay" onClick={() => setOpen(false)}>
-          <div
-            className="popup-content"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="popup-content" onClick={(e) => e.stopPropagation()}>
             <Image
               src="/ds-img/arrow.png"
               alt="arrow"
@@ -109,52 +99,101 @@ const spinWheel = () => {
 
                     <defs>
                       <path id="arc1" d="M130,30 A100,100 0 0,1 217.32,180" />
-                      <path id="arc2" d="M217.32,180 A100,100 0 0,1 42.67,180" />
+                      <path
+                        id="arc2"
+                        d="M217.32,180 A100,100 0 0,1 42.67,180"
+                      />
                       <path id="arc3" d="M42.67,180 A100,100 0 0,1 130,30" />
                     </defs>
 
                     <defs>
-                      <radialGradient id="pathGradient" cx="50%" cy="50%" r="50%">
+                      <radialGradient
+                        id="pathGradient"
+                        cx="50%"
+                        cy="50%"
+                        r="50%"
+                      >
                         <stop offset="0%" stopColor="rgba(42, 155, 123, 1)" />
                         <stop offset="50%" stopColor="rgba(87, 199, 133, 1)" />
-                        <stop offset="100%" stopColor="rgba(165, 237, 83, 0.99)" />
+                        <stop
+                          offset="100%"
+                          stopColor="rgba(165, 237, 83, 0.99)"
+                        />
                       </radialGradient>
                     </defs>
 
-                    <path d="M130 130 L130 30 A100 100 0 0 1 217.32 180 Z" fill="url(#pathGradient)" />
+                    <path
+                      d="M130 130 L130 30 A100 100 0 0 1 217.32 180 Z"
+                      fill="url(#pathGradient)"
+                    />
 
                     <defs>
-                      <linearGradient id="bottomPathGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <linearGradient
+                        id="bottomPathGradient"
+                        x1="0%"
+                        y1="0%"
+                        x2="100%"
+                        y2="0%"
+                      >
                         <stop offset="0%" stopColor="#fcff9e" />
                         <stop offset="100%" stopColor="#c67700" />
                       </linearGradient>
                     </defs>
 
-                    <path d="M130 130 L217.32 180 A100 100 0 0 1 42.67 180 Z" fill="url(#bottomPathGradient)" />
+                    <path
+                      d="M130 130 L217.32 180 A100 100 0 0 1 42.67 180 Z"
+                      fill="url(#bottomPathGradient)"
+                    />
 
                     <defs>
-                      <radialGradient id="lastPathGradient" cx="50%" cy="50%" r="50%">
+                      <radialGradient
+                        id="lastPathGradient"
+                        cx="50%"
+                        cy="50%"
+                        r="50%"
+                      >
                         <stop offset="0%" stopColor="rgba(235, 21, 42, 1)" />
-                        <stop offset="100%" stopColor="rgba(233, 148, 154, 1)" />
+                        <stop
+                          offset="100%"
+                          stopColor="rgba(233, 148, 154, 1)"
+                        />
                       </radialGradient>
                     </defs>
 
-                    <path d="M130 130 L42.67 180 A100 100 0 0 1 130 30 Z" fill="url(#lastPathGradient)" />
+                    <path
+                      d="M130 130 L42.67 180 A100 100 0 0 1 130 30 Z"
+                      fill="url(#lastPathGradient)"
+                    />
 
                     <text fontWeight="600" fill="#444">
-                      <textPath className="text-spin" href="#arc1" startOffset="50%" textAnchor="middle">
+                      <textPath
+                        className="text-spin"
+                        href="#arc1"
+                        startOffset="50%"
+                        textAnchor="middle"
+                      >
                         Free Chat
                       </textPath>
                     </text>
 
                     <text fontWeight="600" fill="#444">
-                      <textPath className="text-spin" href="#arc2" startOffset="50%" textAnchor="middle">
+                      <textPath
+                        className="text-spin"
+                        href="#arc2"
+                        startOffset="50%"
+                        textAnchor="middle"
+                      >
                         Cashback
                       </textPath>
                     </text>
 
                     <text fontWeight="600" fill="#444">
-                      <textPath className="text-spin" href="#arc3" startOffset="50%" textAnchor="middle">
+                      <textPath
+                        className="text-spin"
+                        href="#arc3"
+                        startOffset="50%"
+                        textAnchor="middle"
+                      >
                         Try Again
                       </textPath>
                     </text>
@@ -166,7 +205,8 @@ const spinWheel = () => {
             <button
               className="spin-btn rounded-full shadow-2xl border-b border-gray-300"
               disabled={spinning}
-              onClick={spinWheel}>
+              onClick={spinWheel}
+            >
               {spinning ? "Spinning..." : "Spin"}
             </button>
           </div>
