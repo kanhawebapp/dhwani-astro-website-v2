@@ -10,8 +10,9 @@ import {
 import Link from "next/link";
 import { useLanguage } from "../app/context/LangContext";
 import { useState } from "react";
-
+import { useRouter } from "next/navigation";
 export default function Footerlinks() {
+  const router = useRouter();
   const [showAppBanner, setShowAppBanner] = useState(true);
   const { messages: t } = useLanguage();
   const footlink = [
@@ -613,7 +614,8 @@ export default function Footerlinks() {
                 </h3>
 
                 <button
-                  aria-label="Open App"
+                   onClick={() => router.push("/astrologer/call")}
+  aria-label="Talk to Expert Astrologer"
                   className="bg-green-600 shadow-xl text-white text-xs px-4 py-1.5 border border-green-500 rounded-full"
                 >
                   Talk to Expert Astrologer
