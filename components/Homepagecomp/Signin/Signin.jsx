@@ -70,16 +70,16 @@ const SignInModal = ({ onClose }) => {
 
   const handleGetOTP = async () => {
     try {
-      if (!phoneData.mobile || !phoneData.countryCode) {
-        toast.error("Enter valid mobile number");
+      if (!phoneData.mobile || !phoneData.countryCode || !phoneData.isValid) {
         return;
       }
+
       setOtp(["", "", "", ""]);
       await sendOtp(phoneData.countryCode, phoneData.mobile);
 
       setResetPhoneInput((prev) => prev + 1);
 
-      toast.success("OTP sent successfully ");
+      toast.success("OTP sent successfully");
     } catch (err) {
       toast.error(err.message);
     }
@@ -197,9 +197,13 @@ const SignInModal = ({ onClose }) => {
     }
   };
 
-  /* =============================
-     UI
-  ============================= */
+  useEffect(() => {
+    if (step === "OTP") {
+      setTimeout(() => {
+        document.getElementById("otp-0")?.focus();
+      }, 100);
+    }
+  }, [step]);
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center overflow-hidden justify-center z-[9999]">
@@ -215,121 +219,170 @@ const SignInModal = ({ onClose }) => {
         </div>
 
         <div className="flex flex-col bg-white md:flex-row side-div">
-          <div className="bg-[#3f1069] text-white w-full sm:w-2/5 flex flex-col items-center px-8 py-5 sm:p-8">
-            <Image
-              src="/ds-img/logo.webp"
-              alt="Logo"
-              width={100}
-              height={100}
-            />
-            <h2 className="text-xl font-bold">Welcome to Dhwani Astro</h2>
-            <h2 className="text-sm text-yellow-500 font-serif font-light">
-              "Unlock your destiny with Dhwani Astro"
-            </h2>
+          <div
+            className="relative overflow-hidden text-white w-full sm:w-3/6 
+  flex items-center justify-center px-6 py-6 sm:p-6
+  bg-[#3f1069]"
+          >
+            <div className="absolute w-48 h-48 bg-purple-400/20 rounded-full blur-3xl -top-16 -left-16" />
+
+            <div className="absolute w-48 h-48 bg-yellow-400/10 rounded-full blur-3xl -bottom-16 -right-16" />
+
+            <div
+              className="relative w-full flex flex-col items-center text-center
+    px-5 py-8 sm:px-6 sm:py-8
+    rounded-3xl
+    bg-white/[0.10]
+    backdrop-blur-xl
+    border border-white/20
+    shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_15px_40px_rgba(0,0,0,0.25)]"
+            >
+              <div
+                className="w-30 h-15 flex items-center justify-center
+      rounded-2xl mb-7
+     
+    "
+              >
+                <Image
+                  src="/ds-img/logo.webp"
+                  alt="Dhwani Astro Logo"
+                  width={100}
+                  height={100}
+                  className="object-contain"
+                />
+              </div>
+
+              <h2 className="text-xl sm:text-sm font-bold tracking-wide">
+                Welcome to Dhwani Astro
+              </h2>
+
+              <div className="w-12 h-[2px] bg-yellow-400 rounded-full my-4" />
+
+              <p className="text-sm text-yellow-300 font-serif italic tracking-wide">
+                Unlock your destiny with Dhwani Astro
+              </p>
+              {/* 
+              <p className="text-xs text-white/60 mt-5 leading-relaxed">
+                Discover guidance, clarity and cosmic wisdom
+              </p> */}
+            </div>
           </div>
+          <div
+            className="relative overflow-hidden text-white  sm:w-3/6 
+  flex items-center justify-center
+  bg-[#3f1069]"
+          >
+            <div className="absolute w-48 h-48 bg-purple-400/20 rounded-full blur-3xl -top-16 -left-16" />
 
-          <div className="w-full sm:w-3/5 flex flex-col items-center justify-center p-4 sm:p-8 gap-4">
-            {step === "PHONE" && (
-              <>
-                <PhoneInput
-                  onChange={setPhoneData}
-                  resetTrigger={resetPhoneInput}
-                  handleKeyEnter={(e) => {
-                    if (e.key === "Enter") {
-                      handleGetOTP();
-                    }
-                  }}
-                />
-                <button
-                  onClick={handleGetOTP}
-                  disabled={otpLoading}
-                  className="sm:w-[70%] w-[40%] py-1 text-sm sm:text-base bg-yellow-400 sm:py-2 rounded-full"
-                >
-                  {otpLoading ? "Sending OTP..." : "GET OTP"}
-                </button>
-              </>
-            )}
-
-            {step === "OTP" && (
-              <>
-                <div className="flex gap-3">
-                  {otp.map((digit, index) => (
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                      autoComplete="one-time-code"
-                      disabled={timer === 0}
-                      id={`otp-${index}`}
-                      key={index}
-                      maxLength="1"
-                      value={digit}
-                      onChange={(e) => handleOtpChange(e, index)}
-                      onKeyDown={(e) => handleOtpKeyDown(e, index)}
-                      className="w-12 h-12 rounded-xl  text-center border border-gray-300"
-                    />
-                  ))}
-                </div>
-
-                <button
-                  onClick={handleVerifyOTP}
-                  disabled={verifyLoading || timer === 0}
-                  className="w-[40%] sm:w-[70%] bg-yellow-400 text-xs sm:text-base py-2 rounded-full"
-                >
-                  {verifyLoading ? "Verifying..." : "Verify OTP"}
-                </button>
-
-                {timer > 0 ? (
-                  <p className="text-xs sm:text-sm text-gray-500">
-                    Resend OTP in {timer}s
-                  </p>
-                ) : (
+            <div className="absolute w-48 h-48 bg-yellow-400/10 rounded-full blur-3xl -bottom-16 -right-16" />
+            <div
+              className="w-full h-full flex flex-col items-center justify-center  gap-4     bg-white/20
+    backdrop-blur-xl
+    border border-white/20
+    shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_15px_40px_rgba(0,0,0,0.25)]"
+            >
+              {step === "PHONE" && (
+                <>
+                  <PhoneInput
+                    onChange={setPhoneData}
+                    resetTrigger={resetPhoneInput}
+                    handleKeyEnter={(e) => {
+                      if (e.key === "Enter") {
+                        handleGetOTP();
+                      }
+                    }}
+                  />
                   <button
-                    className="text-sm text-purple-700 underline cursor-pointer"
                     onClick={handleGetOTP}
+                    disabled={otpLoading || !phoneData.isValid}
+                    className="sm:w-[50%] w-[40%] py-1 text-sm sm:text-md font-semibold cursor-pointer hover:scale-103 bg-yellow-400 text-black sm:py-2 rounded-full disabled:cursor-not-allowed disabled:opacity-50 "
                   >
-                    Resend OTP
+                    {otpLoading ? "Sending OTP..." : "GET OTP"}
                   </button>
-                )}
-              </>
-            )}
+                </>
+              )}
 
-            {step === "NAME" && (
-              <>
-                <h2 className="text-xl font-bold mb-4">
-                  Welcome ✨ Please Enter Your Name
-                </h2>
+              {step === "OTP" && (
+                <>
+                  <div className="flex gap-3">
+                    {otp.map((digit, index) => (
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        autoComplete="one-time-code"
+                        disabled={timer === 0}
+                        id={`otp-${index}`}
+                        key={index}
+                        maxLength="1"
+                        value={digit}
+                        onChange={(e) => handleOtpChange(e, index)}
+                        onKeyDown={(e) => handleOtpKeyDown(e, index)}
+                        className="w-12 h-12 rounded-xl  text-center border bg-white/60 border-gray-400"
+                      />
+                    ))}
+                  </div>
 
-                <input
-                  value={userName}
-                  onChange={(e) => setUserName(e.target.value)}
-                  className="w-full border p-2 rounded"
-                  placeholder="Your Name"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      handleSaveName();
-                    }
-                  }}
-                />
+                  <button
+                    onClick={handleVerifyOTP}
+                    disabled={verifyLoading || timer === 0}
+                    className="w-[40%] sm:w-[70%] bg-yellow-400 text-xs sm:text-base py-2 rounded-full"
+                  >
+                    {verifyLoading ? "Verifying..." : "Verify OTP"}
+                  </button>
 
-                <button
-                  onClick={handleSaveName}
-                  className="w-[70%] bg-yellow-400 py-2 rounded-full"
-                >
-                  Continue
-                </button>
-              </>
-            )}
+                  {timer > 0 ? (
+                    <p className="text-xs sm:text-sm text-gray-500">
+                      Resend OTP in {timer}s
+                    </p>
+                  ) : (
+                    <button
+                      className="text-sm text-purple-700 underline cursor-pointer"
+                      onClick={handleGetOTP}
+                    >
+                      Resend OTP
+                    </button>
+                  )}
+                </>
+              )}
 
-            {step === "WELCOME" && (
-              <>
-                <h2 className="text-xl font-bold text-purple-700">
-                  Welcome Back ✨
-                </h2>
-                <p className="text-lg mt-2">{existingUserName}</p>
-              </>
-            )}
+              {step === "NAME" && (
+                <>
+                  <h2 className="text-xl font-bold mb-4">
+                    Welcome ✨ Please Enter Your Name
+                  </h2>
+
+                  <input
+                    value={userName}
+                    onChange={(e) => setUserName(e.target.value)}
+                    className="w-full border p-2 rounded"
+                    placeholder="Your Name"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleSaveName();
+                      }
+                    }}
+                  />
+
+                  <button
+                    onClick={handleSaveName}
+                    className="w-[70%] bg-yellow-400 py-2 rounded-full"
+                  >
+                    Continue
+                  </button>
+                </>
+              )}
+
+              {step === "WELCOME" && (
+                <>
+                  <h2 className="text-xl font-bold text-purple-700">
+                    Welcome Back ✨
+                  </h2>
+                  <p className="text-lg mt-2">{existingUserName}</p>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>
