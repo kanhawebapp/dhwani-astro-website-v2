@@ -41,7 +41,7 @@ export default function PhoneInput({ onChange, handleKeyEnter, resetTrigger }) {
       `${selectedCountry.dialCode}${value}`,
     );
 
-    const isValid = value.length = 10 && (phone?.isValid() || false);
+    const isValid = value.length ==10 && (phone?.isValid() || false);
 
     onChange({
       countryCode: selectedCountry.dialCode,
