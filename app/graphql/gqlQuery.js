@@ -984,3 +984,23 @@ export const UNFOLLOW_ASTROLOGER = gql`
     }
   }
 `;
+
+export const GET_LIVE_STATUS = gql`
+  query GetLiveStatus($chatRoomId: String!) {
+    getLiveStatus(chatRoomId: $chatRoomId) {
+      success
+      message
+      data {
+        id
+        astrologerId
+        title
+        channelName
+        chatRoomId
+        status
+        startedAt
+        endedAt
+        totalViews
+      }
+    }
+  }
+`;

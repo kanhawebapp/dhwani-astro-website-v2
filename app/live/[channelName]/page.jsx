@@ -13,6 +13,7 @@ import {
   GET_ASTROLOGER_FOLLOWERS_COUNT,
   FOLLOW_ASTROLOGER,
   UNFOLLOW_ASTROLOGER,
+  GET_LIVE_STATUS,
 } from "@/app/graphql/gqlQuery";
 
 export default function WatchLive() {
@@ -42,6 +43,7 @@ export default function WatchLive() {
   const [giftNotice, setGiftNotice] = useState("");
 
   const [followNotice, setFollowNotice] = useState("");
+  const [streamEnded, setStreamEnded] = useState(false);
 
   // =======================================================
   // REFS
@@ -64,6 +66,12 @@ export default function WatchLive() {
   const liveInfoRef = useRef(null);
 
   const leavingRef = useRef(false);
+
+  // Prevent duplicate ended-session handling.
+  const endingRef = useRef(false);
+
+  // Store automatic redirect timer.
+  const redirectTimeoutRef = useRef(null);
 
   // Keep current live information accessible to event handlers.
   useEffect(() => {
@@ -96,6 +104,15 @@ export default function WatchLive() {
     refetch: refetchGifts,
   } = useQuery(GET_LIVE_GIFTS, {
     fetchPolicy: "cache-and-network",
+    errorPolicy: "all",
+  });
+
+  // =======================================================
+  // GRAPHQL: LIVE STATUS
+  // =======================================================
+
+  const [getLiveStatus] = useLazyQuery(GET_LIVE_STATUS, {
+    fetchPolicy: "network-only",
     errorPolicy: "all",
   });
 
@@ -434,6 +451,68 @@ export default function WatchLive() {
   }, [disposeLocalClients]);
 
   // =======================================================
+  // HANDLE AUTOMATIC STREAM END
+  // =======================================================
+
+  const handleStreamEnded = useCallback(
+    async (generation) => {
+      console.log("22222222222222222");
+      // Prevent duplicate execution.
+      if (endingRef.current || !isCurrentGeneration(generation)) {
+        return;
+      }
+
+      endingRef.current = true;
+      leavingRef.current = true;
+
+      console.log("Live session ended. Cleaning up viewer connection.");
+
+      setStreamEnded(true);
+      setHostJoined(false);
+      setGiftPanelOpen(false);
+      setSelectedGiftId("");
+      setGiftNotice("");
+      setError("");
+
+      // Invalidate existing Agora event handlers.
+      generationRef.current++;
+      console.log("333333333333333");
+      try {
+        // Record that the viewer has left the live stream.
+        try {
+          const { data } = await leaveLiveStream({
+            variables: {
+              channelName,
+            },
+          });
+
+          if (data?.leaveLive?.success) {
+            console.log("Viewer leave recorded:", data.leaveLive.message);
+          }
+        } catch (err) {
+          console.error("Failed to record viewer leaving:", err);
+        }
+        console.log("4444444444444");
+        // Clean up Agora RTC and Chat connections.
+        await cleanup();
+      } catch (err) {
+        console.error("Error during ended-stream cleanup:", err);
+      } finally {
+        console.log("55555555555555555");
+        // Redirect only if this component is still mounted.
+        if (mountedRef.current) {
+          redirectTimeoutRef.current = setTimeout(() => {
+            if (mountedRef.current) {
+              router.push("/astrologer/liveStream");
+            }
+          }, 3000);
+        }
+      }
+    },
+    [channelName, cleanup, isCurrentGeneration, leaveLiveStream, router],
+  );
+
+  // =======================================================
   // SUBSCRIBE TO ASTROLOGER VIDEO / AUDIO
   // =======================================================
 
@@ -501,6 +580,12 @@ export default function WatchLive() {
         if (!isCurrentGeneration(generation)) {
           return;
         }
+
+        // Reset state when connecting or retrying.
+        endingRef.current = false;
+        leavingRef.current = false;
+        setStreamEnded(false);
+        setGiftPanelOpen(false);
 
         setLoading(true);
         setError("");
@@ -573,10 +658,80 @@ export default function WatchLive() {
           }
         });
 
-        rtcClient.on("user-left", () => {
-          if (isCurrentGeneration(generation)) {
-            setHostJoined(false);
-            pendingVideoTrackRef.current = null;
+        // =================================================
+        // IMPORTANT: CHECK BACKEND STATUS WHEN USER LEAVES
+        // =================================================
+
+        rtcClient.on("user-left", async (user, reason) => {
+          console.log("---------user---",user,reason);
+          if (!isCurrentGeneration(generation)) {
+            return;
+          }
+
+          console.log("Agora user left:", user?.uid, reason);
+
+          setHostJoined(false);
+          pendingVideoTrackRef.current = null;
+
+          try {
+            const chatRoomId = chatRoomIdRef.current;
+
+            if (!chatRoomId) {
+              console.warn("Chat room ID not available.");
+              return;
+            }
+
+            // Wait 5 seconds for the backend to update the live status
+            console.log("Waiting 5 seconds before checking live status...");
+
+            await new Promise((resolve) => setTimeout(resolve, 5000));
+
+            if (!isCurrentGeneration(generation)) {
+              return;
+            }
+
+            const { data, errors } = await getLiveStatus({
+              variables: {
+                chatRoomId: String(chatRoomId),
+              },
+            });
+
+            if (!isCurrentGeneration(generation)) {
+              return;
+            }
+
+            if (errors?.length) {
+              console.error("Live status GraphQL errors:", errors);
+              return;
+            }
+
+            const statusResponse = data?.getLiveStatus;
+
+            if (!statusResponse?.success) {
+              console.warn(
+                "Unable to fetch live status:",
+                statusResponse?.message,
+              );
+              return;
+            }
+
+            const status = statusResponse.data?.status;
+
+            console.log("Current live status:", status);
+
+            if (status === "ENDED") {
+              console.log("Live stream has ended.");
+
+              await handleStreamEnded(generation);
+            } else if (status === "LIVE") {
+              console.log(
+                "Live session is still active. Host may have temporarily disconnected.",
+              );
+            } else {
+              console.warn("Unknown live stream status:", status);
+            }
+          } catch (err) {
+            console.error("Error checking live status:", err);
           }
         });
 
@@ -710,7 +865,9 @@ export default function WatchLive() {
       cleanup,
       disposeLocalClients,
       getErrorMessage,
+      getLiveStatus,
       handleIncomingTextMessage,
+      handleStreamEnded,
       isCurrentGeneration,
       isValidLiveResponse,
       subscribeToUser,
@@ -741,6 +898,12 @@ export default function WatchLive() {
     return () => {
       mountedRef.current = false;
       generationRef.current++;
+
+      // Cancel pending automatic redirect.
+      if (redirectTimeoutRef.current) {
+        clearTimeout(redirectTimeoutRef.current);
+        redirectTimeoutRef.current = null;
+      }
 
       void cleanup();
     };
@@ -781,7 +944,7 @@ export default function WatchLive() {
   const sendMessage = async () => {
     const trimmedMessage = message.trim();
 
-    if (!trimmedMessage || !liveInfo) {
+    if (!trimmedMessage || !liveInfo || streamEnded) {
       return;
     }
 
@@ -827,6 +990,10 @@ export default function WatchLive() {
   // =======================================================
 
   const handleSendGift = async () => {
+    if (streamEnded) {
+      return;
+    }
+
     if (!liveInfo?.id) {
       setGiftNotice(
         "Stream database ID is missing from the joinLive response.",
@@ -885,12 +1052,9 @@ export default function WatchLive() {
         `Successfully sent ${sentName} × ${sentQuantity} for ${coins} coins.${balanceMessage}`,
       );
 
-      // Reset selection after successful transaction.
       setSelectedGiftId("");
       setGiftQuantity(1);
 
-      // Refresh the gift list in case the backend changes it.
-      // Do not fail the completed transaction if refetch fails.
       try {
         await refetchGifts();
       } catch (refreshError) {
@@ -905,11 +1069,11 @@ export default function WatchLive() {
   };
 
   // =======================================================
-  // LEAVE LIVE STREAM
+  // MANUAL LEAVE LIVE STREAM
   // =======================================================
 
   const handleLeaveLive = async () => {
-    if (leavingRef.current || leavingLive) {
+    if (leavingRef.current || leavingLive || streamEnded) {
       return;
     }
 
@@ -980,7 +1144,7 @@ export default function WatchLive() {
   // =======================================================
 
   return (
-    <div className="flex min-h-[70vh] w-full flex-col bg-gradient-to-b from-gray-950 to-black text-white lg:flex-row">
+    <div className="relative flex min-h-[70vh] w-full flex-col bg-gradient-to-b from-gray-950 to-black text-white lg:flex-row">
       {/* VIDEO PANEL */}
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Header */}
@@ -992,7 +1156,6 @@ export default function WatchLive() {
 
             <div>
               <h2 className="text-lg font-semibold">Live Session</h2>
-
               <p className="text-xs text-gray-400">Watch astrologer live</p>
             </div>
           </div>
@@ -1059,10 +1222,7 @@ export default function WatchLive() {
                   className="absolute inset-0 z-0 h-full w-full bg-black"
                 />
 
-                {/* =================================================
-                    CROSS ICON: LEAVE LIVE
-                ================================================= */}
-
+                {/* Leave button */}
                 <button
                   type="button"
                   onClick={handleLeaveLive}
@@ -1092,12 +1252,8 @@ export default function WatchLive() {
                   )}
                 </button>
 
-                {/* =================================================
-                    STREAM HEADER OVERLAY
-                ================================================= */}
-
+                {/* Stream header overlay */}
                 <div className="absolute left-0 right-0 top-0 z-10 flex flex-wrap items-start justify-between gap-3 bg-gradient-to-b from-black/90 to-transparent p-3 pr-16 sm:p-4 sm:pr-20">
-                  {/* Astrologer information */}
                   <div className="flex min-w-0 items-center gap-3">
                     {astrologerProfilePic ? (
                       <img
@@ -1176,7 +1332,6 @@ export default function WatchLive() {
                     </button>
                   </div>
 
-                  {/* Follow status notice */}
                   {followNotice && (
                     <p
                       role="status"
@@ -1188,10 +1343,7 @@ export default function WatchLive() {
                   )}
                 </div>
 
-                {/* =================================================
-                    GIFT PANEL
-                ================================================= */}
-
+                {/* Gift panel */}
                 {giftPanelOpen && (
                   <div
                     role="dialog"
@@ -1199,7 +1351,6 @@ export default function WatchLive() {
                     aria-label="Send a gift"
                     className="absolute bottom-[76px] right-3 z-40 max-h-[65%] w-[calc(100%-24px)] max-w-[360px] overflow-y-auto rounded-2xl border border-white/10 bg-gray-950/95 p-4 shadow-2xl backdrop-blur-md sm:bottom-[88px] sm:right-4"
                   >
-                    {/* Panel header */}
                     <div className="mb-4 flex items-center justify-between gap-3 border-b border-gray-800 pb-3">
                       <div>
                         <h3 className="text-lg font-bold">🎁 Send a Gift</h3>
@@ -1219,7 +1370,6 @@ export default function WatchLive() {
                       </button>
                     </div>
 
-                    {/* Loading state */}
                     {giftsLoading && gifts.length === 0 && (
                       <div className="flex items-center justify-center gap-3 py-8">
                         <span className="h-5 w-5 animate-spin rounded-full border-2 border-yellow-400 border-t-transparent" />
@@ -1230,7 +1380,6 @@ export default function WatchLive() {
                       </div>
                     )}
 
-                    {/* Error state */}
                     {giftsError && gifts.length === 0 && (
                       <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3">
                         <p className="text-sm text-red-300">
@@ -1249,14 +1398,12 @@ export default function WatchLive() {
                       </div>
                     )}
 
-                    {/* Empty state */}
                     {!giftsLoading && !giftsError && gifts.length === 0 && (
                       <p className="py-6 text-center text-sm text-gray-400">
                         No gifts are available right now.
                       </p>
                     )}
 
-                    {/* Gift list */}
                     {gifts.length > 0 && (
                       <>
                         <div className="grid grid-cols-3 gap-2">
@@ -1289,7 +1436,7 @@ export default function WatchLive() {
                                   <img
                                     src={`${process.env.NEXT_PUBLIC_BASE_URL}${gift.icon}`}
                                     alt={gift.name}
-                                    className="w-10 h-10 object-contain"
+                                    className="h-10 w-10 object-contain"
                                   />
                                 </span>
 
@@ -1306,7 +1453,6 @@ export default function WatchLive() {
                           })}
                         </div>
 
-                        {/* Selected gift */}
                         {selectedGift && (
                           <div className="mt-4 rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-3">
                             <div className="flex items-center gap-3">
@@ -1416,7 +1562,6 @@ export default function WatchLive() {
                           </div>
                         )}
 
-                        {/* Gift success/error notice */}
                         {giftNotice && (
                           <div
                             role="status"
@@ -1431,7 +1576,6 @@ export default function WatchLive() {
                           </div>
                         )}
 
-                        {/* Send button */}
                         <button
                           type="button"
                           onClick={handleSendGift}
@@ -1470,10 +1614,7 @@ export default function WatchLive() {
                   </div>
                 )}
 
-                {/* =================================================
-                    BOTTOM CONTROLS
-                ================================================= */}
-
+                {/* Bottom controls */}
                 <div className="absolute bottom-0 left-0 right-0 z-20 flex items-center justify-between gap-3 bg-gradient-to-t from-black via-black/90 to-transparent px-4 pb-4 pt-10">
                   <div className="flex items-center gap-2 text-sm text-gray-300">
                     <span className="h-2 w-2 animate-pulse rounded-full bg-red-500" />
@@ -1541,10 +1682,7 @@ export default function WatchLive() {
         </div>
       </div>
 
-      {/* =====================================================
-          CHAT PANEL
-      ===================================================== */}
-
+      {/* CHAT PANEL */}
       <aside className="flex w-full min-w-0 flex-col border-t border-gray-800 bg-gray-950 lg:w-[350px] lg:shrink-0 lg:border-l lg:border-t-0">
         <div className="border-b border-gray-800 px-4 py-3">
           <h3 className="font-semibold">Live Chat</h3>
@@ -1619,7 +1757,7 @@ export default function WatchLive() {
             onChange={(event) => setMessage(event.target.value)}
             placeholder="Write a message..."
             maxLength={1000}
-            disabled={!liveInfo || loading}
+            disabled={!liveInfo || loading || streamEnded}
             className="min-w-0 flex-1 rounded-full bg-gray-900 px-4 py-3 text-white outline-none placeholder:text-gray-500 focus:ring-1 focus:ring-red-500 disabled:opacity-50"
             onKeyDown={(event) => {
               if (event.key === "Enter" && !event.shiftKey) {
@@ -1632,13 +1770,61 @@ export default function WatchLive() {
           <button
             type="button"
             onClick={() => void sendMessage()}
-            disabled={!message.trim() || !liveInfo || loading}
+            disabled={!message.trim() || !liveInfo || loading || streamEnded}
             className="rounded-full bg-red-600 px-5 py-3 text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Send
           </button>
         </div>
       </aside>
+
+      {/* =====================================================
+          FULL-SCREEN LIVE ENDED MESSAGE
+          Covers BOTH video and chat panels.
+      ===================================================== */}
+
+      {streamEnded && (
+        <div
+          role="alert"
+          aria-live="assertive"
+          className="fixed inset-0 z-[100] flex min-h-screen flex-col items-center justify-center bg-gray-950 px-6 text-center text-white"
+        >
+          <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full border border-red-500/30 bg-red-500/10">
+            <span className="text-5xl">📴</span>
+          </div>
+
+          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+            Live Session Ended
+          </h2>
+
+          <p className="mt-4 max-w-md text-base leading-7 text-gray-300">
+            The astrologer has ended the live session. Thank you for joining!
+          </p>
+
+          <div className="mt-8 flex items-center gap-3 rounded-full border border-gray-700 bg-gray-900 px-5 py-3">
+            <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-yellow-400" />
+
+            <span className="text-sm text-gray-300">
+              Redirecting you shortly...
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              if (redirectTimeoutRef.current) {
+                clearTimeout(redirectTimeoutRef.current);
+                redirectTimeoutRef.current = null;
+              }
+
+              router.push("/astrologer/liveStream");
+            }}
+            className="mt-8 rounded-xl bg-red-600 px-6 py-3 font-semibold text-white transition hover:bg-red-700"
+          >
+            Go Back Now
+          </button>
+        </div>
+      )}
     </div>
   );
 }
