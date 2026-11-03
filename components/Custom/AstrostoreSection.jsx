@@ -7,32 +7,32 @@ export default function AstrostoreSection() {
     {
       name: "Puja Essential",
       img: "/ds-img/webp/puja essential.webp",
-      href: "https://shop.dhwaniastro.com/collections/499-store",
+      href: "https://shop.dhwaniastro.com/collections/puja-essentials",
     },
     {
       name: "Gift Hamper",
       img: "/ds-img/webp/gift hamper.webp",
-      href: "https://shop.dhwaniastro.com/collections/rose-quartz",
+      href: "https://shop.dhwaniastro.com/collections",
     },
     {
       name: "Brass Idol",
       img: "/ds-img/webp/brass idol.webp",
-      href: "https://shop.dhwaniastro.com/collections/god-idols",
+      href: "https://shop.dhwaniastro.com/collections/brass-items",
     },
     {
       name: "925 Silver",
       img: "/ds-img/webp/925 silver.webp",
-      href: "https://shop.dhwaniastro.com/collections/buy-1-get-1-free",
+      href: "https://shop.dhwaniastro.com/collections/925-silver",
     },
     {
       name: "Candle",
       img: "/ds-img/webp/candle.webp",
-      href: "https://shop.dhwaniastro.com/collections/kavach",
+      href: "https://shop.dhwaniastro.com/collections/candle",
     },
     {
       name: "Kamdhenu Cow",
       img: "/ds-img/webp/kamdhenu cow.webp",
-      href: "https://shop.dhwaniastro.com/collections/mala",
+      href: "https://shop.dhwaniastro.com/collections/kamdhenu-cow",
     },
   
   ];

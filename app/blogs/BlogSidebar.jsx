@@ -12,7 +12,7 @@ export default function BlogSidebar({ categories, recentBlogs, loading }) {
           <div className="h-12 w-full rounded-full bg-gray-200 animate-pulse" />
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5 w-full xl:w-[90%]">
+        {/* <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5 w-full xl:w-[90%]">
           {[...Array(4)].map((_, index) => (
             <div
               key={index}
@@ -27,7 +27,7 @@ export default function BlogSidebar({ categories, recentBlogs, loading }) {
               </div>
             </div>
           ))}
-        </div>
+        </div> */}
       </section>
     );
   }

@@ -143,7 +143,7 @@ const canLoop =
                       {test.name}
                     </h2>
 
-                    <div className="flex justify-center items-center gap-1 mt-2">
+                    <div className="flex justify-center items-center gap-1 mt-1">
                       <div className="text-yellow-400">
                         {Array.from({ length: Number(test.rating || 0) }).map(
                           (_, index) => (
@@ -165,9 +165,9 @@ const canLoop =
                     <h3 className="text-[10px] sm:text-sm text-gray-500 mt-1">
                       {test.address}
                     </h3>
-                    <p className="text-gray-600 p-s text-start  overflow-y-auto h-15 mt-3 text-[11px] sm:text-sm">
-                      {test.content}
-                    </p>
+                  <p className="text-gray-600 p-s text-start overflow-y-auto scrollbar-hide h-15 mt-3 text-[11px] sm:text-sm">
+  {test.content}
+</p>
                     <div className="flex justify-between items-center mt-2">
                       <span className="text-[10px] font-semibold text-gray-500">
                         {formatDate(test.createdAt)}

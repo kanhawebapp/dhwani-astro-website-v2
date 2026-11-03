@@ -5,10 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "@apollo/client/react";
 
-import {
-  GET_BLOG_BY_SLUG,
-  GET_BLOGS,
-} from "@/app/graphql/gqlQuery";
+import { GET_BLOG_BY_SLUG, GET_BLOGS } from "@/app/graphql/gqlQuery";
 
 import { BASE_URL } from "@/utils/siteConfig";
 
@@ -29,9 +26,7 @@ export default function BlogDetail() {
   const blog = data?.blogBySlug;
 
   const recentBlogs =
-    blogsData?.blogs
-      ?.filter((item) => item.slug !== slug)
-      ?.slice(0, 4) || [];
+    blogsData?.blogs?.filter((item) => item.slug !== slug)?.slice(0, 4) || [];
 
   const formatDate = (date) => {
     if (!date) {
@@ -82,10 +77,7 @@ export default function BlogDetail() {
       return "";
     }
 
-    if (
-      image.startsWith("http://") ||
-      image.startsWith("https://")
-    ) {
+    if (image.startsWith("http://") || image.startsWith("https://")) {
       return image;
     }
 
@@ -140,9 +132,7 @@ export default function BlogDetail() {
   if (error || !blog) {
     return (
       <main className="py-20 text-center">
-        <h1 className="text-2xl font-semibold">
-          Blog not found
-        </h1>
+        <h1 className="text-2xl font-semibold">Blog not found</h1>
 
         <p className="mt-2 text-gray-600">
           The requested article could not be found.
@@ -166,19 +156,15 @@ export default function BlogDetail() {
 
   return (
     <main className="w-full px-3 py-5 sm:px-5">
-      <article className="w-full max-w-6xl border border-gray-200 shadow-xl py-4 sm:px-8 rounded-2xl mx-auto sm:py-10 bg-white">
-
+      <article className="w-full max-w-6xl border border-gray-200 shadow-xl py-4 sm:px-8 rounded-2xl mx-auto sm:py-5 bg-white">
         {/* Breadcrumb */}
         <nav
           aria-label="Breadcrumb"
-          className="mb-5 text-xs sm:text-sm text-gray-500"
+          className="mb-2 text-[10px] sm:text-xs text-gray-500"
         >
-          <ol className="flex flex-wrap items-center gap-2">
+          <ol className="flex flex-wrap  items-center gap-2">
             <li>
-              <Link
-                href="/"
-                className="hover:text-purple-600"
-              >
+              <Link href="/" className="hover:text-purple-600">
                 Home
               </Link>
             </li>
@@ -186,11 +172,8 @@ export default function BlogDetail() {
             <li aria-hidden="true">/</li>
 
             <li>
-              <Link
-                href="/blogs"
-                className="hover:text-purple-600"
-              >
-                Astrology Blogs
+              <Link href="/blogs" className="hover:text-purple-600">
+                Blogs
               </Link>
             </li>
 
@@ -205,10 +188,10 @@ export default function BlogDetail() {
           </ol>
         </nav>
 
-        {/* Article Header */}
-        <header className="flex flex-col gap-3">
-          {/* Primary page heading - keep exactly one H1 */}
-          <h1 className="text-xl sm:text-3xl md:text-4xl text-center font-bold text-black leading-tight">
+    
+        <header className="flex flex-col gap-2">
+         
+          <h1 className="text-xl sm:text-2xl md:text-3xl text-center font-bold text-black leading-tight">
             {blog.title}
           </h1>
 
@@ -224,15 +207,13 @@ export default function BlogDetail() {
             <span>Posted by Dhwani Astro</span>
           </div>
 
-          {/* Categories */}
+     
           {blog.categories?.length > 0 && (
             <div className="flex flex-wrap items-center justify-center gap-2">
               {blog.categories.map((category) => (
                 <Link
                   key={category.id}
-                  href={`/blogs/category/${
-                    category.slug || category.id
-                  }`}
+                  href={`/blogs/category/${category.slug || category.id}`}
                   className="px-3 py-1 rounded-full bg-purple-100 text-purple-700 text-[10px] sm:text-xs hover:bg-purple-200"
                 >
                   {category.name}
@@ -242,9 +223,8 @@ export default function BlogDetail() {
           )}
         </header>
 
-        {/* Featured Image + CTA */}
+     
         <div className="grid rounded-2xl overflow-hidden mt-6 sm:grid-cols-6 gap-3">
-
           {featuredImage && (
             <div className="overflow-hidden sm:col-span-4 rounded-xl">
               <Image

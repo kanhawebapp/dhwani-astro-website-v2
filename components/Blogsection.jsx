@@ -49,8 +49,7 @@ export default function Blogsection() {
   }
   const maxSlidesPerView = 4;
 
-const canLoop =
-  blogs.length > maxSlidesPerView;
+  const canLoop = blogs.length > maxSlidesPerView;
   return (
     <section className="flex flex-col gap-4 w-full items-center self-center sm:max-w-7xl sm:my-4 p-3 ">
       <div className="py-3 flex flex-col gap-2">
@@ -82,8 +81,7 @@ const canLoop =
             nextEl: ".swiper-button-next-blg",
             prevEl: ".swiper-button-prev-blg",
           }}
-         loop={canLoop}
-       
+          loop={canLoop}
           resizeObserver={false}
           observer={false}
           observeParents={false}
