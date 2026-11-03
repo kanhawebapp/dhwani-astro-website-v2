@@ -47,25 +47,19 @@ const formatDate = (value) => {
 export default function RechargePaymentLogs() {
   const client = useApolloClient();
 
-  // Pagination
   const [page, setPage] = useState(1);
 
-  // Dates currently selected in the input fields.
-  // Both fields are blank initially.
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
-  // Dates that have actually been applied to the query.
   const [appliedStartDate, setAppliedStartDate] = useState("");
   const [appliedEndDate, setAppliedEndDate] = useState("");
 
-  // Invoice state
   const [invoiceData, setInvoiceData] = useState(null);
   const [invoiceLoading, setInvoiceLoading] = useState(null);
 
   const invoiceRef = useRef(null);
 
-  // Recharge payment logs query
   const [getLogs, { data, loading, error }] = useLazyQuery(
     GET_RECHARGE_PAYMENT_LOGS,
     {
@@ -73,12 +67,6 @@ export default function RechargePaymentLogs() {
     }
   );
 
-  /**
-   * Fetch recharge payment logs.
-   *
-   * If dates are empty, null is passed to the resolver,
-   * allowing it to return records without a date filter.
-   */
   const fetchLogs = (
     currentPage = page,
     start = appliedStartDate,
@@ -94,60 +82,42 @@ export default function RechargePaymentLogs() {
     });
   };
 
-  // Fetch logs initially and whenever the page changes.
   useEffect(() => {
     fetchLogs(page);
 
-    // fetchLogs uses the current applied date filters.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
-  // Response data
   const response = data?.getRechargePaymentLogs;
   const logs = response?.data ?? [];
   const pagination = response?.pagination ?? {};
 
-  /**
-   * Apply date filters.
-   */
   const applyFilters = () => {
-    // Validate the date range.
+
     if (startDate && endDate && startDate > endDate) {
       alert("Start date cannot be later than end date.");
       return;
     }
 
-    // Save the selected dates as the applied filters.
     setAppliedStartDate(startDate);
     setAppliedEndDate(endDate);
 
-    // Reset pagination and fetch the filtered records.
     setPage(1);
     fetchLogs(1, startDate, endDate);
   };
 
-  /**
-   * Reset date filters and fetch all recharge payment logs.
-   */
   const resetFilters = () => {
-    // Clear the input fields.
+
     setStartDate("");
     setEndDate("");
 
-    // Clear the applied filters.
     setAppliedStartDate("");
     setAppliedEndDate("");
 
-    // Reset pagination.
     setPage(1);
 
-    // Fetch records without any date restrictions.
     fetchLogs(1, "", "");
   };
 
-  /**
-   * Download recharge invoice as a PDF.
-   */
   const downloadInvoice = async (row) => {
     if (!row?.id) {
       alert("Invoice download is unavailable: payment log ID is missing.");
@@ -173,7 +143,6 @@ export default function RechargePaymentLogs() {
 
       setInvoiceData(invoice);
 
-      // Wait for PaymentInvoice to render.
       await new Promise((resolve) => setTimeout(resolve, 300));
 
       if (!invoiceRef.current) {
@@ -215,9 +184,6 @@ export default function RechargePaymentLogs() {
     }
   };
 
-  /**
-   * Payment status badge styling.
-   */
   const statusClass = (status) => {
     const value = String(status || "").toUpperCase();
 
@@ -235,32 +201,32 @@ export default function RechargePaymentLogs() {
   return (
     <div className="min-h-screen bg-gray-100 p-3 text-black sm:p-6">
       <div className="rounded-2xl bg-white p-4 shadow-sm sm:p-6">
-        {/* Header */}
+   
         <div className="mb-6 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-xl font-bold text-gray-900">
               Recharge Payment Logs
             </h1>
 
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-1 text-[10px] text-gray-500">
               Total records: {pagination.totalRecords ?? 0}
             </p>
           </div>
 
-          {/* Refresh button */}
+
           <button
             type="button"
             onClick={() => fetchLogs(page)}
             disabled={loading}
-            className="rounded-lg border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50 disabled:opacity-50"
+            className="rounded-full border border-gray-300 px-4 py-1 text-[10px] bg-indigo-600 text-white hover:bg-gray-50 disabled:opacity-50"
           >
             Refresh
           </button>
         </div>
 
-        {/* Date filters */}
-        <div className="mb-6 flex flex-col gap-3 rounded-xl border bg-gray-50 p-4 sm:flex-row sm:flex-wrap sm:items-end">
-          {/* Start date */}
+   
+        <div className="mb-6 flex flex-col gap-3 rounded-xl  bg-gray-50 p-4 sm:flex-row sm:flex-wrap sm:items-end">
+     
           <div className="flex flex-col gap-1">
             <label
               htmlFor="recharge-start-date"
@@ -275,11 +241,11 @@ export default function RechargePaymentLogs() {
               value={startDate}
               max={endDate || undefined}
               onChange={(e) => setStartDate(e.target.value)}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
+              className="rounded-full border border-gray-300 bg-white px-3 py-2 text-sm"
             />
           </div>
 
-          {/* End date */}
+      
           <div className="flex flex-col gap-1">
             <label
               htmlFor="recharge-end-date"
@@ -294,42 +260,42 @@ export default function RechargePaymentLogs() {
               value={endDate}
               min={startDate || undefined}
               onChange={(e) => setEndDate(e.target.value)}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
+              className="rounded-full border border-gray-300 bg-white px-3 py-2 text-sm"
             />
           </div>
 
-          {/* Apply and Reset buttons */}
+    
           <div className="flex flex-wrap items-center gap-3">
-            {/* Apply Filters */}
+           
             <button
               type="button"
               onClick={applyFilters}
               disabled={loading}
-              className="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-full bg-indigo-600 px-5 py-1 text-sm font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Apply Filters
             </button>
 
-            {/* Reset Filters */}
+
             <button
               type="button"
               onClick={resetFilters}
               disabled={loading}
-              className="rounded-lg border border-gray-300 bg-white px-5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-full border border-gray-300 bg-white px-5 py-1 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Reset
             </button>
           </div>
         </div>
 
-        {/* API response error */}
+
         {response?.success === false && (
           <p className="mb-4 text-sm text-red-600">
             {response.message || "Unable to fetch recharge logs."}
           </p>
         )}
 
-        {/* Payment logs */}
+     
         {loading ? (
           <div className="py-16 text-center text-gray-500">
             Loading recharge payment logs...
@@ -348,7 +314,7 @@ export default function RechargePaymentLogs() {
               <thead className="bg-purple-100 text-gray-600">
                 <tr>
                   <th className="px-4 py-3">Date</th>
-                  <th className="px-4 py-3">Invoice No.</th>
+                  
                   <th className="px-4 py-3">Recharge Pack</th>
                   <th className="px-4 py-3">Coins</th>
                   <th className="px-4 py-3">Amount</th>
@@ -361,34 +327,31 @@ export default function RechargePaymentLogs() {
                 {logs.map((row, index) => (
                   <tr
                     key={row.id || `${row.invoiceNo}-${index}`}
-                    className="text-sm hover:bg-gray-50"
+                    className="text-xs hover:bg-gray-50"
                   >
-                    {/* Date */}
+           
                     <td className="whitespace-nowrap px-4 py-3">
                       {formatDate(row.createdAt)}
                     </td>
 
-                    {/* Invoice number */}
-                    <td className="px-4 py-3 font-medium">
-                      {row.invoiceNo || "-"}
-                    </td>
+               
 
-                    {/* Recharge pack */}
+               
                     <td className="px-4 py-3">
                       {row.rechargePackName || "-"}
                     </td>
 
-                    {/* Coins */}
+               
                     <td className="px-4 py-3">
                       {Number(row.coins ?? 0).toLocaleString("en-IN")}
                     </td>
 
-                    {/* Amount */}
+                 
                     <td className="whitespace-nowrap px-4 py-3 font-semibold">
                       {money(row.amount)}
                     </td>
 
-                    {/* Status */}
+             
                     <td className="px-4 py-3">
                       <span
                         className={`rounded-full px-2 py-1 text-xs font-semibold ${statusClass(
@@ -399,8 +362,10 @@ export default function RechargePaymentLogs() {
                       </span>
                     </td>
 
-                    {/* Invoice download */}
                     <td className="px-4 py-3">
+                   
+                      {row.invoiceNo.slice(0,12) || "-"}
+                  
                       <button
                         type="button"
                         onClick={() => downloadInvoice(row)}

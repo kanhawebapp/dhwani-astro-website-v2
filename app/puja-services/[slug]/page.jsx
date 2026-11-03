@@ -9,6 +9,7 @@ import { useParams } from "next/navigation";
 import { useState } from "react";
 import UpcomingPujas from "../UpcomingPujas";
 import CreatePujaReview from "./CreatePujaReview";
+import CustomButton from "@/components/Custom/CustomButton";
 const CREATE_PUJA_BOOKING = gql`
   mutation CreatePujaBooking($input: CreatePujaBookingInput!) {
     createPujaBooking(input: $input) {
@@ -74,26 +75,36 @@ const GET_PUJA_DETAILS = gql`
 
 const backendUrl = new URL(process.env.NEXT_PUBLIC_BASE_URL).origin;
 
-function Accordion({ title, children, defaultOpen = false }) {
-  const [open, setOpen] = useState(defaultOpen);
-
+function Accordion({ title, children, isOpen, onToggle }) {
   return (
     <div className="border-b border-gray-200">
       <button
         type="button"
-        onClick={() => setOpen((previous) => !previous)}
-        aria-expanded={open}
-        className="flex w-full items-center justify-between py-3 text-left text-base font-medium text-gray-900 md:text-sm"
+        onClick={onToggle}
+        className="flex w-full items-center justify-between py-3 text-left text-sm font-semibold text-gray-900"
       >
         {title}
-        <span className="ml-4 text-lg">{open ? "−" : "+"}</span>
+
+        <span
+          className={`text-xs transition-transform duration-300 ${
+            isOpen ? "rotate-180" : ""
+          }`}
+        >
+          ↓
+        </span>
       </button>
 
-      {open && (
-        <div className="whitespace-pre-line pb-4 text-sm leading-7 text-gray-600">
-          {children || "Information will be updated soon."}
+      <div
+        className={`grid transition-all duration-300 ease-in-out ${
+          isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+        }`}
+      >
+        <div className="overflow-hidden">
+          <div className="pb-4 text-sm leading-7 text-gray-600 whitespace-pre-line">
+            {children}
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -131,6 +142,7 @@ function PujaDetailsImage({ src, title }) {
 
 export default function PujaDetailsPage() {
   const params = useParams();
+  const [activeAccordion, setActiveAccordion] = useState(null);
   const slug = params.slug;
   const [quantity, setQuantity] = useState(1);
   const [selectedMantra, setSelectedMantra] = useState("");
@@ -147,7 +159,7 @@ export default function PujaDetailsPage() {
   const [createPujaBooking, { loading: bookingLoading }] =
     useMutation(CREATE_PUJA_BOOKING);
 
-// Always display mantra options in admin-defined order.
+  // Always display mantra options in admin-defined order.
   const sortedMantraOptions = [...(puja?.mantraOptions ?? [])].sort(
     (a, b) => Number(a.sortOrder ?? 0) - Number(b.sortOrder ?? 0),
   );
@@ -198,17 +210,11 @@ export default function PujaDetailsPage() {
 
   // The selected mantra option controls the displayed puja price.
   // Puja-level pricing is only a fallback for legacy records without options.
-  const price = Number(
-    selectedMantraOption?.offerPrice ?? puja?.price ?? 0,
-  );
-  const mrp = Number(
-    selectedMantraOption?.originalPrice ?? puja?.mrp ?? 0,
-  );
+  const price = Number(selectedMantraOption?.offerPrice ?? puja?.price ?? 0);
+  const mrp = Number(selectedMantraOption?.originalPrice ?? puja?.mrp ?? 0);
 
   const discount =
-    mrp > price && mrp > 0
-      ? Math.round(((mrp - price) / mrp) * 100)
-      : 0;
+    mrp > price && mrp > 0 ? Math.round(((mrp - price) / mrp) * 100) : 0;
 
   // function handleAddToCart() {
   //   // Connect your existing cart API/context here.
@@ -269,7 +275,7 @@ export default function PujaDetailsPage() {
         </Link>
 
         <div className="grid items-start gap-8 md:grid-cols-2 md:gap-12">
-          <div>
+          <div className="md:sticky md:top-24 self-start">
             <PujaDetailsImage src={puja.image} title={puja.title} />
           </div>
 
@@ -477,14 +483,14 @@ export default function PujaDetailsPage() {
                   Add to cart
                 </button> */}
 
-                <button
+                <CustomButton
                   type="button"
                   onClick={handleBuyNow}
                   disabled={bookingLoading}
                   className="h-12 flex-1 rounded-full bg-purple-400 px-4 font-medium text-white transition hover:bg-[#a88986] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {bookingLoading ? "Creating booking..." : "Buy it now"}
-                </button>
+                </CustomButton>
               </div>
 
               {message && (
@@ -497,17 +503,50 @@ export default function PujaDetailsPage() {
               )}
             </div>
 
-            {/* Expandable sections */}
             <div className="mt-8">
-              <Accordion title="Benefits">{puja.benefits}</Accordion>
+              <Accordion
+                title="Benefits"
+                isOpen={activeAccordion === "benefits"}
+                onToggle={() =>
+                  setActiveAccordion(
+                    activeAccordion === "benefits" ? null : "benefits",
+                  )
+                }
+              >
+                {puja.benefits}
+              </Accordion>
 
-              <Accordion title="Description">
+              <Accordion
+                title="Description"
+                isOpen={activeAccordion === "description"}
+                onToggle={() =>
+                  setActiveAccordion(
+                    activeAccordion === "description" ? null : "description",
+                  )
+                }
+              >
                 {puja.description || puja.shortDescription}
               </Accordion>
 
-              <Accordion title="How to perform?">{puja.howToPerform}</Accordion>
+              <Accordion
+                title="How to perform?"
+                isOpen={activeAccordion === "howToPerform"}
+                onToggle={() =>
+                  setActiveAccordion(
+                    activeAccordion === "howToPerform" ? null : "howToPerform",
+                  )
+                }
+              >
+                {puja.howToPerform}
+              </Accordion>
 
-              <Accordion title="FAQ's">
+              <Accordion
+                title="FAQ's"
+                isOpen={activeAccordion === "faqs"}
+                onToggle={() =>
+                  setActiveAccordion(activeAccordion === "faqs" ? null : "faqs")
+                }
+              >
                 {puja.faqs?.length > 0 ? (
                   <div className="space-y-5">
                     {puja.faqs.map((faq) => (
@@ -524,7 +563,17 @@ export default function PujaDetailsPage() {
                 )}
               </Accordion>
 
-              <Accordion title="Packaging">{puja.packaging}</Accordion>
+              <Accordion
+                title="Packaging"
+                isOpen={activeAccordion === "packaging"}
+                onToggle={() =>
+                  setActiveAccordion(
+                    activeAccordion === "packaging" ? null : "packaging",
+                  )
+                }
+              >
+                {puja.packaging}
+              </Accordion>
             </div>
           </div>
         </div>

@@ -100,7 +100,7 @@ function PujaImage({ src, title }) {
     : null;
 
   return (
-    <div className="relative h-48 w-full overflow-hidden rounded-t-xl bg-gray-100">
+    <div className="relative h-60 w-full overflow-hidden rounded-t-xl bg-gray-100">
       {imageUrl && !imageError ? (
         <Image
           src={imageUrl}

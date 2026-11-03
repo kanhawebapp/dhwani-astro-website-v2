@@ -5,45 +5,36 @@ export const dynamic = "force-static";
 export default function AstrostoreSection() {
   const astrostorepro = [
     {
-      name: "499 Store",
-      img: "/ds-img/st1.webp",
+      name: "Puja Essential",
+      img: "/ds-img/webp/puja essential.webp",
       href: "https://shop.dhwaniastro.com/collections/499-store",
     },
     {
-      name: "Rose Quartz",
-      img: "/ds-img/st2.webp",
+      name: "Gift Hamper",
+      img: "/ds-img/webp/gift hamper.webp",
       href: "https://shop.dhwaniastro.com/collections/rose-quartz",
     },
     {
-      name: "God Idols",
-      img: "/prblm/godidol.jpg",
+      name: "Brass Idol",
+      img: "/ds-img/webp/brass idol.webp",
       href: "https://shop.dhwaniastro.com/collections/god-idols",
     },
     {
-      name: "Buy 1 Get 1",
-      img: "/ds-img/st4.webp",
+      name: "925 Silver",
+      img: "/ds-img/webp/925 silver.webp",
       href: "https://shop.dhwaniastro.com/collections/buy-1-get-1-free",
     },
     {
-      name: "Protective Kavach",
-      img: "/ds-img/st5.webp",
+      name: "Candle",
+      img: "/ds-img/webp/candle.webp",
       href: "https://shop.dhwaniastro.com/collections/kavach",
     },
     {
-      name: "Divine Malas",
-      img: "/ds-img/st6.webp",
+      name: "Kamdhenu Cow",
+      img: "/ds-img/webp/kamdhenu cow.webp",
       href: "https://shop.dhwaniastro.com/collections/mala",
     },
-    {
-      name: "Pendants & Charms",
-      img: "/prblm/penchar.jpg",
-      href: "https://shop.dhwaniastro.com/collections/pendants",
-    },
-    {
-      name: "Crystal Tree",
-      img: "/ds-img/st8.webp",
-      href: "https://shop.dhwaniastro.com/collections/crystal-tree",
-    },
+  
   ];
 
   return (
