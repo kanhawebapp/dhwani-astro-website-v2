@@ -39,7 +39,7 @@ export default function AstrostoreSection() {
 
   return (
     <section
-      className="products_service_new mt-2 sm:max-w-7xl mx-auto w-full p-4"
+      className="products_service_new sm:mt-2 sm:max-w-7xl mx-auto w-full p-4"
       aria-labelledby="dhwani-shop-heading"
     >
       <h2

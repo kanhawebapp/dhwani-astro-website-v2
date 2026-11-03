@@ -98,7 +98,7 @@ export default function ServiceBookingHistory() {
   );
 
   return (
-    <div className="min-h-screen p-3 sm:p-4 bg-gray-100 md:p-6">
+    <div className="min-h-screen  sm:p-4 bg-gray-100 md:p-6">
       {/* Header */}
       <div className="mb-3 sm:mb-6">
         <h1 className="text-xl sm:text-3xl font-bold text-purple-900">

@@ -46,7 +46,7 @@ const formatDate = (value) => {
 
 export default function RechargePaymentLogs() {
   const client = useApolloClient();
-
+const PAGE_LIMIT = 10;
   const [page, setPage] = useState(1);
 
   const [startDate, setStartDate] = useState("");
@@ -199,7 +199,7 @@ export default function RechargePaymentLogs() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-3 text-black sm:p-6">
+    <div className="min-h-screen bg-gray-100  text-black sm:p-6">
       <div className="rounded-2xl bg-white p-4 shadow-sm sm:p-6">
    
         <div className="mb-6 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
@@ -404,63 +404,62 @@ export default function RechargePaymentLogs() {
           </div>
         )}
 
-        {/* Pagination */}
         <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
-          <p className="text-sm text-gray-500">
-            Showing {logs.length ? (page - 1) * 10 + 1 : 0}–
-            {Math.min(page * 10, pagination.totalRecords ?? 0)} of{" "}
-            {pagination.totalRecords ?? 0} records
+          <p className="text-xs text-gray-500">
+            Showing{" "}
+            {logs.length ? (page - 1) * PAGE_LIMIT + 1 : 0}–
+            {" "}
+            {Math.min(
+              (page - 1) * PAGE_LIMIT + logs.length,
+              pagination.totalRecords ?? 0
+            )}{" "}
+            of {pagination.totalRecords ?? 0} records
           </p>
 
           <div className="flex items-center gap-2">
-            {/* First page */}
             <button
               type="button"
               disabled={page <= 1 || loading}
               onClick={() => setPage(1)}
-              className="rounded-lg border px-3 py-2 disabled:opacity-40"
-              aria-label="First page"
+              className="rounded-lg border text-xs border-gray-200 px-3 py-1 disabled:opacity-40"
             >
               {"<<"}
             </button>
 
-            {/* Previous page */}
             <button
               type="button"
               disabled={page <= 1 || loading}
               onClick={() => setPage((current) => current - 1)}
-              className="rounded-lg border px-3 py-2 disabled:opacity-40"
+              className="rounded-lg border text-xs border-gray-200 px-3 py-1 disabled:opacity-40"
             >
               Previous
             </button>
 
-            {/* Current page */}
-            <span className="px-2 text-sm">
+            <span className="px-2 text-xs">
               Page {pagination.currentPage ?? page} of{" "}
               {pagination.totalPages ?? 0}
             </span>
 
-            {/* Next page */}
             <button
               type="button"
               disabled={
                 loading || page >= (pagination.totalPages ?? 0)
               }
               onClick={() => setPage((current) => current + 1)}
-              className="rounded-lg border px-3 py-2 disabled:opacity-40"
+              className="rounded-lg border text-xs border-gray-200 px-3 py-1 disabled:opacity-40"
             >
               Next
             </button>
 
-            {/* Last page */}
             <button
               type="button"
               disabled={
-                loading || page >= (pagination.totalPages ?? 0)
+                loading ||
+                page >= (pagination.totalPages ?? 0) ||
+                !pagination.totalPages
               }
               onClick={() => setPage(pagination.totalPages)}
-              className="rounded-lg border px-3 py-2 disabled:opacity-40"
-              aria-label="Last page"
+              className="rounded-lg border text-xs border-gray-200 px-3 py-1 disabled:opacity-40"
             >
               {">>"}
             </button>

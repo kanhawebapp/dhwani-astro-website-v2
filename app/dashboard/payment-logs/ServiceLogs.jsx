@@ -218,7 +218,7 @@ export default function ServicesBankPaymentLogs() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-3 text-black sm:p-6">
+    <div className="min-h-screen bg-gray-100  text-black sm:p-6">
       <div className="rounded-2xl bg-white p-4 shadow-sm sm:p-6">
      
         <div className="mb-6 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
@@ -495,9 +495,9 @@ export default function ServicesBankPaymentLogs() {
           </div>
         )}
 
-        {/* Pagination */}
+       
         <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
-          <p className="text-sm text-gray-500">
+          <p className="text-xs text-gray-500">
             Showing{" "}
             {logs.length ? (page - 1) * PAGE_LIMIT + 1 : 0}–
             {" "}
@@ -513,7 +513,7 @@ export default function ServicesBankPaymentLogs() {
               type="button"
               disabled={page <= 1 || loading}
               onClick={() => setPage(1)}
-              className="rounded-lg border px-3 py-2 disabled:opacity-40"
+              className="rounded-lg border text-xs border-gray-200 px-3 py-1 disabled:opacity-40"
             >
               {"<<"}
             </button>
@@ -522,12 +522,12 @@ export default function ServicesBankPaymentLogs() {
               type="button"
               disabled={page <= 1 || loading}
               onClick={() => setPage((current) => current - 1)}
-              className="rounded-lg border px-3 py-2 disabled:opacity-40"
+              className="rounded-lg border text-xs border-gray-200 px-3 py-1 disabled:opacity-40"
             >
               Previous
             </button>
 
-            <span className="px-2 text-sm">
+            <span className="px-2 text-xs">
               Page {pagination.currentPage ?? page} of{" "}
               {pagination.totalPages ?? 0}
             </span>
@@ -538,7 +538,7 @@ export default function ServicesBankPaymentLogs() {
                 loading || page >= (pagination.totalPages ?? 0)
               }
               onClick={() => setPage((current) => current + 1)}
-              className="rounded-lg border px-3 py-2 disabled:opacity-40"
+              className="rounded-lg border text-xs border-gray-200 px-3 py-1 disabled:opacity-40"
             >
               Next
             </button>
@@ -551,14 +551,14 @@ export default function ServicesBankPaymentLogs() {
                 !pagination.totalPages
               }
               onClick={() => setPage(pagination.totalPages)}
-              className="rounded-lg border px-3 py-2 disabled:opacity-40"
+              className="rounded-lg border text-xs border-gray-200 px-3 py-1 disabled:opacity-40"
             >
               {">>"}
             </button>
           </div>
         </div>
 
-        {/* Hidden invoice component for PDF generation */}
+      
         <div
           aria-hidden="true"
           style={{

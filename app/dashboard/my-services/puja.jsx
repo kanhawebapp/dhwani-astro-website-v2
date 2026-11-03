@@ -43,9 +43,7 @@ const formatDate = (value) => {
   if (!value) return "N/A";
 
   const date = new Date(
-    typeof value === "string" && /^\d+$/.test(value)
-      ? Number(value)
-      : value,
+    typeof value === "string" && /^\d+$/.test(value) ? Number(value) : value,
   );
 
   if (Number.isNaN(date.getTime())) return "N/A";
@@ -84,14 +82,12 @@ const getStatusClass = (status) => {
 export default function PujaBookingHistory() {
   const [page, setPage] = useState(1);
 
-const [startDate, setStartDate] = useState("");
-const [endDate, setEndDate] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   const limit = 10;
 
-const { data, loading, error } = useQuery(
-  GET_MY_BOOKED_PUJA_SERVICE,
-  {
+  const { data, loading, error } = useQuery(GET_MY_BOOKED_PUJA_SERVICE, {
     variables: {
       page,
       limit,
@@ -99,8 +95,7 @@ const { data, loading, error } = useQuery(
       endDate: endDate || null,
     },
     fetchPolicy: "network-only",
-  }
-);
+  });
 
   const result = data?.getMyBookedPujaService;
 
@@ -111,31 +106,28 @@ const { data, loading, error } = useQuery(
   const totalBookings = result?.total || 0;
 
   const totalAmount = bookings.reduce(
-    (sum, booking) =>
-      sum + Number(booking?.totalAmount || 0),
+    (sum, booking) => sum + Number(booking?.totalAmount || 0),
     0,
   );
 
   const successfulPayments = bookings.filter(
-    (booking) =>
-      String(booking?.paymentStatus).toUpperCase() === "SUCCESS",
+    (booking) => String(booking?.paymentStatus).toUpperCase() === "SUCCESS",
   ).length;
 
-  const pendingBookings = bookings.filter(
-    (booking) =>
-      ["PENDING", "PROCESSING"].includes(
-        String(booking?.bookingStatus).toUpperCase(),
-      ),
+  const pendingBookings = bookings.filter((booking) =>
+    ["PENDING", "PROCESSING"].includes(
+      String(booking?.bookingStatus).toUpperCase(),
+    ),
   ).length;
 
-const handleDateFilter = () => {
-  if (startDate && endDate && startDate > endDate) return;
+  const handleDateFilter = () => {
+    if (startDate && endDate && startDate > endDate) return;
 
-  setPage(1);
-};
+    setPage(1);
+  };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-3 sm:p-4 md:p-6">
+    <div className="min-h-screen bg-gray-100  sm:p-4 md:p-6">
       {/* Header */}
       <div className="mb-4 sm:mb-6">
         <h1 className="text-xl font-bold text-purple-900 sm:text-3xl">
@@ -181,9 +173,7 @@ const handleDateFilter = () => {
           <button
             type="button"
             onClick={handleDateFilter}
-         disabled={
-  (startDate && endDate && startDate > endDate) || loading
-}
+            disabled={(startDate && endDate && startDate > endDate) || loading}
             className="rounded-lg bg-purple-900 px-4 py-2 text-sm font-medium text-white hover:bg-purple-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Apply Filter
@@ -200,9 +190,7 @@ const handleDateFilter = () => {
       {/* Summary Cards */}
       <div className="mb-4 grid grid-cols-2 gap-3 sm:mb-6 sm:gap-4 md:grid-cols-4">
         <div className="rounded-2xl bg-white p-3 shadow sm:p-4">
-          <p className="text-xs text-gray-500 sm:text-sm">
-            Total Bookings
-          </p>
+          <p className="text-xs text-gray-500 sm:text-sm">Total Bookings</p>
           <h2 className="mt-2 text-lg font-bold text-black sm:text-2xl">
             {totalBookings}
           </h2>
@@ -218,18 +206,14 @@ const handleDateFilter = () => {
         </div>
 
         <div className="rounded-2xl bg-white p-3 shadow sm:p-4">
-          <p className="text-xs text-gray-500 sm:text-sm">
-            Pending Bookings
-          </p>
+          <p className="text-xs text-gray-500 sm:text-sm">Pending Bookings</p>
           <h2 className="mt-2 text-lg font-bold text-yellow-600 sm:text-2xl">
             {pendingBookings}
           </h2>
         </div>
 
         <div className="rounded-2xl bg-white p-3 shadow sm:p-4">
-          <p className="text-xs text-gray-500 sm:text-sm">
-            Page Amount
-          </p>
+          <p className="text-xs text-gray-500 sm:text-sm">Page Amount</p>
           <h2 className="mt-2 break-words text-lg font-bold text-black sm:text-2xl">
             {formatCurrency(totalAmount)}
           </h2>
@@ -286,24 +270,22 @@ const handleDateFilter = () => {
                   <h2 className="text-base font-semibold text-gray-900 sm:text-xl">
                     {booking.pujaName || "Puja Service"}
                   </h2>
-                   <p className="mt-2 text-xs text-gray-700">
+                  <p className="mt-2 text-xs text-gray-700">
                     Mantra Option:{" "}
                     <span className="font-medium">
                       {booking.mantraOptionName || "N/A"}
                     </span>
                   </p>
 
-                <div className="flex gap-2 items-center text-xs">
+                  <div className="flex gap-2 items-center text-xs">
                     <p className="mt-1 break-all  text-gray-500 ">
-                    Booking ID: {booking.id.slice(0,8)}
-                  </p>
+                      Booking ID: {booking.id.slice(0, 8)}
+                    </p>
 
-                 
-
-                  <p className="mt-1 break-all  text-gray-500 ">
-                    Puja ID: {booking.pujaId.slice(0,8) || "N/A"}
-                  </p>
-                </div>
+                    <p className="mt-1 break-all  text-gray-500 ">
+                      Puja ID: {booking.pujaId.slice(0, 8) || "N/A"}
+                    </p>
+                  </div>
 
                   {/* Status Badges */}
                   <div className="mt-3 flex flex-wrap gap-2">
@@ -328,14 +310,12 @@ const handleDateFilter = () => {
                 {/* Amount and Date */}
                 <div className="flex flex-row justify-between gap-4 border-t pt-3 md:min-w-48 md:flex-col md:items-end md:border-l md:border-t-0 md:pl-5 md:pt-0">
                   <div>
-              
                     <p className="mt-1 text-lg font-bold text-purple-900 sm:text-2xl">
                       {formatCurrency(booking.totalAmount)}
                     </p>
                   </div>
 
                   <div className="text-right md:text-right">
-                   
                     <p className="mt-1 text-sm font-medium text-gray-700">
                       {formatDate(booking.bookingDate)}
                     </p>
@@ -388,10 +368,7 @@ const handleDateFilter = () => {
               Previous
             </button>
 
-            {Array.from(
-              { length: totalPages },
-              (_, index) => index + 1,
-            )
+            {Array.from({ length: totalPages }, (_, index) => index + 1)
               .slice(
                 Math.max(0, currentPage - 3),
                 Math.min(totalPages, currentPage + 2),
@@ -414,9 +391,7 @@ const handleDateFilter = () => {
             <button
               type="button"
               disabled={currentPage >= totalPages || loading}
-              onClick={() =>
-                setPage((prev) => Math.min(totalPages, prev + 1))
-              }
+              onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
               className="rounded-lg border bg-white px-3 py-2 text-sm hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 sm:px-4"
             >
               Next
