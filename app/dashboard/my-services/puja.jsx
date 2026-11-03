@@ -8,8 +8,8 @@ const GET_MY_BOOKED_PUJA_SERVICE = gql`
   query GetMyBookedPujaService(
     $page: Int!
     $limit: Int!
-    $startDate: String!
-    $endDate: String!
+    $startDate: String
+    $endDate: String
   ) {
     getMyBookedPujaService(
       page: $page
@@ -23,7 +23,6 @@ const GET_MY_BOOKED_PUJA_SERVICE = gql`
       currentPage
       totalPages
       limit
-
       data {
         id
         pujaId
@@ -85,24 +84,23 @@ const getStatusClass = (status) => {
 export default function PujaBookingHistory() {
   const [page, setPage] = useState(1);
 
-  const [startDate, setStartDate] = useState("2026-10-01");
-  const [endDate, setEndDate] = useState("2026-10-27");
+const [startDate, setStartDate] = useState("");
+const [endDate, setEndDate] = useState("");
 
   const limit = 10;
 
-  const { data, loading, error } = useQuery(
-    GET_MY_BOOKED_PUJA_SERVICE,
-    {
-      variables: {
-        page,
-        limit,
-        startDate,
-        endDate,
-      },
-      fetchPolicy: "network-only",
-      skip: !startDate || !endDate || startDate > endDate,
+const { data, loading, error } = useQuery(
+  GET_MY_BOOKED_PUJA_SERVICE,
+  {
+    variables: {
+      page,
+      limit,
+      startDate: startDate || null,
+      endDate: endDate || null,
     },
-  );
+    fetchPolicy: "network-only",
+  }
+);
 
   const result = data?.getMyBookedPujaService;
 
@@ -130,10 +128,11 @@ export default function PujaBookingHistory() {
       ),
   ).length;
 
-  const handleDateFilter = () => {
-    if (!startDate || !endDate || startDate > endDate) return;
-    setPage(1);
-  };
+const handleDateFilter = () => {
+  if (startDate && endDate && startDate > endDate) return;
+
+  setPage(1);
+};
 
   return (
     <div className="min-h-screen bg-gray-100 p-3 sm:p-4 md:p-6">
@@ -182,12 +181,9 @@ export default function PujaBookingHistory() {
           <button
             type="button"
             onClick={handleDateFilter}
-            disabled={
-              !startDate ||
-              !endDate ||
-              startDate > endDate ||
-              loading
-            }
+         disabled={
+  (startDate && endDate && startDate > endDate) || loading
+}
             className="rounded-lg bg-purple-900 px-4 py-2 text-sm font-medium text-white hover:bg-purple-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Apply Filter
@@ -290,21 +286,24 @@ export default function PujaBookingHistory() {
                   <h2 className="text-base font-semibold text-gray-900 sm:text-xl">
                     {booking.pujaName || "Puja Service"}
                   </h2>
-
-                  <p className="mt-1 break-all text-xs text-gray-500 sm:text-sm">
-                    Booking ID: {booking.id}
-                  </p>
-
-                  <p className="mt-2 text-sm text-gray-700">
+                   <p className="mt-2 text-xs text-gray-700">
                     Mantra Option:{" "}
                     <span className="font-medium">
                       {booking.mantraOptionName || "N/A"}
                     </span>
                   </p>
 
-                  <p className="mt-1 break-all text-xs text-gray-500 sm:text-sm">
-                    Puja ID: {booking.pujaId || "N/A"}
+                <div className="flex gap-2 items-center text-xs">
+                    <p className="mt-1 break-all  text-gray-500 ">
+                    Booking ID: {booking.id.slice(0,8)}
                   </p>
+
+                 
+
+                  <p className="mt-1 break-all  text-gray-500 ">
+                    Puja ID: {booking.pujaId.slice(0,8) || "N/A"}
+                  </p>
+                </div>
 
                   {/* Status Badges */}
                   <div className="mt-3 flex flex-wrap gap-2">
@@ -329,18 +328,14 @@ export default function PujaBookingHistory() {
                 {/* Amount and Date */}
                 <div className="flex flex-row justify-between gap-4 border-t pt-3 md:min-w-48 md:flex-col md:items-end md:border-l md:border-t-0 md:pl-5 md:pt-0">
                   <div>
-                    <p className="text-xs text-gray-500 sm:text-sm">
-                      Total Amount
-                    </p>
+              
                     <p className="mt-1 text-lg font-bold text-purple-900 sm:text-2xl">
                       {formatCurrency(booking.totalAmount)}
                     </p>
                   </div>
 
                   <div className="text-right md:text-right">
-                    <p className="text-xs text-gray-500 sm:text-sm">
-                      Booking Date
-                    </p>
+                   
                     <p className="mt-1 text-sm font-medium text-gray-700">
                       {formatDate(booking.bookingDate)}
                     </p>
@@ -349,7 +344,7 @@ export default function PujaBookingHistory() {
               </div>
 
               {/* Price Breakdown */}
-              <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl bg-gray-50 p-3 sm:grid-cols-3">
+              <div className="mt-2 grid grid-cols-2 gap-3 rounded-xl bg-gray-50 p-2 sm:grid-cols-3">
                 <div>
                   <p className="text-xs text-gray-500">Quantity</p>
                   <p className="mt-1 text-sm font-semibold text-gray-800">

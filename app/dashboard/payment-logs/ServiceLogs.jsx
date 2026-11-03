@@ -61,10 +61,10 @@ export default function ServicesBankPaymentLogs() {
 
   const [page, setPage] = useState(1);
 
-  // Values currently displayed in the filter form.
+ 
   const [filters, setFilters] = useState(EMPTY_FILTERS);
 
-  // Filters currently applied to the API request.
+
   const [appliedFilters, setAppliedFilters] = useState(EMPTY_FILTERS);
 
   const [invoiceData, setInvoiceData] = useState(null);
@@ -80,7 +80,7 @@ export default function ServicesBankPaymentLogs() {
     }
   );
 
-  // Fetch logs whenever the page or applied filters change.
+ 
   useEffect(() => {
     getLogs({
       variables: {
@@ -108,7 +108,7 @@ export default function ServicesBankPaymentLogs() {
     setFilterError("");
   };
 
-  // Validate and apply filters.
+  
   const handleApplyFilters = (event) => {
     event.preventDefault();
 
@@ -132,7 +132,7 @@ export default function ServicesBankPaymentLogs() {
     });
   };
 
-  // Clear all filters and fetch all payment logs.
+ 
   const handleResetFilters = () => {
     setFilters({ ...EMPTY_FILTERS });
     setAppliedFilters({ ...EMPTY_FILTERS });
@@ -177,7 +177,7 @@ export default function ServicesBankPaymentLogs() {
 
       setInvoiceData(invoice);
 
-      // Wait for PaymentInvoice to render before generating the PDF.
+      
       await new Promise((resolve) => setTimeout(resolve, 300));
 
       if (!invoiceRef.current) {
@@ -220,14 +220,14 @@ export default function ServicesBankPaymentLogs() {
   return (
     <div className="min-h-screen bg-gray-100 p-3 text-black sm:p-6">
       <div className="rounded-2xl bg-white p-4 shadow-sm sm:p-6">
-        {/* Page heading */}
+     
         <div className="mb-6 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-xl font-bold text-gray-900">
               Services Payment Logs
             </h1>
 
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-1 text-[10px] text-gray-500">
               Total records: {pagination.totalRecords ?? 0}
             </p>
           </div>
@@ -236,13 +236,13 @@ export default function ServicesBankPaymentLogs() {
             type="button"
             onClick={handleRefresh}
             disabled={loading}
-            className="rounded-lg border border-gray-300 px-4 py-2 text-sm transition hover:bg-gray-50 disabled:opacity-50"
+            className="rounded-full border border-gray-300 px-3 py-1 text-[10px] transition bg-indigo-600 text-white hover:bg-gray-50 disabled:opacity-50"
           >
             {loading ? "Refreshing..." : "Refresh"}
           </button>
         </div>
 
-        {/* Filters */}
+     
         <form
           onSubmit={handleApplyFilters}
           className="mb-6 rounded-xl border border-gray-200 bg-gray-50 p-4"
@@ -252,7 +252,7 @@ export default function ServicesBankPaymentLogs() {
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {/* Service type */}
+       
             <div>
               <label
                 htmlFor="serviceType"
@@ -266,7 +266,7 @@ export default function ServicesBankPaymentLogs() {
                 name="serviceType"
                 value={filters.serviceType}
                 onChange={handleFilterChange}
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100"
+                className="w-full rounded-full border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100"
               >
                 <option value="">All Services</option>
                 <option value="SERVICE">Service</option>
@@ -290,11 +290,11 @@ export default function ServicesBankPaymentLogs() {
                 value={filters.startDate}
                 max={filters.endDate || undefined}
                 onChange={handleFilterChange}
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100"
+                className="w-full rounded-full border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100"
               />
             </div>
 
-            {/* End date */}
+        
             <div>
               <label
                 htmlFor="endDate"
@@ -310,18 +310,18 @@ export default function ServicesBankPaymentLogs() {
                 value={filters.endDate}
                 min={filters.startDate || undefined}
                 onChange={handleFilterChange}
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100"
+                className="w-full rounded-full border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100"
               />
             </div>
 
-            {/* Actions */}
+         
             <div className="flex items-end gap-2">
               <button
                 type="submit"
                 disabled={loading}
-                className="flex-1 rounded-lg bg-purple-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-purple-700 disabled:opacity-50"
+                className="flex-1 rounded-full bg-purple-600 px-2 py-1.5 text-sm font-semibold text-white transition hover:bg-purple-700 disabled:opacity-50"
               >
-                Apply Filters
+                Apply 
               </button>
 
               <button
@@ -333,7 +333,7 @@ export default function ServicesBankPaymentLogs() {
                   !filters.startDate &&
                   !filters.endDate
                 }
-                className="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-100 disabled:opacity-50"
+                className="rounded-full border border-gray-300 bg-white px-4 py-1.5 text-sm font-medium text-gray-700 transition hover:bg-gray-100 disabled:opacity-50"
               >
                 Reset
               </button>
@@ -373,21 +373,20 @@ export default function ServicesBankPaymentLogs() {
           )}
         </form>
 
-        {/* API response message */}
+       
         {response?.success === false && (
           <p className="mb-4 text-sm text-red-600">
             {response.message || "Unable to fetch payment logs."}
           </p>
         )}
 
-        {/* Error */}
         {error && (
           <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">
             {error.message}
           </div>
         )}
 
-        {/* Payment logs table */}
+     
         {loading ? (
           <div className="py-16 text-center text-gray-500">
             Loading payment logs...
@@ -401,11 +400,11 @@ export default function ServicesBankPaymentLogs() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[850px] text-left text-sm">
-              <thead className="rounded-xl bg-purple-100 text-gray-600">
+            <table className="w-full rounded-2xl min-w-[850px] text-left text-sm">
+              <thead className="rounded-full bg-purple-100 text-gray-600">
                 <tr>
                   <th className="px-4 py-3">Date</th>
-                  <th className="px-4 py-3">Invoice No.</th>
+                 
                   <th className="px-4 py-3">Service Type</th>
                   <th className="px-4 py-3">Service Name</th>
                   <th className="px-4 py-3">Taxable Amount</th>
@@ -419,15 +418,13 @@ export default function ServicesBankPaymentLogs() {
                 {logs.map((row, index) => (
                   <tr
                     key={row.id || `${row.invoiceNo}-${index}`}
-                    className="text-sm hover:bg-gray-50"
+                    className="text-xs hover:bg-gray-50"
                   >
                     <td className="whitespace-nowrap px-4 py-3">
                       {formatDate(row.createdAt)}
                     </td>
 
-                    <td className="px-4 py-3 font-medium">
-                      {row.invoiceNo || "-"}
-                    </td>
+                 
 
                     <td className="px-4 py-3">
                       <span
@@ -441,7 +438,7 @@ export default function ServicesBankPaymentLogs() {
                       </span>
                     </td>
 
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-1 text-xs">
                       {row.serviceName || "-"}
                     </td>
 
@@ -457,7 +454,9 @@ export default function ServicesBankPaymentLogs() {
                       {money(row.amount)}
                     </td>
 
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3">  
+                      {row.invoiceNo.slice(0,12) || "-"}
+                 
                       <button
                         type="button"
                         onClick={() => downloadInvoice(row)}

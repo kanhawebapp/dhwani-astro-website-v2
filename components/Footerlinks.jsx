@@ -42,17 +42,37 @@ export default function Footerlinks() {
     {
       id: 1,
       ulname: `${t.footer.p1}`,
-      link: "/dhwani-services/consultation/marriage",
+      link: "/formpage?slug=manglik",
     },
     {
       id: 2,
       ulname: `${t.footer.p2}`,
-      link: "/dhwani-services/consultation/education",
+      link: "/formpage?slug=kalsharp",
     },
     {
       id: 3,
       ulname: `${t.footer.p3}`,
-      link: "/dhwani-services/consultation/moneyandfame",
+      link: "/formpage?slug=numerokundali",
+    },
+        {
+      id: 4,
+      ulname: `${t.footer.p4}`,
+      link: "/formpage?slug=pitra",
+    },
+        {
+      id: 5,
+      ulname: `${t.footer.p5}`,
+      link: "/formpage?slug=sadesati",
+    },
+            {
+      id: 6,
+      ulname: `${t.footer.p6}`,
+      link: "/formpage?slug=rudrafol",
+    },
+            {
+      id: 7,
+      ulname: `${t.footer.p7}`,
+      link: "/formpage?slug=lalkitab",
     },
   ];
 
