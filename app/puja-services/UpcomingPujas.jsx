@@ -6,12 +6,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
-// import {
-//   CalendarDays,
-//   MapPin,
-//   Image as ImageIcon,
-//   ArrowRight,
-// } from "lucide-react";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Navigation } from "swiper/modules";
+
+import "swiper/css";
+import "swiper/css/navigation";
 
 const GET_PUJA_SERVICES = gql`
   query GetPujaServices {
@@ -51,39 +50,39 @@ function PujaSocialProof({ pujaId }) {
   }, []);
 
   return (
-    <div className="relative h-14 min-w-0 flex-1 overflow-hidden">
+    <div className="relative h-8 sm:h-14 min-w-0 flex-1 ">
       {/* Booked by */}
       <div
-        className={`absolute inset-x-0 top-0 transition-all duration-500 ${
+        className={`absolute inset-x-0 top-0 flex flex-row sm:flex-col transition-all duration-500 ${
           showRating
             ? "-translate-y-full opacity-0"
             : "translate-y-0 opacity-100"
         }`}
       >
-        <p className="text-[10px] text-gray-500">Booked by</p>
-        <p className="flex items-baseline gap-1">
-          <span className="text-md font-bold text-purple-600">
-            {Math.round(bookings)}K+
+        <p className="text-[10px] text-gray-500">Booked by {" "} </p>
+        <p className="flex items-center gap-1">
+          <span className="text-sm sm:text-mdfont-bold text-purple-600">
+            {" "} {Math.round(bookings)} {" "} K+
           </span>
-          <span className="text-[10px] text-gray-500">devotees</span>
+          <span className="text-[10px] text-gray-500"> {" "} devotees </span>
         </p>
       </div>
 
       {/* Rating */}
       <div
-        className={`absolute inset-x-0 top-0 transition-all duration-500 ${
+        className={`absolute flex items-center flex-row sm:flex-col inset-x-0 top-0 transition-all duration-500 ${
           showRating
             ? "translate-y-0 opacity-100"
             : "translate-y-full opacity-0"
         }`}
       >
-        <p className="text-[10px] text-gray-500">Rated</p>
+        <p className="text-[10px] text-gray-500">Rated {" "}</p>
         <p className="flex items-center gap-1.5">
-          <span className="text-md leading-6 text-yellow-500">★</span>
-          <span className="text-md font-bold text-gray-900">
-            {rating.toFixed(1)}
+          <span className="text-sm sm:text-md  text-yellow-500">★</span>
+          <span className="text-sm sm:text-md font-bold text-gray-900">
+          {" "}   {rating.toFixed(1)}
           </span>
-          <span className="text-[10px] text-gray-500">by devotees</span>
+          <span className="text-[10px] text-gray-500"> {" "} by devotees</span>
         </p>
       </div>
     </div>
@@ -100,7 +99,7 @@ function PujaImage({ src, title }) {
     : null;
 
   return (
-    <div className="relative h-60 w-full overflow-hidden rounded-t-xl bg-gray-100">
+    <div className="relative md:h-60 h-39 w-full overflow-hidden rounded-t-xl bg-gray-100">
       {imageUrl && !imageError ? (
         <Image
           src={imageUrl}
@@ -134,9 +133,11 @@ export default function UpcomingPujas() {
   });
 
   const pujas = data?.pujaServices ?? [];
+  const maxSlidesPerView = 4;
 
+  const canLoop = pujas.length > maxSlidesPerView;
   return (
-    <section className="sm:max-w-7xl mx-auto w-full bg-white px-4 py-8 md:px-8 md:py-8 ">
+    <section className="sm:max-w-7xl mx-auto w-full bg-white sm:px-4 px-2 pt-8 pb-3 md:px-8 md:py-8 ">
       <div className="mx-auto max-w-7xl">
         {!hideHeading && (
           <h1 className="text-[#2f1254] text-md md:text-2xl py-1 md:py-5 text-center font-semibold">
@@ -185,85 +186,108 @@ export default function UpcomingPujas() {
           </p>
         </div>
       )}
+    <div className="relative sm:p-4 p-2 astrocard-swipe sm:max-w-7xl">
 
-      {pujas.length > 0 && (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {pujas.map((puja) => (
-            <article
-              key={puja.id}
-              className="group overflow-hidden rounded-xl border border-gray-100 bg-white shadow-xs transition-shadow duration-300 hover:shadow-lg"
-            >
-              <PujaImage
-                src={puja.image}
-                title={puja.title}
-                backendUrl={backendUrl}
-              />
+  {/* Previous Button */}
+  <div className="absolute top-1/2 left-0 sm:-left-1px lg:left-[-50px] -translate-y-1/2 z-10">
+    <button
+      aria-label="Previous Puja"
+      className="swiper-button-prev-astro"
+    >
+      ‹
+    </button>
+  </div>
 
-              <div className="py-2 md:py-2 px-4">
-                {/* {puja.category && (
-                    <span className="inline-block rounded-full bg-pink-50 px-3 py-1 text-xs font-semibold capitalize text-pink-600">
-                      {puja.category}
-                    </span>
-                  )} */}
+  {/* Next Button */}
+  <div className="absolute top-1/2 right-0 sm:-right-1px lg:right-[-50px] -translate-y-1/2 z-10">
+    <button
+      aria-label="Next Puja"
+      className="swiper-button-next-astro"
+    >
+      ›
+    </button>
+  </div>
 
-                <h3 className=" line-clamp-2 text-lg font-bold text-[#2f1254]">
-                  {puja.title}
-                </h3>
+  <Swiper
+    modules={[Navigation]}
+    slidesPerView={2}
+    slidesPerGroup={1}
+    spaceBetween={10}
+    navigation={{
+      nextEl: ".swiper-button-next-astro",
+      prevEl: ".swiper-button-prev-astro",
+    }}
+    loop={canLoop}
+    watchOverflow={true}
+    observer={true}
+    observeParents={true}
+    breakpoints={{
+      480: {
+        slidesPerView: 2,
+        spaceBetween: 15,
+      },
+      768: {
+        slidesPerView: 3,
+        spaceBetween: 15,
+      },
+      1024: {
+        slidesPerView: 4,
+        spaceBetween: 20,
+      },
+    }}
+    className="mySwiperhoro"
+  >
+    {pujas.map((puja) => (
+      <SwiperSlide key={puja.id}>
+        <article className="group h-full overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm transition-shadow duration-300 hover:shadow-lg">
 
-                {/* {puja.shortDescription && (
-                  <p className="mt-1 line-clamp-3 text-sm leading-6 text-gray-600">
-                    {puja.shortDescription}
-                  </p>
-                )} */}
-                {/* Stars based on customer count */}
-                <div className="mt-1 flex items-center gap-1">
-                  {Array.from({
-                    length: Math.max(0, Math.floor(puja.rating || 0)),
-                  }).map((_, index) => (
-                    <svg
-                      key={`${puja.id}-star-${index}`}
-                      width={16}
-                      height={16}
-                      viewBox="0 0 640 640"
-                    >
-                      <path
-                        fill="#FFCE1B"
-                        d="M341.5 45.1C337.4 37.1 329.1 32 320.1 32C311.1 32 302.8 37.1 298.7 45.1L225.1 189.3L65.2 214.7C56.3 216.1 48.9 222.4 46.1 231C43.3 239.6 45.6 249 51.9 255.4L166.3 369.9L141.1 529.8C139.7 538.7 143.4 547.7 150.7 553C158 558.3 167.6 559.1 175.7 555L320.1 481.6L464.4 555C472.4 559.1 482.1 558.3 489.4 553C496.7 547.7 500.4 538.8 499 529.8L473.7 369.9L588.1 255.4C594.5 249 596.7 239.6 593.9 231C591.1 222.4 583.8 216.1 574.8 214.7L415 189.3L341.5 45.1z"
-                      />
-                    </svg>
-                  ))}
-                </div>
+          <PujaImage
+            src={puja.image}
+            title={puja.title}
+          />
 
-                <div className="mt-1 flex items-center justify-between gap-3  border-gray-100 pt-4">
-                  {/* <div>
-                      {puja.price != null && (
-                        <p className="text-lg font-bold text-[#2f1254]">
-                          ₹{puja.price}
-                        </p>
-                      )}
+          <div className="px-2 py-2 md:px-4">
 
-                      {puja.mrp != null &&
-                        puja.price != null &&
-                        Number(puja.mrp) > Number(puja.price) && (
-                          <p className="text-xs text-gray-400 line-through">
-                            ₹{puja.mrp}
-                          </p>
-                        )}
-                    </div> */}
-                  <PujaSocialProof pujaId={puja.id} />
+            <h3 className="line-clamp-2 text-xs sm:text-sm font-bold text-[#2f1254] md:text-lg">
+              {puja.title}
+            </h3>
 
-                  <Link
-                    href={`/puja-services/${puja.slug}`}
-                    className="inline-flex items-center gap-2 rounded-full bg-purple-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-prple-700"
-                  >
-                    Book Now
-                  </Link>
-                </div>
-              </div>
-            </article>
-          ))}
-        </div>
-      )}
+            <div className="mt-1 flex items-center gap-1">
+              {Array.from({
+                length: Math.max(0, Math.floor(puja.rating || 0)),
+              }).map((_, index) => (
+                <svg
+                  key={`${puja.id}-star-${index}`}
+                  width={14}
+                  height={14}
+                  viewBox="0 0 640 640"
+                >
+                  <path
+                    fill="#FFCE1B"
+                    d="M341.5 45.1C337.4 37.1 329.1 32 320.1 32C311.1 32 302.8 37.1 298.7 45.1L225.1 189.3L65.2 214.7C56.3 216.1 48.9 222.4 46.1 231C43.3 239.6 45.6 249 51.9 255.4L166.3 369.9L141.1 529.8C139.7 538.7 143.4 547.7 150.7 553C158 558.3 167.6 559.1 175.7 555L320.1 481.6L464.4 555C472.4 559.1 482.1 558.3 489.4 553C496.7 547.7 500.4 538.8 499 529.8L473.7 369.9L588.1 255.4C594.5 249 596.7 239.6 593.9 231C591.1 222.4 583.8 216.1 574.8 214.7L415 189.3L341.5 45.1z"
+                  />
+                </svg>
+              ))}
+            </div>
+
+            <div className="flex flex-col justify-between gap-5 border-gray-100 pt-2 sm:flex-row sm:items-center">
+
+              <PujaSocialProof pujaId={puja.id} />
+
+              <Link
+                href={`/puja-services/${puja.slug}`}
+                className="rounded-full bg-purple-600 px-2 py-2 text-center text-sm font-semibold text-white transition hover:bg-purple-700 sm:px-4"
+              >
+                Book Now
+              </Link>
+
+            </div>
+          </div>
+        </article>
+      </SwiperSlide>
+    ))}
+  </Swiper>
+</div>
     </section>
   );
 }

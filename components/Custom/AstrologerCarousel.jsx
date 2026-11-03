@@ -106,29 +106,29 @@ export default function AstrologerCarousel({
     notifyOnNetworkStatusChange: true,
   });
 
-  // Dono APIs ke response fields old file ke according.
+
   const responseData = isLoggedIn
     ? data?.getAstrologerListForUser
     : data?.getAstrologerListBySearch;
 
   const astrologerList = useMemo(() => {
-    // Auth confirm hone se pehle public server data dikhao.
+ 
     if (authLoading) {
       return initialAstrologers;
     }
 
-    // Query ka response aane tak guest ke initial data ka fallback.
+  
     if (!data) {
       return isLoggedIn ? [] : initialAstrologers;
     }
 
     const list = responseData?.data ?? [];
 
-    // Old file mein logged-in users ko online astrologers hi dikhte the.
+
     return isLoggedIn ? list.filter((astro) => astro.isOnline) : list;
   }, [authLoading, initialAstrologers, isLoggedIn, data, responseData]);
 
-  // Socket listeners: busy/free status ko live update karna.
+
   useEffect(() => {
     if (!socket) return;
 
@@ -171,7 +171,7 @@ const canLoop =
   astrologerList.length > maxSlidesPerView;
   return (
     <section className="flex-col items-center self-center w-full sm:max-w-7xl">
-      <div className="flex flex-col items-center justify-center rounded-full px-4 sm:py-4 py-0 sm:max-w-7xl">
+      <div className="flex flex-col items-center justify-center rounded-full px- sm:py-4 py-0 sm:max-w-7xl">
         {/* Homepage section heading */}
         <h2
           dangerouslySetInnerHTML={{

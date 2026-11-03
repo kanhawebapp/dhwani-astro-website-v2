@@ -265,32 +265,32 @@ export default function PujaDetailsPage() {
   }
 
   return (
-    <main className=" w-[80%] bg-white px-4 py-6 md:px-6 md:py-6">
+    <main className=" sm:w-[80%] w-full bg-white px-4 py- md:px-6 md:py-6">
       <div className="mx-auto max-w-7xl">
         <Link
           href="/"
-          className="mb-4 inline-block text-xs text-gray-500 hover:text-pink-600"
+          className="mb- inline-block text-xs text-gray-500 hover:text-pink-600"
         >
           ← Back to pujas
         </Link>
 
-        <div className="grid items-start gap-8 md:grid-cols-2 md:gap-12">
+        <div className="grid items-start gap-5 sm:gap-8 md:grid-cols-2 md:gap-12">
           <div className="md:sticky md:top-24 self-start">
             <PujaDetailsImage src={puja.image} title={puja.title} />
           </div>
 
           <div className="min-w-0">
-            <h1 className=" text-2xl font-bold leading-tight text-gray-950 md:text-3xl">
+            <h1 className=" text-xl font-bold leading-tight text-gray-950 md:text-3xl">
               {puja.title}
             </h1>
 
             {puja.shortDescription && (
-              <p className="mt-3 text-sm leading-6 text-gray-600 md:text-base">
+              <p className="sm:mt-3 mt-1 text-sm leading-6 text-gray-600 md:text-base">
                 {puja.shortDescription}
               </p>
             )}
 
-            <div className="mt-4 flex flex-wrap items-center gap-2">
+            <div className="sm:mt-4 mt- flex flex-wrap items-center gap-2">
               <span className="text-xl tracking-wide text-amber-400">
                 {"★".repeat(
                   Math.max(
@@ -316,7 +316,7 @@ export default function PujaDetailsPage() {
               </span>
             </div>
 
-            <div className="mt-3 flex flex-wrap items-center gap-3">
+            <div className="sm:mt-3 mt-1 flex flex-wrap items-center gap-3">
               <span className="text-3xl font-bold text-gray-950">
                 ₹{price.toLocaleString("en-IN")}
               </span>
@@ -336,9 +336,9 @@ export default function PujaDetailsPage() {
               )}
             </div>
 
-            <p className="mt-1 text-xs text-gray-500">(Incl. of all taxes)</p>
+            <p className="mt-1 text-[10px] text-gray-500">(Incl. of all taxes)</p>
 
-            {/* Reviews */}
+       
             {puja.reviews?.length > 0 && (
               <div className="review-slider mt-6 overflow-hidden">
                 <div className="review-track flex gap-4">
@@ -371,7 +371,7 @@ export default function PujaDetailsPage() {
               </div>
             )}
 
-            <div className="mt-6 rounded-lg bg-[#f8eaea] px-4 py-3 text-center font-medium text-[#704c32]">
+            <div className="sm:mt-6 mt-4 rounded-lg bg-[#f8eaea] px-4 py-2 text-center font-medium text-[#704c32]">
               {puja.customersCount > 0
                 ? `Loved by ${Number(puja.customersCount).toLocaleString("en-IN")}+ devotees`
                 : "A meaningful ritual for your spiritual journey"}
@@ -379,8 +379,8 @@ export default function PujaDetailsPage() {
 
             {/* Mantra options with their individual pricing */}
             {sortedMantraOptions.length > 0 && (
-              <div className="mt-6">
-                <h2 className="font-bold text-gray-950">Mantra Jaap</h2>
+              <div className="sm:mt-6 mt-2">
+                <h2 className="font-bold text-sm text-gray-950">Mantra Jaap</h2>
 
                 <div className="mt-3 grid gap-3">
                   {sortedMantraOptions.map((option) => {
@@ -400,44 +400,20 @@ export default function PujaDetailsPage() {
                         type="button"
                         aria-pressed={isSelected}
                         onClick={() => setSelectedMantra(option.id)}
-                        className={`flex w-full items-center justify-between gap-3 rounded-full border px-4 py-2 text-left transition ${
+                        className={`flex w-full items-center justify-between gap-3 rounded-full border px-4 py-1 sm:py-2 text-left transition ${
                           isSelected
                             ? "border-purple-300 bg-purple-200 ring-1 ring-purple-300"
                             : "border-purple-100 bg-white hover:border-purple-100"
                         }`}
                       >
                         <span className="flex min-w-0 items-start gap-3">
-                          {/* <span
-                            className={`mt-1 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
-                              isSelected
-                                ? "border-[#9f7773]"
-                                : "border-gray-400"
-                            }`}
-                          >
-                            {isSelected && (
-                              <span className="h-2 w-2 rounded-full bg-[#9f7773]" />
-                            )}
-                          </span> */}
-                          <span className="font-medium text-gray-900">
+                 
+                          <span className="font-medium text-xs text-gray-900">
                             {option.name}
                           </span>
                         </span>
 
-                        {/* <span className="shrink-0 text-right">
-                          <span className="block font-bold text-gray-950">
-                            ₹{optionPrice.toLocaleString("en-IN")}
-                          </span>
-                          {optionMrp > optionPrice && (
-                            <span className="mt-1 block text-xs text-gray-400 line-through">
-                              ₹{optionMrp.toLocaleString("en-IN")}
-                            </span>
-                          )}
-                          {optionDiscount > 0 && (
-                            <span className="mt-1 block text-xs font-semibold text-green-700">
-                              {optionDiscount}% off
-                            </span>
-                          )}
-                        </span> */}
+                   
                       </button>
                     );
                   })}
@@ -445,20 +421,20 @@ export default function PujaDetailsPage() {
               </div>
             )}
 
-            {/* Quantity and actions */}
+       
             <div className="mt-7">
               <label className="text-sm font-semibold text-gray-900">
                 Quantity
               </label>
 
               <div className="mt-2 flex text-black flex-wrap items-center gap-3">
-                <div className="flex h-12 items-center rounded-full border border-gray-300">
+                <div className="flex h-10 sm:h-10 items-center rounded-full border border-gray-300">
                   <button
                     type="button"
                     aria-label="Decrease quantity"
                     disabled={quantity <= 1}
                     onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                    className="h-full px-4 text-xl disabled:opacity-30"
+                    className="h-full px-4 text-sm disabled:opacity-30"
                   >
                     −
                   </button>
@@ -469,19 +445,11 @@ export default function PujaDetailsPage() {
                     type="button"
                     aria-label="Increase quantity"
                     onClick={() => setQuantity((q) => q + 1)}
-                    className="h-full px-4 text-xl"
+                    className="h-full px-4 text-sm"
                   >
                     +
                   </button>
-                </div>
-
-                {/* <button
-                  type="button"
-                  onClick={handleAddToCart}
-                  className="h-12 flex-1 rounded-full border border-gray-400 px-4 font-medium transition hover:bg-gray-50"
-                >
-                  Add to cart
-                </button> */}
+                </div>            
 
                 <CustomButton
                   type="button"
@@ -599,11 +567,11 @@ export default function PujaDetailsPage() {
         <section className="mt-12 border-t border-gray-200 pt-8">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <h2 className="text-2xl font-semibold text-gray-900">
+              <h2 className="text-xl font-semibold text-gray-900">
                 Customer Reviews
               </h2>
 
-              <p className="mt-2 text-sm text-gray-500">
+              <p className="mt-2 text-xs text-gray-500">
                 {puja.reviews?.length || 0} reviews
               </p>
             </div>
@@ -611,7 +579,7 @@ export default function PujaDetailsPage() {
             <button
               type="button"
               onClick={() => setShowReviewModal(true)}
-              className="rounded-md bg-amber-400 px-6 py-3 font-medium text-white hover:bg-amber-500"
+              className="rounded-full bg-amber-400 px-6 py-2 font-medium text-white hover:bg-amber-500"
             >
               Write a review
             </button>
@@ -653,7 +621,7 @@ export default function PujaDetailsPage() {
                 </article>
               ))
             ) : (
-              <p className="py-6 text-gray-500">
+              <p className="py-6 text-xs sm:text-sm text-gray-500">
                 No approved reviews yet. Be the first to share your experience.
               </p>
             )}

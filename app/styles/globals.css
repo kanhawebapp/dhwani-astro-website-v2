@@ -1573,6 +1573,9 @@ body {
 /* media queries ************************************** */
 
 @media (319px <=width <=430px) {
+ .swiper-button-prev:after, .swiper-button-next:after {
+  font-size: 26px !important;
+ }
   .css-e4a9x2-indicatorContainer {
     padding: 0px !important;
   }
