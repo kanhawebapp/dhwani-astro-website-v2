@@ -20,6 +20,7 @@ import {
   organizationSchema,
   websiteSchema,
 } from "@/utils/schema";
+import { BlogProvider } from "./context/blogContext";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -124,10 +125,11 @@ export default function RootLayout({ children }) {
               <Providers>
                 <SocketProvider>
                   <SignInModalWrapper>
+                       <BlogProvider>
                     <LayoutWrapper>
                       {children}
                     </LayoutWrapper>
-
+</BlogProvider>
                     <GlobalChatPopup />
                   </SignInModalWrapper>
 

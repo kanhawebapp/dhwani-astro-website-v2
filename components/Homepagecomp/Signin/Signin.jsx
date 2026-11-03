@@ -318,7 +318,7 @@ const SignInModal = ({ onClose }) => {
                         value={digit}
                         onChange={(e) => handleOtpChange(e, index)}
                         onKeyDown={(e) => handleOtpKeyDown(e, index)}
-                        className="w-12 h-12 rounded-xl  text-center border bg-white/60 border-gray-400"
+                        className="w-12 h-12 rounded-xl text-black  text-center border bg-white/70 border-gray-400"
                       />
                     ))}
                   </div>
@@ -332,7 +332,7 @@ const SignInModal = ({ onClose }) => {
                   </button>
 
                   {timer > 0 ? (
-                    <p className="text-xs sm:text-sm text-gray-500">
+                    <p className="text-xs sm:text-sm text-gray-100">
                       Resend OTP in {timer}s
                     </p>
                   ) : (

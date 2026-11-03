@@ -55,7 +55,7 @@ export default function PhoneInput({ onChange, handleKeyEnter, resetTrigger }) {
   return (
     <div>
       <div className="flex gap-0.5 rounded">
-        <div className="flex w-20 sm:w-25 items-center bg-white/60 gap-0.5 h-full px-1 py-1 sm:px-3 sm:py-2 border border-gray-400 rounded-2xl shadow-lg">
+        <div className="flex w-20 sm:w-25 items-center bg-white/70 gap-0.5 h-full px-1 py-1 sm:px-3 sm:py-2 border border-gray-400 rounded-2xl shadow-lg">
           <Select
             className="text-black  "
             value={country}
@@ -131,7 +131,7 @@ export default function PhoneInput({ onChange, handleKeyEnter, resetTrigger }) {
           pattern="[0-9]*"
           className={`flex-1 px-3 w-50 sm:w-full py-2 border ${
             error ? "border-red-500" : "border-gray-400"
-          } text-gray-800 text-sm sm:text-base rounded-2xl placeholder:text-xs bg-white/60 shadow-lg outline-none`}
+          } text-gray-800 text-sm sm:text-base rounded-2xl placeholder:text-xs bg-white/70 shadow-lg outline-none`}
           placeholder="Mobile number"
           value={number}
           onKeyDown={(e) => {
