@@ -269,11 +269,13 @@ export default function CallPage(
 
   const sendRecordingToServer = async () => {
     try {
+      debugger;
+      console.log("sendRecordingToServer--------");
       if (recordedChunksRef.current.length === 0) {
         setUploadStatus("No recording data to upload");
         return;
       }
-
+     console.log("111111111111111--------");
       // Create blob from recorded chunks
       const blob = new Blob(recordedChunksRef.current, {
         type: mediaRecorderRef.current?.mimeType || "audio/webm",
@@ -287,18 +289,21 @@ export default function CallPage(
       try {
         const user = JSON.parse(localStorage.getItem("user"));
         userId = user?.id || "";
-
+       console.log("----222222222----",userId);
         astroId = callInfoRef.current.astroId || "";
         astroName = callInfoRef.current.astroName || "";
+        console.log("----333333333333----",astroId,astroName);
       } catch (e) {
         console.warn("Could not parse data from localStorage:", e);
       }
 
       if (!astroId) {
       }
-
+      
       const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
       const filename = `call-${roomId}-${timestamp}.webm`;
+
+      console.log("----filename----",filename);
 
       const file = new File([blob], filename, {
         type: mediaRecorderRef.current?.mimeType || "audio/webm",
@@ -321,6 +326,7 @@ export default function CallPage(
       });
 
       if (errors) {
+         console.log("----errr----",errors);
         console.error("GraphQL errors:", errors);
         setUploadStatus(
           `Upload failed: ${errors[0]?.message || "Unknown error"}`,
@@ -329,6 +335,7 @@ export default function CallPage(
       }
 
       if (data?.uploadCallRecording?.success) {
+        console.log("4444444444444444444");
         setUploadStatus("Recording uploaded successfully");
       } else {
         console.error(
