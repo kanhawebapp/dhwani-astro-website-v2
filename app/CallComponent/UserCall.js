@@ -143,6 +143,7 @@ export default function CallPage(
 
   const startRecording = () => {
     try {
+      console.log("start recording");
       if (recordingInitializedRef.current) {
         return;
       }
@@ -248,6 +249,7 @@ export default function CallPage(
 
   const stopRecording = () => {
     try {
+      console.log("stopRecording");
       if (mediaRecorderRef.current && isRecordingRef.current) {
         mediaRecorderRef.current.stop();
         isRecordingRef.current = false;
