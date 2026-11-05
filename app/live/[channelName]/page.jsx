@@ -1453,7 +1453,14 @@ export default function WatchLive() {
                           <div className="mt-4 rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-3">
                             <div className="flex items-center gap-3">
                               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-black/30 text-3xl">
-                                {`${process.env.NEXT_PUBLIC_BASE_URL}${selectedGift.icon}`}
+                              <span>
+                              <img
+                                    src={`${process.env.NEXT_PUBLIC_BASE_URL}${selectedGift.icon}`}
+                                    alt={gift.name}
+                                    className="h-10 w-10 object-contain"
+                                  />
+                                </span>
+                               
                               </div>
 
                               <div className="min-w-0 flex-1">
