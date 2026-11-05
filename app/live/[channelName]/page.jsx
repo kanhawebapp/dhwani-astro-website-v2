@@ -456,7 +456,6 @@ export default function WatchLive() {
 
   const handleStreamEnded = useCallback(
     async (generation) => {
-      console.log("22222222222222222");
       // Prevent duplicate execution.
       if (endingRef.current || !isCurrentGeneration(generation)) {
         return;
@@ -476,7 +475,6 @@ export default function WatchLive() {
 
       // Invalidate existing Agora event handlers.
       generationRef.current++;
-      console.log("333333333333333");
       try {
         // Record that the viewer has left the live stream.
         try {
@@ -492,13 +490,11 @@ export default function WatchLive() {
         } catch (err) {
           console.error("Failed to record viewer leaving:", err);
         }
-        console.log("4444444444444");
         // Clean up Agora RTC and Chat connections.
         await cleanup();
       } catch (err) {
         console.error("Error during ended-stream cleanup:", err);
       } finally {
-        console.log("55555555555555555");
         // Redirect only if this component is still mounted.
         if (mountedRef.current) {
           redirectTimeoutRef.current = setTimeout(() => {
@@ -1457,7 +1453,7 @@ export default function WatchLive() {
                           <div className="mt-4 rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-3">
                             <div className="flex items-center gap-3">
                               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-black/30 text-3xl">
-                                {selectedGift.icon || "🎁"}
+                                {`${process.env.NEXT_PUBLIC_BASE_URL}${selectedGift.icon}`}
                               </div>
 
                               <div className="min-w-0 flex-1">
