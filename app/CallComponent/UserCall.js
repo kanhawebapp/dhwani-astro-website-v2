@@ -6,8 +6,9 @@ import SocketContext from "@/app/context/socketContext";
 import Image from "next/image";
 import { useDispatch } from "react-redux";
 import { removeActiveRequest } from "@/app/redux/reducer/chat/sendRequestSlice";
-import { useQuery, useMutation } from "@apollo/client/react";
+import { useMutation } from "@apollo/client/react";
 import { gql } from "@apollo/client";
+
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
 const UPLOAD_CALL_RECORDING = gql`
@@ -48,6 +49,15 @@ const UPLOAD_CALL_RECORDING = gql`
   }
 `;
 
+const getCandidateType = (candidate) => {
+  const candidateString =
+    typeof candidate === "string"
+      ? candidate
+      : candidate?.candidate || "";
+
+  return candidateString.match(/\btyp\s+(\w+)/)?.[1] || "unknown";
+};
+
 export default function CallPage(
   room_Id,
   astro_Name,
@@ -56,146 +66,149 @@ export default function CallPage(
   user_Id,
   astroid,
   astro_price,
-  userIntakeId,
+  userIntakeId
 ) {
   const dispatch = useDispatch();
   const { roomId } = useParams();
-
   const router = useRouter();
-  const [remainingTime, setRemainingTime] = useState(0);
-
-  const timerRef = useRef(null);
 
   const { socket, connectSocket } = useContext(SocketContext);
 
-  // GraphQL mutation for uploading recording
-  const [uploadRecording, { loading: uploadLoading, error: uploadError }] =
-    useMutation(UPLOAD_CALL_RECORDING);
+  const [remainingTime, setRemainingTime] = useState(0);
+  const [callStatus, setCallStatus] = useState("Connecting...");
+  const [isMuted, setIsMuted] = useState(false);
+  const [waveHeights, setWaveHeights] = useState(Array(20).fill(10));
+  const [isRecording, setIsRecording] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState("");
+
+  const [uploadRecording] = useMutation(UPLOAD_CALL_RECORDING);
 
   const pc = useRef(null);
-  // Hold remote ICE candidates until setRemoteDescription() has completed.
-  const pendingIceCandidatesRef = useRef([]);
-
+  const socketRef = useRef(null);
   const remoteAudio = useRef(null);
-
   const localStream = useRef(null);
+  const remoteStreamRef = useRef(null);
 
+  const pendingIceCandidatesRef = useRef([]);
   const statsIntervalRef = useRef(null);
+  const timerRef = useRef(null);
+  const recordingRetryTimerRef = useRef(null);
+  const animationFrameRef = useRef(null);
 
-  // Recording refs (hidden from UI)
+  // Recording refs
   const mediaRecorderRef = useRef(null);
   const recordedChunksRef = useRef([]);
   const isRecordingRef = useRef(false);
   const callStartTimeRef = useRef(null);
   const combinedStreamRef = useRef(null);
   const recordingInitializedRef = useRef(false);
-  const remoteStreamRef = useRef(null);
   const callFullyConnectedRef = useRef(false);
+  const callEndedRef = useRef(false);
 
-  const [callStatus, setCallStatus] = useState("Connecting...");
-  const [isMuted, setIsMuted] = useState(false);
-  const [waveHeights, setWaveHeights] = useState(Array(20).fill(10));
-  const [isRecording, setIsRecording] = useState(false);
-  const [uploadStatus, setUploadStatus] = useState("");
-  // const [astroLogerData, setAstrologerData] = useState("");
   const callInfoRef = useRef({
     astroId: "",
     astroName: "",
     userId: "",
   });
 
-  // voice waves
-  useEffect(() => {
-    if (!remoteAudio.current?.srcObject) return;
+  // --------------------------------------------------
+  // ICE CONFIGURATION
+  // Keep this configuration consistent on BOTH sides.
+  // --------------------------------------------------
 
-    const audioContext = new AudioContext();
+  const getIceConfig = () => ({
+    iceServers: [
+      // Google STUN
+      {
+        urls: "stun:stun.l.google.com:19302",
+      },
+      {
+        urls: "stun:stun1.l.google.com:19302",
+      },
+      {
+        urls: "stun:stun2.l.google.com:19302",
+      },
 
-    const analyser = audioContext.createAnalyser();
+      // Metered OpenRelay TURN - UDP
+      {
+        urls: "turn:openrelay.metered.ca:80?transport=udp",
+        username: "openrelayproject",
+        credential: "openrelayproject",
+      },
+      {
+        urls: "turn:openrelay.metered.ca:443?transport=udp",
+        username: "openrelayproject",
+        credential: "openrelayproject",
+      },
 
-    analyser.fftSize = 64;
+      // Metered OpenRelay TURN - TCP
+      {
+        urls: "turn:openrelay.metered.ca:443?transport=tcp",
+        username: "openrelayproject",
+        credential: "openrelayproject",
+      },
+    ],
 
-    const source = audioContext.createMediaStreamSource(
-      remoteAudio.current.srcObject,
-    );
+    iceCandidatePoolSize: 10,
+    bundlePolicy: "max-bundle",
+    rtcpMuxPolicy: "require",
+  });
 
-    source.connect(analyser);
-
-    const bufferLength = analyser.frequencyBinCount;
-
-    const dataArray = new Uint8Array(bufferLength);
-
-    const animate = () => {
-      analyser.getByteFrequencyData(dataArray);
-
-      const normalized = Array.from(dataArray)
-        .slice(0, 20)
-        .map((v) => Math.max(10, v / 2));
-
-      setWaveHeights(normalized);
-
-      requestAnimationFrame(animate);
-    };
-
-    animate();
-
-    return () => {
-      audioContext.close();
-    };
-  }, [remoteAudio.current?.srcObject]); // eslint-disable-line react-hooks/exhaustive-deps
+  // --------------------------------------------------
+  // RECORDING
+  // --------------------------------------------------
 
   const startRecording = () => {
     try {
-      console.log("start recording");
+      console.log("[USER][RECORDING] Starting recording...");
+
       if (recordingInitializedRef.current) {
+        console.log("[USER][RECORDING] Already initialized");
         return;
       }
 
       if (!window.MediaRecorder) {
+        console.warn("[USER][RECORDING] MediaRecorder not supported");
         return;
       }
 
       if (!callFullyConnectedRef.current) {
-        setTimeout(() => startRecording(), 1000);
+        console.log("[USER][RECORDING] Waiting for connection");
+        clearTimeout(recordingRetryTimerRef.current);
+
+        recordingRetryTimerRef.current = setTimeout(
+          startRecording,
+          1000
+        );
         return;
       }
 
-      let remoteStream = null;
-      if (remoteAudio.current?.srcObject) {
-        remoteStream = remoteAudio.current.srcObject;
+      const remoteStream = remoteAudio.current?.srcObject;
+
+      if (!localStream.current || !remoteStream) {
+        console.warn("[USER][RECORDING] Local or remote stream missing");
+        return;
       }
 
       const combinedStream = new MediaStream();
 
-      if (localStream.current) {
-        const localTracks = localStream.current.getAudioTracks();
-        localTracks.forEach((track) => {
-          if (track.readyState === "live") {
-            combinedStream.addTrack(track);
-          }
-        });
-      } else {
-        return;
-      }
+      localStream.current.getAudioTracks().forEach((track) => {
+        if (track.readyState === "live") {
+          combinedStream.addTrack(track);
+        }
+      });
 
-      if (remoteStream) {
-        const remoteTracks = remoteStream.getAudioTracks();
-        remoteTracks.forEach((track) => {
-          if (track.readyState === "live") {
-            combinedStream.addTrack(track);
-          }
-        });
-      } else {
-        return;
-      }
+      remoteStream.getAudioTracks().forEach((track) => {
+        if (track.readyState === "live") {
+          combinedStream.addTrack(track);
+        }
+      });
 
-      // Check if we have any tracks
       if (combinedStream.getAudioTracks().length === 0) {
+        console.warn("[USER][RECORDING] No audio tracks available");
         return;
       }
 
-      combinedStreamRef.current = combinedStream;
-
-      // Create MediaRecorder instance
       const mimeTypes = [
         "audio/webm;codecs=opus",
         "audio/webm",
@@ -203,47 +216,58 @@ export default function CallPage(
         "audio/mp4",
       ];
 
-      let mimeType = "";
-      for (const type of mimeTypes) {
-        if (MediaRecorder.isTypeSupported(type)) {
-          mimeType = type;
-          break;
-        }
-      }
+      const mimeType = mimeTypes.find((type) =>
+        MediaRecorder.isTypeSupported(type)
+      );
 
       const mediaRecorder = new MediaRecorder(combinedStream, {
         mimeType: mimeType || undefined,
         audioBitsPerSecond: 128000,
       });
 
+      combinedStreamRef.current = combinedStream;
       mediaRecorderRef.current = mediaRecorder;
       recordedChunksRef.current = [];
 
       mediaRecorder.ondataavailable = (event) => {
-        if (event.data && event.data.size > 0) {
+        if (event.data?.size > 0) {
           recordedChunksRef.current.push(event.data);
         }
       };
 
-      mediaRecorder.onstop = () => {
-        sendRecordingToServer();
+      mediaRecorder.onstop = async () => {
+        console.log("[USER][RECORDING] Recording stopped");
+
         setIsRecording(false);
+        isRecordingRef.current = false;
         recordingInitializedRef.current = false;
+
+        await sendRecordingToServer();
       };
 
-      mediaRecorder.onerror = (error) => {
+      mediaRecorder.onerror = (event) => {
+        console.error("[USER][RECORDING] Recorder error:", event);
+
         setIsRecording(false);
+        isRecordingRef.current = false;
         recordingInitializedRef.current = false;
         setUploadStatus("Recording error occurred");
       };
 
-      // Start recording
       mediaRecorder.start(1000);
+
       isRecordingRef.current = true;
       recordingInitializedRef.current = true;
-      setIsRecording(true);
       callStartTimeRef.current = Date.now();
+
+      setIsRecording(true);
+
+      console.log("[USER][RECORDING] Recording started", {
+        mimeType: mediaRecorder.mimeType,
+        audioTracks: combinedStream.getAudioTracks().length,
+      });
     } catch (error) {
+      console.error("[USER][RECORDING] Start error:", error);
       recordingInitializedRef.current = false;
       setUploadStatus("Failed to start recording");
     }
@@ -251,114 +275,476 @@ export default function CallPage(
 
   const stopRecording = () => {
     try {
-      console.log("stopRecording");
-      if (mediaRecorderRef.current && isRecordingRef.current) {
-        mediaRecorderRef.current.stop();
-        isRecordingRef.current = false;
-        setIsRecording(false);
-        recordingInitializedRef.current = false;
+      console.log("[USER][RECORDING] Stop requested");
 
-        // Clean up combined stream
-        if (combinedStreamRef.current) {
-          combinedStreamRef.current.getTracks().forEach((track) => {
-            combinedStreamRef.current.removeTrack(track);
-          });
-          combinedStreamRef.current = null;
-        }
+      if (
+        mediaRecorderRef.current &&
+        mediaRecorderRef.current.state !== "inactive"
+      ) {
+        mediaRecorderRef.current.stop();
+      }
+
+      isRecordingRef.current = false;
+      setIsRecording(false);
+
+      if (combinedStreamRef.current) {
+        combinedStreamRef.current.getTracks().forEach((track) => {
+          track.stop();
+        });
+
+        combinedStreamRef.current = null;
       }
     } catch (error) {
-      console.error("Error stopping recording:", error);
+      console.error("[USER][RECORDING] Stop error:", error);
     }
   };
 
   const sendRecordingToServer = async () => {
     try {
-      debugger;
-      console.log("sendRecordingToServer--------");
       if (recordedChunksRef.current.length === 0) {
+        console.warn("[USER][RECORDING] No recording chunks");
         setUploadStatus("No recording data to upload");
         return;
       }
-      console.log("111111111111111--------");
-      // Create blob from recorded chunks
+
       const blob = new Blob(recordedChunksRef.current, {
         type: mediaRecorderRef.current?.mimeType || "audio/webm",
       });
 
-      let astroData = null;
-      let userId = null;
+      let userId = "";
       let astroId = "";
       let astroName = "";
 
       try {
-        const user = JSON.parse(localStorage.getItem("user"));
+        const user = JSON.parse(localStorage.getItem("user") || "{}");
+
         userId = user?.id || "";
-        console.log("----222222222----", userId);
         astroId = callInfoRef.current.astroId || "";
         astroName = callInfoRef.current.astroName || "";
-        console.log("----333333333333----", astroId, astroName);
-      } catch (e) {
-        console.warn("Could not parse data from localStorage:", e);
+      } catch (error) {
+        console.warn("[USER][RECORDING] Local storage parse error:", error);
       }
 
-      if (!astroId) {
-      }
+      const timestamp = new Date()
+        .toISOString()
+        .replace(/[:.]/g, "-");
 
-      const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
       const filename = `call-${roomId}-${timestamp}.webm`;
-
-      console.log("----filename----", filename);
 
       const file = new File([blob], filename, {
         type: mediaRecorderRef.current?.mimeType || "audio/webm",
       });
 
-      const duration = Math.floor(
-        (Date.now() - callStartTimeRef.current) / 1000,
-      );
+      const duration = callStartTimeRef.current
+        ? Math.floor((Date.now() - callStartTimeRef.current) / 1000)
+        : 0;
+
+      console.log("[USER][RECORDING] Uploading recording:", {
+        filename,
+        size: file.size,
+        duration,
+        astroId,
+        astroName,
+        userId,
+      });
 
       const { data, errors } = await uploadRecording({
         variables: {
           recording: file,
-          roomId: roomId,
-          astroId: astroId || "",
-          astroName: astroName || "",
-          userId: userId || "",
-          duration: duration,
+          roomId,
+          astroId,
+          astroName,
+          userId,
+          duration,
           callType: "audio",
         },
       });
 
-      if (errors) {
-        console.log("----errr----", errors);
-        console.error("GraphQL errors:", errors);
-        setUploadStatus(
-          `Upload failed: ${errors[0]?.message || "Unknown error"}`,
-        );
-        throw new Error(errors[0]?.message || "Failed to upload recording");
+      if (errors?.length) {
+        throw new Error(errors[0]?.message || "Recording upload failed");
       }
 
       if (data?.uploadCallRecording?.success) {
-        console.log("4444444444444444444");
+        console.log("[USER][RECORDING] Upload successful");
         setUploadStatus("Recording uploaded successfully");
       } else {
-        console.error(
-          " Failed to save recording:",
-          data?.uploadCallRecording?.message,
-        );
-        setUploadStatus(
-          `Upload failed: ${data?.uploadCallRecording?.message || "Unknown error"}`,
+        throw new Error(
+          data?.uploadCallRecording?.message ||
+            "Recording upload failed"
         );
       }
 
-      // Clear chunks after successful upload
       recordedChunksRef.current = [];
     } catch (error) {
-      console.error("Failed to send recording to server:", error);
+      console.error("[USER][RECORDING] Upload error:", error);
       setUploadStatus(`Upload error: ${error.message}`);
       recordedChunksRef.current = [];
     }
   };
+
+  // --------------------------------------------------
+  // REMOTE AUDIO
+  // --------------------------------------------------
+
+  const attachRemoteAudio = async (stream) => {
+    if (!remoteAudio.current || !stream) {
+      console.warn("[USER][AUDIO] Audio element or stream missing");
+      return;
+    }
+
+    remoteAudio.current.srcObject = stream;
+    remoteAudio.current.volume = 1;
+    remoteAudio.current.muted = false;
+
+    console.log("[USER][AUDIO] Remote stream attached:", {
+      streamId: stream.id,
+      audioTracks: stream.getAudioTracks().map((track) => ({
+        enabled: track.enabled,
+        muted: track.muted,
+        readyState: track.readyState,
+      })),
+    });
+
+    try {
+      await remoteAudio.current.play();
+      console.log("[USER][AUDIO] Remote audio playback started");
+    } catch (error) {
+      console.error("[USER][AUDIO] Playback failed:", error);
+      setCallStatus("Tap to enable audio");
+    }
+  };
+
+  // --------------------------------------------------
+  // ICE CANDIDATE QUEUE
+  // --------------------------------------------------
+
+  const addPendingIceCandidates = async () => {
+    if (!pc.current?.remoteDescription) {
+      console.warn(
+        "[USER][ICE] Cannot drain queue: remote description missing"
+      );
+      return;
+    }
+
+    const queuedCandidates =
+      pendingIceCandidatesRef.current.splice(0);
+
+    console.log("[USER][ICE] Processing queued candidates:", {
+      count: queuedCandidates.length,
+    });
+
+    for (const candidate of queuedCandidates) {
+      try {
+        await pc.current.addIceCandidate(
+          new RTCIceCandidate(candidate)
+        );
+
+        console.log("[USER][ICE] Queued candidate added:", {
+          type: getCandidateType(candidate),
+        });
+      } catch (error) {
+        console.error(
+          "[USER][ICE] Queued candidate failed:",
+          error,
+          candidate
+        );
+      }
+    }
+  };
+
+  // --------------------------------------------------
+  // WEBRTC STATISTICS
+  // --------------------------------------------------
+
+  const startStats = () => {
+    if (statsIntervalRef.current) {
+      clearInterval(statsIntervalRef.current);
+    }
+
+    statsIntervalRef.current = setInterval(async () => {
+      if (!pc.current) return;
+
+      try {
+        const stats = await pc.current.getStats();
+
+        let inboundAudio = null;
+        let outboundAudio = null;
+        let selectedPair = null;
+
+        const candidateMap = new Map();
+
+        stats.forEach((report) => {
+          if (
+            report.type === "local-candidate" ||
+            report.type === "remote-candidate"
+          ) {
+            candidateMap.set(report.id, report);
+          }
+
+          if (
+            report.type === "inbound-rtp" &&
+            report.kind === "audio" &&
+            !report.isRemote
+          ) {
+            inboundAudio = report;
+          }
+
+          if (
+            report.type === "outbound-rtp" &&
+            report.kind === "audio" &&
+            !report.isRemote
+          ) {
+            outboundAudio = report;
+          }
+
+          if (
+            report.type === "candidate-pair" &&
+            (report.selected || report.nominated)
+          ) {
+            selectedPair = report;
+          }
+        });
+
+        if (inboundAudio) {
+          console.log("[USER][AUDIO] Incoming audio stats:", {
+            packetsReceived: inboundAudio.packetsReceived,
+            bytesReceived: inboundAudio.bytesReceived,
+            packetsLost: inboundAudio.packetsLost,
+            jitter: inboundAudio.jitter,
+          });
+        }
+
+        if (outboundAudio) {
+          console.log("[USER][AUDIO] Outgoing audio stats:", {
+            packetsSent: outboundAudio.packetsSent,
+            bytesSent: outboundAudio.bytesSent,
+          });
+        }
+
+        if (selectedPair) {
+          const localCandidate = candidateMap.get(
+            selectedPair.localCandidateId
+          );
+
+          const remoteCandidate = candidateMap.get(
+            selectedPair.remoteCandidateId
+          );
+
+          console.log("[USER][ICE] Selected candidate pair:", {
+            state: selectedPair.state,
+            nominated: selectedPair.nominated,
+            currentRoundTripTime:
+              selectedPair.currentRoundTripTime,
+            availableOutgoingBitrate:
+              selectedPair.availableOutgoingBitrate,
+            localCandidateType: localCandidate?.candidateType,
+            remoteCandidateType: remoteCandidate?.candidateType,
+            localProtocol: localCandidate?.protocol,
+            remoteProtocol: remoteCandidate?.protocol,
+          });
+        }
+      } catch (error) {
+        console.error("[USER][STATS] Error:", error);
+      }
+    }, 3000);
+  };
+
+  // --------------------------------------------------
+  // CREATE PEER CONNECTION
+  // --------------------------------------------------
+
+  const createPeer = async (activeSocket) => {
+    if (pc.current) {
+      console.log("[USER][RTC] Reusing existing PeerConnection");
+      return pc.current;
+    }
+
+    pendingIceCandidatesRef.current = [];
+    callFullyConnectedRef.current = false;
+
+    const iceConfig = getIceConfig();
+
+    pc.current = new RTCPeerConnection(iceConfig);
+
+    const peer = pc.current;
+
+    console.log("[USER][RTC] PeerConnection created:", {
+      roomId,
+      iceServers: iceConfig.iceServers.map((server) => server.urls),
+    });
+
+    peer.onconnectionstatechange = () => {
+      if (!pc.current) return;
+
+      console.log(
+        "[USER][RTC] connectionState:",
+        peer.connectionState
+      );
+
+      if (peer.connectionState === "connected") {
+        callFullyConnectedRef.current = true;
+        setCallStatus("Connected");
+
+        if (!recordingInitializedRef.current) {
+          startRecording();
+        }
+      }
+
+      if (
+        peer.connectionState === "failed" ||
+        peer.connectionState === "disconnected"
+      ) {
+        console.warn(
+          "[USER][RTC] Peer connection problem:",
+          peer.connectionState
+        );
+      }
+    };
+
+    peer.oniceconnectionstatechange = () => {
+      if (!pc.current) return;
+
+      console.log(
+        "[USER][RTC] iceConnectionState:",
+        peer.iceConnectionState
+      );
+
+      if (peer.iceConnectionState === "connected" ||
+          peer.iceConnectionState === "completed") {
+        callFullyConnectedRef.current = true;
+        setCallStatus("Connected");
+
+        if (!recordingInitializedRef.current) {
+          startRecording();
+        }
+      }
+
+      if (peer.iceConnectionState === "failed") {
+        console.error(
+          "[USER][RTC] ICE FAILED. Check TURN connectivity and relay candidates."
+        );
+      }
+
+      if (peer.iceConnectionState === "disconnected") {
+        console.warn(
+          "[USER][RTC] ICE disconnected. Waiting for recovery..."
+        );
+      }
+    };
+
+    peer.onsignalingstatechange = () => {
+      console.log(
+        "[USER][RTC] signalingState:",
+        peer.signalingState
+      );
+    };
+
+    peer.onicegatheringstatechange = () => {
+      console.log(
+        "[USER][RTC] iceGatheringState:",
+        peer.iceGatheringState
+      );
+
+      if (peer.iceGatheringState === "complete") {
+        console.log("[USER][ICE] Candidate gathering completed");
+      }
+    };
+
+    peer.onicecandidateerror = (event) => {
+      console.error("[USER][RTC] ICE candidate error:", {
+        url: event.url,
+        errorCode: event.errorCode,
+        errorText: event.errorText,
+        address: event.address,
+        port: event.port,
+      });
+    };
+
+    // Add local microphone before creating the offer.
+    try {
+      localStream.current =
+        await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          },
+        });
+
+      const audioTracks = localStream.current.getAudioTracks();
+
+      audioTracks.forEach((track) => {
+        peer.addTrack(track, localStream.current);
+
+        console.log("[USER][RTC] Local audio track added:", {
+          label: track.label,
+          enabled: track.enabled,
+          muted: track.muted,
+          readyState: track.readyState,
+        });
+      });
+
+      if (audioTracks.length === 0) {
+        throw new Error("No microphone audio track found");
+      }
+    } catch (error) {
+      console.error("[USER][MIC] Microphone access error:", error);
+      setCallStatus("Mic Error");
+      throw error;
+    }
+
+    peer.ontrack = async (event) => {
+      console.log("[USER][RTC] Remote track received:", {
+        kind: event.track?.kind,
+        readyState: event.track?.readyState,
+        muted: event.track?.muted,
+        streamsCount: event.streams?.length,
+      });
+
+      const remoteStream =
+        event.streams?.[0] || new MediaStream([event.track]);
+
+      remoteStreamRef.current = remoteStream;
+
+      await attachRemoteAudio(remoteStream);
+
+      setCallStatus("Connected");
+
+      if (callFullyConnectedRef.current &&
+          !recordingInitializedRef.current) {
+        startRecording();
+      }
+    };
+
+    peer.onicecandidate = (event) => {
+      if (!event.candidate) {
+        console.log("[USER][ICE] ICE candidate gathering completed");
+        return;
+      }
+
+      // IMPORTANT: Serialize candidate before sending through Socket.IO.
+      const candidateData = event.candidate.toJSON();
+
+      console.log("[USER][ICE] Sending candidate:", {
+        type: getCandidateType(candidateData),
+        protocol: candidateData.protocol,
+        candidate: candidateData.candidate,
+      });
+
+      activeSocket.emit("ice-candidate", {
+        room_id: roomId,
+        candidate: candidateData,
+      });
+    };
+
+    startStats();
+
+    return peer;
+  };
+
+  // --------------------------------------------------
+  // SOCKET EVENTS AND CALL SETUP
+  // --------------------------------------------------
 
   useEffect(() => {
     let activeSocket = socket;
@@ -367,225 +753,38 @@ export default function CallPage(
       activeSocket = connectSocket();
     }
 
-    if (!activeSocket) return;
+    if (!activeSocket) {
+      console.error("[USER][SOCKET] Socket unavailable");
+      return;
+    }
 
-    const createPeer = async () => {
-      if (pc.current) {
-        return pc.current;
-      }
+    socketRef.current = activeSocket;
 
-
-      // Reset candidates whenever a new RTCPeerConnection is created.
-      pendingIceCandidatesRef.current = [];
-
-      const iceConfig = {
-        iceServers: [
-          { urls: "stun:stun.l.google.com:19302" },
-          { urls: "stun:stun1.l.google.com:19302" },
-          { urls: "stun:stun2.l.google.com:19302" },
-          {
-            urls: "turn:openrelay.metered.ca:80",
-            username: "openrelayproject",
-            credential: "openrelayproject",
-          },
-          {
-            urls: "turn:openrelay.metered.ca:443",
-            username: "openrelayproject",
-            credential: "openrelayproject",
-          },
-        ],
-        iceCandidatePoolSize: 10,
-        bundlePolicy: "max-bundle",
-        rtcpMuxPolicy: "require",
-      };
-
-      
-
-      pc.current = new RTCPeerConnection(iceConfig);
-      console.log("[USER][RTC] PeerConnection created", {
-        roomId,
-        iceServers: iceConfig.iceServers.map((server) => server.urls),
-      });
-
-      pc.current.onconnectionstatechange = () => {
-        console.log("[USER][RTC] connectionState:", pc.current?.connectionState);
-        // When connection is fully established, trigger recording
-        if (pc.current.connectionState === "connected") {
-          callFullyConnectedRef.current = true;
-
-          // Start recording automatically (hidden)
-          setTimeout(() => {
-            if (!recordingInitializedRef.current) {
-              startRecording();
-            }
-          }, 1500);
-        }
-      };
-
-      pc.current.oniceconnectionstatechange = () => {
-        console.log("[USER][RTC] iceConnectionState:", pc.current?.iceConnectionState);
-        if (pc.current.iceConnectionState === "connected") {
-          callFullyConnectedRef.current = true;
-
-          // Start recording automatically (hidden)
-          setTimeout(() => {
-            if (!recordingInitializedRef.current) {
-              startRecording();
-            }
-          }, 1500);
-        }
-
-        if (
-          ["failed", "disconnected"].includes(pc.current.iceConnectionState)
-        ) {
-          console.warn(" ICE Connection failing! Check network/TURN");
-        }
-      };
-
-      pc.current.onsignalingstatechange = () => {
-        console.log("[USER][RTC] signalingState:", pc.current?.signalingState);
-      };
-
-      pc.current.onicegatheringstatechange = () => {
-        console.log("[USER][RTC] iceGatheringState:", pc.current?.iceGatheringState);
-      };
-
-      pc.current.onicecandidateerror = (event) => {
-        console.error("[USER][RTC] ICE candidate error:", {
-          url: event.url,
-          errorCode: event.errorCode,
-          errorText: event.errorText,
-          address: event.address,
-          port: event.port,
-        });
-      };
-
+    const handlePeerJoined = async (data) => {
       try {
-        localStream.current = await navigator.mediaDevices.getUserMedia({
-          audio: {
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true,
-            sampleRate: 48000,
-          },
-        });
+        console.log("[USER][SOCKET] peer_joined received:", data);
 
-        const tracks = localStream.current.getAudioTracks();
-        tracks.forEach((track) => {
-          pc.current.addTrack(track, localStream.current);
-          console.log("[USER][RTC] Local audio track added:", {
-            label: track.label,
-            enabled: track.enabled,
-            readyState: track.readyState,
-          });
-        });
+        if (callEndedRef.current) return;
 
-        // Verify senders
-        setTimeout(() => {
-          if (pc.current) {
-            const senders = pc.current.getSenders() || [];
-            senders.forEach((sender, i) => {});
-          }
-        }, 1500);
-      } catch (err) {
-        console.error(" Microphone access error:", err);
-        setCallStatus("Mic Error");
-        return;
-      }
+        setCallStatus("Ringing...");
 
-      pc.current.ontrack = async (event) => {
-        const remoteStream = event.streams[0];
-        console.log("[USER][RTC] Remote track received:", {
-          kind: event.track?.kind,
-          readyState: event.track?.readyState,
-          streamId: remoteStream?.id,
-        });
+        const peer = await createPeer(activeSocket);
 
-        // Store remote stream for recording
-        remoteStreamRef.current = remoteStream;
-
-        if (remoteAudio.current) {
-          remoteAudio.current.srcObject = remoteStream;
-          remoteAudio.current.volume = 1.0;
-          remoteAudio.current.muted = false;
-
-          try {
-            await remoteAudio.current.play();
-          } catch (err) {
-            console.error(" Autoplay blocked:", err);
-          }
+        if (!peer || peer.signalingState !== "stable") {
+          console.warn(
+            "[USER][SDP] Cannot create offer. Current signaling state:",
+            peer?.signalingState
+          );
+          return;
         }
-        setCallStatus("Connected");
 
-        // Try to start recording after remote track is received
-        setTimeout(() => {
-          if (
-            !recordingInitializedRef.current &&
-            callFullyConnectedRef.current
-          ) {
-            startRecording();
-          } else if (!callFullyConnectedRef.current) {
-          }
-        }, 2000);
-      };
-
-      pc.current.onicecandidate = (event) => {
-        if (event.candidate) {
-          console.log("[USER][ICE] Sending candidate:", {
-            type: event.candidate.type,
-            protocol: event.candidate.protocol,
-            address: event.candidate.address,
-            port: event.candidate.port,
-            candidate: event.candidate.candidate,
-          });
-          activeSocket.emit("ice-candidate", {
-            room_id: roomId,
-            candidate: event.candidate,
-          });
-        } else {
-          console.log("[USER][ICE] ICE candidate gathering completed");
-        }
-      };
-
-      statsIntervalRef.current = setInterval(async () => {
-        if (!pc.current) return;
-        try {
-          const stats = await pc.current.getStats();
-          stats.forEach((report) => {
-            if (report.type === "outbound-rtp" && report.kind === "audio") {
-            }
-            if (report.type === "inbound-rtp" && report.kind === "audio") {
-            }
-          });
-        } catch (e) {
-          console.error("Stats error:", e);
-        }
-      }, 3000);
-
-      return pc.current;
-    };
-
-    activeSocket.on("peer_joined", async (data) => {
-      console.log("[USER][SOCKET] peer_joined received:", data);
-      setCallStatus("Ringing...");
-
-      const peer = await createPeer();
-
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Check if peer exists before accessing getSenders
-      if (peer && peer.getSenders) {
-      } else {
-        return;
-      }
-
-      try {
         const offer = await peer.createOffer({
           offerToReceiveAudio: true,
         });
 
         await peer.setLocalDescription(offer);
-        console.log("[USER][SDP] Local offer set; sending offer", {
+
+        console.log("[USER][SDP] Local offer set; sending offer:", {
           roomId,
           signalingState: peer.signalingState,
           sdpType: peer.localDescription?.type,
@@ -596,81 +795,78 @@ export default function CallPage(
           offer: peer.localDescription,
         });
       } catch (error) {
-        console.error("Error creating offer:", error);
+        console.error("[USER][SDP] Error creating offer:", error);
         setCallStatus("Error creating offer");
       }
-    });
+    };
 
-    activeSocket.on("answer", async ({ answer }) => {
-      if (!pc.current) {
-        console.warn("No peer connection available for answer");
-        return;
-      }
-
+    const handleAnswer = async (data) => {
       try {
+        const answer = data?.answer;
+
+        if (!pc.current) {
+          console.warn("[USER][SDP] Answer received but PeerConnection is missing");
+          return;
+        }
+
+        if (!answer) {
+          console.error("[USER][SDP] Empty answer received:", data);
+          return;
+        }
+
         console.log("[USER][SDP] Answer received:", {
           roomId,
-          answerType: answer?.type,
+          answerType: answer.type,
           signalingStateBefore: pc.current.signalingState,
         });
 
         await pc.current.setRemoteDescription(
-          new RTCSessionDescription(answer),
+          new RTCSessionDescription(answer)
         );
 
         console.log("[USER][SDP] Remote answer applied:", {
           signalingState: pc.current.signalingState,
           remoteDescriptionType: pc.current.remoteDescription?.type,
-          queuedCandidates: pendingIceCandidatesRef.current.length,
+          queuedCandidates:
+            pendingIceCandidatesRef.current.length,
         });
 
-        // Apply candidates that arrived before the answer.
-        const queuedCandidates = pendingIceCandidatesRef.current.splice(0);
-        for (const candidate of queuedCandidates) {
-          try {
-            await pc.current.addIceCandidate(new RTCIceCandidate(candidate));
-            console.log("[USER][ICE] Queued candidate added successfully");
-          } catch (iceError) {
-            console.error("[USER][ICE] Failed to add queued candidate:", iceError, candidate);
-          }
-        }
+        await addPendingIceCandidates();
 
-        setCallStatus("Connected");
-        const stored = localStorage.getItem(`call_request_${roomId}`);
+        setCallStatus("Connecting...");
+
+        const stored = localStorage.getItem(
+          `call_request_${roomId}`
+        );
+
         const activeRequest = JSON.parse(
-          localStorage.getItem("activeRequest") || "{}",
+          localStorage.getItem("activeRequest") || "{}"
         );
 
         if (stored) {
-          const data = JSON.parse(stored);
+          const requestData = JSON.parse(stored);
 
-          const totalSeconds = Number(data.maximum_time || 0) * 60;
+          const totalSeconds =
+            Number(requestData.maximum_time || 0) * 60;
+
           setRemainingTime(totalSeconds);
 
           callInfoRef.current = {
-            astroId: data.astro_id || "",
-            astroName: activeRequest?.astrologer?.name || "",
-            userId: data.user_id || "",
+            astroId: requestData.astro_id || "",
+            astroName:
+              activeRequest?.astrologer?.name || "",
+            userId: requestData.user_id || "",
           };
         }
-
-        // Try to start recording after answer received
-        setTimeout(() => {
-          if (
-            !recordingInitializedRef.current &&
-            callFullyConnectedRef.current
-          ) {
-            startRecording();
-          } else if (!callFullyConnectedRef.current) {
-          }
-        }, 2000);
       } catch (error) {
-        console.error("Error handling answer:", error);
+        console.error("[USER][SDP] Error handling answer:", error);
       }
-    });
+    };
 
-    activeSocket.on("ice-candidate", async ({ candidate, room_id }) => {
+    const handleIceCandidate = async (data) => {
       try {
+        const { candidate, room_id } = data || {};
+
         if (room_id !== roomId) {
           console.warn("[USER][ICE] Ignoring candidate for another room:", {
             receivedRoomId: room_id,
@@ -679,96 +875,184 @@ export default function CallPage(
           return;
         }
 
-        if (!candidate) {
-          console.warn("[USER][ICE] Empty candidate received");
+        if (!candidate?.candidate) {
+          console.warn("[USER][ICE] Invalid candidate received:", data);
           return;
         }
 
-        if (!pc.current) {
-          console.warn("[USER][ICE] PeerConnection not ready; candidate queued");
+        if (!pc.current || !pc.current.remoteDescription) {
           pendingIceCandidatesRef.current.push(candidate);
+
+          console.log(
+            "[USER][ICE] Candidate queued until remote answer is applied:",
+            {
+              queueLength: pendingIceCandidatesRef.current.length,
+              candidateType: getCandidateType(candidate),
+            }
+          );
+
           return;
         }
 
-        if (!pc.current.remoteDescription) {
-          pendingIceCandidatesRef.current.push(candidate);
-          console.log("[USER][ICE] Candidate queued until remote answer is applied", {
-            queueLength: pendingIceCandidatesRef.current.length,
-            candidateType: candidate.type,
-            protocol: candidate.protocol,
-          });
-          return;
-        }
+        await pc.current.addIceCandidate(
+          new RTCIceCandidate(candidate)
+        );
 
-        await pc.current.addIceCandidate(new RTCIceCandidate(candidate));
-        console.log("[USER][ICE] Remote candidate added successfully", {
-          candidateType: candidate.type,
-          protocol: candidate.protocol,
-          queueLength: pendingIceCandidatesRef.current.length,
+        console.log("[USER][ICE] Remote candidate added successfully:", {
+          candidateType: getCandidateType(candidate),
         });
-      } catch (err) {
-        console.error("[USER][ICE] Failed to add remote candidate:", err, candidate);
+      } catch (error) {
+        console.error(
+          "[USER][ICE] Failed to add remote candidate:",
+          error,
+          data
+        );
       }
-    });
+    };
 
-    activeSocket.on("call_ended_by_astrologer", () => {
-      // Stop recording before cleanup (hidden)
+    const handleCallEndedByAstrologer = () => {
+      console.log("[USER][SOCKET] Call ended by astrologer");
+
+      callEndedRef.current = true;
+
       if (isRecordingRef.current) {
         stopRecording();
       }
 
       cleanup();
       dispatch(removeActiveRequest(roomId));
-
       router.push("/astrologer/call");
-    });
+    };
 
-    activeSocket.on("call_ended_by_admin", () => {
-      // Stop recording before cleanup (hidden)
+    const handleCallEndedByAdmin = () => {
+      console.log("[USER][SOCKET] Call ended by admin");
+
+      callEndedRef.current = true;
+
       if (isRecordingRef.current) {
         stopRecording();
       }
 
       cleanup();
       dispatch(removeActiveRequest(roomId));
-
       router.push("/astrologer/call");
-    });
+    };
+
+    activeSocket.on("peer_joined", handlePeerJoined);
+    activeSocket.on("answer", handleAnswer);
+    activeSocket.on("ice-candidate", handleIceCandidate);
+    activeSocket.on(
+      "call_ended_by_astrologer",
+      handleCallEndedByAstrologer
+    );
+    activeSocket.on(
+      "call_ended_by_admin",
+      handleCallEndedByAdmin
+    );
+
+    console.log("[USER][SOCKET] Joining call:", roomId);
 
     activeSocket.emit("join_call", {
       roomId,
     });
 
     return () => {
-      // Stop recording on unmount (hidden)
+      console.log("[USER][CLEANUP] Removing socket listeners");
+
+      activeSocket.off("peer_joined", handlePeerJoined);
+      activeSocket.off("answer", handleAnswer);
+      activeSocket.off("ice-candidate", handleIceCandidate);
+      activeSocket.off(
+        "call_ended_by_astrologer",
+        handleCallEndedByAstrologer
+      );
+      activeSocket.off(
+        "call_ended_by_admin",
+        handleCallEndedByAdmin
+      );
+
       if (isRecordingRef.current) {
         stopRecording();
       }
 
-      activeSocket.off("peer_joined");
-
-      activeSocket.off("answer");
-
-      activeSocket.off("ice-candidate");
-
-      activeSocket.off("call_ended_by_astrologer");
-
       cleanup();
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // call status time
+  // --------------------------------------------------
+  // AUDIO WAVEFORM
+  // --------------------------------------------------
+
+  useEffect(() => {
+    const stream = remoteAudio.current?.srcObject;
+
+    if (!stream) return;
+
+    let audioContext;
+    let analyser;
+    let source;
+    let animationId;
+
+    const animate = () => {
+      if (!analyser) return;
+
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+
+      analyser.getByteFrequencyData(dataArray);
+
+      const normalized = Array.from(dataArray)
+        .slice(0, 20)
+        .map((value) => Math.max(10, value / 2));
+
+      setWaveHeights(normalized);
+
+      animationId = requestAnimationFrame(animate);
+    };
+
+    try {
+      audioContext = new AudioContext();
+      analyser = audioContext.createAnalyser();
+      analyser.fftSize = 64;
+
+      source = audioContext.createMediaStreamSource(stream);
+      source.connect(analyser);
+
+      animate();
+    } catch (error) {
+      console.error("[USER][AUDIO] Waveform error:", error);
+    }
+
+    return () => {
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+      }
+
+      if (source) {
+        source.disconnect();
+      }
+
+      if (audioContext && audioContext.state !== "closed") {
+        audioContext.close();
+      }
+    };
+  }, [remoteStreamRef.current]);
+
+  // --------------------------------------------------
+  // CALL TIMER
+  // --------------------------------------------------
+
   useEffect(() => {
     if (callStatus !== "Connected" || remainingTime <= 0) {
       return;
     }
 
     timerRef.current = setInterval(() => {
-      setRemainingTime((prev) => {
-        if (prev <= 1) {
+      setRemainingTime((previous) => {
+        if (previous <= 1) {
           clearInterval(timerRef.current);
 
-          // Stop recording when timer expires (hidden)
           if (isRecordingRef.current) {
             stopRecording();
           }
@@ -778,75 +1062,103 @@ export default function CallPage(
           return 0;
         }
 
-        return prev - 1;
+        return previous - 1;
       });
     }, 1000);
 
     return () => {
       clearInterval(timerRef.current);
     };
-  }, [callStatus]); // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [callStatus]);
+
+  // --------------------------------------------------
+  // END CALL
+  // --------------------------------------------------
 
   const handleEndCall = () => {
-    const stored = localStorage.getItem(`call_request_${roomId}`);
+    if (callEndedRef.current) return;
 
-    const data = JSON.parse(stored);
+    callEndedRef.current = true;
 
-    // Stop recording when user ends call (hidden)
-    if (isRecordingRef.current) {
-      stopRecording();
+    console.log("[USER][CALL] Ending call:", roomId);
+
+    try {
+      const stored = localStorage.getItem(
+        `call_request_${roomId}`
+      );
+
+      const data = stored ? JSON.parse(stored) : {};
+
+      if (isRecordingRef.current) {
+        stopRecording();
+      }
+
+      socketRef.current?.emit("call_ended_by_user", {
+        room_id: roomId,
+        astro_id: data?.astro_id,
+      });
+    } catch (error) {
+      console.error("[USER][CALL] Error ending call:", error);
     }
-
-    socket.emit("call_ended_by_user", {
-      room_id: roomId,
-      astro_id: data?.astro_id,
-    });
 
     cleanup();
 
     dispatch(removeActiveRequest(roomId));
-
     router.push("/astrologer/call");
   };
+
+  // --------------------------------------------------
+  // MUTE
+  // --------------------------------------------------
 
   const toggleMute = () => {
     if (!localStream.current) return;
 
+    const nextMuted = !isMuted;
+
     localStream.current.getAudioTracks().forEach((track) => {
-      track.enabled = !track.enabled;
+      track.enabled = !nextMuted;
     });
 
-    setIsMuted(!isMuted);
+    setIsMuted(nextMuted);
+
+    console.log("[USER][AUDIO] Microphone mute changed:", nextMuted);
   };
 
-  // =========================
+  // --------------------------------------------------
   // CLEANUP
-  // =========================
-  const cleanup = () => {
-    // Stop recording if active (hidden)
-    if (isRecordingRef.current) {
-      stopRecording();
-    }
+  // --------------------------------------------------
 
-    // Reset connection and pending ICE state.
+  const cleanup = () => {
+    console.log("[USER][CLEANUP] Cleaning up WebRTC resources");
+
     callFullyConnectedRef.current = false;
     pendingIceCandidatesRef.current = [];
 
-    // CLEAR STATS
+    clearTimeout(recordingRetryTimerRef.current);
+
     if (statsIntervalRef.current) {
       clearInterval(statsIntervalRef.current);
-
       statsIntervalRef.current = null;
     }
 
-    // CLOSE PEER
-    if (pc.current) {
-      pc.current.close();
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
 
+    if (pc.current) {
+      pc.current.ontrack = null;
+      pc.current.onicecandidate = null;
+      pc.current.onicecandidateerror = null;
+      pc.current.onconnectionstatechange = null;
+      pc.current.oniceconnectionstatechange = null;
+
+      pc.current.close();
       pc.current = null;
     }
 
-    // STOP TRACKS
     if (localStream.current) {
       localStream.current.getTracks().forEach((track) => {
         track.stop();
@@ -855,19 +1167,22 @@ export default function CallPage(
       localStream.current = null;
     }
 
-    // CLEAR AUDIO
     if (remoteAudio.current) {
       remoteAudio.current.pause();
-
       remoteAudio.current.srcObject = null;
     }
 
-    // Clear remote stream ref
+    if (combinedStreamRef.current) {
+      combinedStreamRef.current.getTracks().forEach((track) => {
+        track.stop();
+      });
+
+      combinedStreamRef.current = null;
+    }
+
     remoteStreamRef.current = null;
 
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-    }
+    console.log("[USER][CLEANUP] Cleanup completed");
 
     [
       `call_request_${roomId}`,
@@ -878,10 +1193,12 @@ export default function CallPage(
     ].forEach((key) => localStorage.removeItem(key));
   };
 
-  // format time
+  // --------------------------------------------------
+  // FORMAT TIMER
+  // --------------------------------------------------
+
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
-
     const secs = seconds % 60;
 
     return `${mins.toString().padStart(2, "0")}:${secs
@@ -889,38 +1206,67 @@ export default function CallPage(
       .padStart(2, "0")}`;
   };
 
-  // =========================
-  // UI - No recording indicators shown
-  // =========================
+  // --------------------------------------------------
+  // ASTROLOGER DISPLAY DATA
+  // --------------------------------------------------
 
-  const astroData = JSON.parse(localStorage.getItem("activeRequest"));
+  let astroData = {};
+
+  if (typeof window !== "undefined") {
+    try {
+      astroData = JSON.parse(
+        localStorage.getItem("activeRequest") || "{}"
+      );
+    } catch (error) {
+      console.warn("[USER] Invalid activeRequest localStorage data");
+    }
+  }
+
+  // --------------------------------------------------
+  // UI
+  // --------------------------------------------------
+
   return (
-    <div className="flex items-center justify-center h-screen justify-center overflow-hidden  items-center bg-[#120a18e7] relative overflow-hidden">
+    <div className="flex items-center justify-center h-screen overflow-hidden bg-[#120a18e7] relative">
       <div className="absolute w-[400px] h-[400px] bg-purple-600 opacity-20 blur-3xl rounded-full top-[-100px] left-[-100px]" />
+
       <div className="absolute w-[500px] h-[500px] bg-violet-500 opacity-20 blur-3xl rounded-full bottom-[-100px] right-[-100px]" />
-      <div className="md:w-3/5 overflow-hidden w-full shadow-lg rounded-3xl  flex flex-col md:h-[95vh] h-[100vh]">
-        <div className="flex flex-col w-full  rounded-3xl shadow-xl items-center justify-between py-10    h-full bg-gray-900 text-white">
-          <div className="flex flex-col  items-center gap-3">
+
+      <div className="md:w-3/5 overflow-hidden w-full shadow-lg rounded-3xl flex flex-col md:h-[95vh] h-[100vh]">
+        <div className="flex flex-col w-full rounded-3xl shadow-xl items-center justify-between py-10 h-full bg-gray-900 text-white">
+          <div className="flex flex-col items-center gap-3">
             <Image
               width={100}
               height={100}
-              src={astroImage ? `${BASE_URL}${astroImage}` : "/man.png"}
+              src={
+                astroImage
+                  ? `${BASE_URL}${astroImage}`
+                  : "/man.png"
+              }
               alt={astroData?.astrologer?.name || "Astrologer"}
               className="rounded-full object-cover"
             />
 
-            <h2 className="text-xl">{astroData?.astrologer?.name}</h2>
+            <h2 className="text-xl">
+              {astroData?.astrologer?.name}
+            </h2>
+
             <div className="flex items-center gap-2 mt-2 text-green-400">
               <span className="w-2 h-2 bg-green-400 rounded-full text-xs animate-pulse" />
               {callStatus}
             </div>
-          </div>
-          <div className="flex flex-col items-center ">
-            {/* <h2 className="text-2xl mb-4">📞 Call Status</h2> */}
 
+            {uploadStatus && (
+              <p className="text-xs text-gray-300">
+                {uploadStatus}
+              </p>
+            )}
+          </div>
+
+          <div className="flex flex-col items-center">
             {callStatus === "Connected" && (
               <p className="mb-2 text-lg">
-                Time Left : {formatTime(remainingTime)}
+                Time Left: {formatTime(remainingTime)}
               </p>
             )}
 
@@ -929,20 +1275,24 @@ export default function CallPage(
                 <div
                   key={index}
                   className="w-2 bg-green-400 rounded-full transition-all duration-75"
-                  style={{
-                    height: `${height}px`,
-                  }}
+                  style={{ height: `${height}px` }}
                 />
               ))}
             </div>
           </div>
 
-          {/* REMOTE AUDIO */}
-          <audio ref={remoteAudio} autoPlay playsInline />
+          {/* Remote audio */}
+          <audio
+            ref={remoteAudio}
+            autoPlay
+            playsInline
+          />
 
-          <div className="flex gap-6  w-full items-center justify-center   ">
+          <div className="flex gap-6 w-full items-center justify-center">
             <button
               onClick={toggleMute}
+              type="button"
+              aria-label={isMuted ? "Unmute microphone" : "Mute microphone"}
               className="w-18 h-18 bg-gray-200 rounded-full flex items-center justify-center shadow-2xl"
             >
               {isMuted ? (
@@ -964,12 +1314,14 @@ export default function CallPage(
 
             <button
               onClick={handleEndCall}
+              type="button"
+              aria-label="End call"
               className="w-18 h-18 bg-red-600 hover:bg-red-700 rounded-full flex items-center justify-center shadow-2xl"
             >
               <svg width={25} height={25} viewBox="0 0 640 640">
                 <path
                   fill="rgb(255, 255, 255)"
-                  d="M567 39.1C576.4 29.7 591.6 29.7 600.9 39.1C610.2 48.5 610.3 63.7 600.9 73L73 601.1C63.6 610.5 48.4 610.5 39.1 601.1C29.8 591.7 29.7 576.5 39.1 567.2L173.5 432.6C121.2 374.5 83.6 302.8 66.8 223.4C50.7 147.1 105.9 84.6 170.5 66.9L176 65.4C195.7 60 216.3 70.1 224.1 88.9L264.6 186.2C271.5 202.7 266.7 221.8 252.8 233.2L208.7 269.3C221.6 297.8 238.3 324.1 258.2 347.8L567 39.1zM416.6 573.1C353.6 559.7 295.3 533.3 244.9 496.8L329.8 412C342 420.2 354.8 427.6 368.1 434.2L406.7 387C418 373.1 437.1 368.4 453.7 375.2L551 415.8C569.8 423.6 579.9 444.2 574.5 463.9L573 469.4C555.4 534 492.8 589.2 416.6 573.1z"
+                  d="M567 39.1C576.4 29.7 576.5 44.4 600.9 73L73 601.1C63.6 610.5 48.4 610.5 39.1 601.1C29.8 591.7 29.7 576.5 39.1 567.2L173.5 432.6C121.2 374.5 83.6 302.8 66.8 223.4C50.7 147.1 105.9 84.6 170.5 66.9L176 65.4C195.7 60 216.3 70.1 224.1 88.9L264.6 186.2C271.5 202.7 266.7 221.8 252.8 233.2L208.7 269.3C221.6 297.7 238.3 324.1 258.2 347.8L567 39.1zM416.6 573.1C353.6 559.7 295.3 533.3 244.9 496.8L329.8 412C342 420.2 354.8 427.6 368.1 434.2L406.7 387C418 373.1 437.1 368.4 453.7 375.2L551 415.8C569.8 423.6 579.9 444.2 574.5 463.9L573 469.4C555.4 534 492.8 589.2 416.6 573.1z"
                 />
               </svg>
             </button>
