@@ -17,18 +17,77 @@ import { gql } from "@apollo/client";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
-// Configure these in the frontend environment and rebuild.
-// Example:
-// NEXT_PUBLIC_TURN_URLS=turn:your-turn-host:3478?transport=udp,turns:your-turn-host:5349?transport=tcp
-// NEXT_PUBLIC_TURN_USERNAME=your-username
-// NEXT_PUBLIC_TURN_CREDENTIAL=your-credential
-const TURN_URLS = (process.env.NEXT_PUBLIC_TURN_URLS || "")
-  .split(",")
-  .map((url) => url.trim())
-  .filter(Boolean);
+// --------------------------------------------------
+// METERED TURN CONFIGURATION
+// --------------------------------------------------
 
-const TURN_USERNAME = process.env.NEXT_PUBLIC_TURN_USERNAME || "";
-const TURN_CREDENTIAL = process.env.NEXT_PUBLIC_TURN_CREDENTIAL || "";
+const getIceConfig = async () => {
+  const fallbackIceServers = [
+    { urls: "stun:stun.l.google.com:19302" },
+    { urls: "stun:stun1.l.google.com:19302" },
+  ];
+
+  try {
+    console.log("[USER][ICE] Fetching Metered TURN credentials...");
+
+    const response = await fetch("/api/turn-credentials", {
+      method: "GET",
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      throw new Error(`TURN API returned HTTP ${response.status}`);
+    }
+
+    const result = await response.json();
+
+    if (
+      !result?.success ||
+      !Array.isArray(result.iceServers) ||
+      result.iceServers.length === 0
+    ) {
+      throw new Error(
+        result?.message || "Invalid Metered ICE server response"
+      );
+    }
+
+    // Google STUN + Metered TURN servers.
+    const iceServers = [
+      ...fallbackIceServers,
+      ...result.iceServers,
+    ];
+
+    console.log("[USER][ICE] Metered ICE servers loaded:", {
+      count: result.iceServers.length,
+      servers: result.iceServers.map((server) => server.urls),
+    });
+
+    return {
+      iceServers,
+      iceCandidatePoolSize: 10,
+      bundlePolicy: "max-bundle",
+      rtcpMuxPolicy: "require",
+      iceTransportPolicy: "all",
+    };
+  } catch (error) {
+    console.error(
+      "[USER][ICE] Could not load Metered TURN credentials. Falling back to Google STUN:",
+      error
+    );
+
+    return {
+      iceServers: fallbackIceServers,
+      iceCandidatePoolSize: 10,
+      bundlePolicy: "max-bundle",
+      rtcpMuxPolicy: "require",
+      iceTransportPolicy: "all",
+    };
+  }
+};
+
+// --------------------------------------------------
+// GRAPHQL MUTATION
+// --------------------------------------------------
 
 const UPLOAD_CALL_RECORDING = gql`
   mutation UploadCallRecording(
@@ -68,6 +127,10 @@ const UPLOAD_CALL_RECORDING = gql`
   }
 `;
 
+// --------------------------------------------------
+// ICE HELPERS
+// --------------------------------------------------
+
 const getCandidateType = (candidate) => {
   const value =
     typeof candidate === "string"
@@ -86,35 +149,9 @@ const getCandidateProtocol = (candidate) => {
   return value.match(/\b(udp|tcp)\b/i)?.[1]?.toLowerCase() || "unknown";
 };
 
-const getIceConfig = () => {
-  const iceServers = [
-    { urls: "stun:stun.l.google.com:19302" },
-    { urls: "stun:stun1.l.google.com:19302" },
-  ];
-
-  if (TURN_URLS.length && TURN_USERNAME && TURN_CREDENTIAL) {
-    iceServers.push({
-      urls: TURN_URLS,
-      username: TURN_USERNAME,
-      credential: TURN_CREDENTIAL,
-    });
-  } else {
-    console.warn(
-      "[USER][ICE] TURN is not configured. Only STUN servers will be used. " +
-        "Configure NEXT_PUBLIC_TURN_URLS, NEXT_PUBLIC_TURN_USERNAME and NEXT_PUBLIC_TURN_CREDENTIAL."
-    );
-  }
-
-  return {
-    iceServers,
-    iceCandidatePoolSize: 10,
-    bundlePolicy: "max-bundle",
-    rtcpMuxPolicy: "require",
-
-    // Normal production mode. Do not force relay unless you are testing TURN.
-    iceTransportPolicy: "all",
-  };
-};
+// --------------------------------------------------
+// CALL PAGE
+// --------------------------------------------------
 
 export default function CallPage(props = {}) {
   const dispatch = useDispatch();
@@ -123,7 +160,6 @@ export default function CallPage(props = {}) {
 
   const { socket, connectSocket } = useContext(SocketContext);
 
-  // Supports a component receiving normal React props.
   const roomId = params?.roomId || props?.room_Id || props?.roomId;
 
   const astroImage = props?.astroImage || props?.astro_image || "";
@@ -143,7 +179,10 @@ export default function CallPage(props = {}) {
 
   const [uploadRecording] = useMutation(UPLOAD_CALL_RECORDING);
 
-  // WebRTC refs
+  // --------------------------------------------------
+  // WEBRTC REFS
+  // --------------------------------------------------
+
   const pc = useRef(null);
   const peerCreationPromiseRef = useRef(null);
   const socketRef = useRef(null);
@@ -253,7 +292,10 @@ export default function CallPage(props = {}) {
 
         userId = user?.id || userId;
       } catch (error) {
-        console.warn("[USER][RECORDING] User storage parse error", error);
+        console.warn(
+          "[USER][RECORDING] User storage parse error",
+          error
+        );
       }
 
       const astroId = callInfoRef.current.astroId || "";
@@ -421,7 +463,6 @@ export default function CallPage(props = {}) {
         setIsRecording(false);
         recordingInitializedRef.current = false;
 
-        // Upload before clearing the recorded chunks.
         await sendRecordingToServer();
 
         if (combinedStreamRef.current) {
@@ -465,7 +506,6 @@ export default function CallPage(props = {}) {
       const recorder = mediaRecorderRef.current;
 
       if (recorder && recorder.state !== "inactive") {
-        // onstop handles upload and then releases combined tracks.
         recorder.stop();
       } else {
         isRecordingRef.current = false;
@@ -540,8 +580,10 @@ export default function CallPage(props = {}) {
 
       await remoteAudio.current.play();
 
-      if (pc.current?.iceConnectionState === "connected" ||
-          pc.current?.iceConnectionState === "completed") {
+      if (
+        pc.current?.iceConnectionState === "connected" ||
+        pc.current?.iceConnectionState === "completed"
+      ) {
         setCallStatus("Connected");
       }
 
@@ -650,21 +692,8 @@ export default function CallPage(props = {}) {
           ) {
             selectedPair = report;
           }
-
-          // Newer browser implementations expose selected pair here.
-          if (
-            report.type === "transport" &&
-            report.selectedCandidatePairId
-          ) {
-            const pair = reports.get(
-              report.selectedCandidatePairId
-            );
-
-            if (pair) selectedPair = pair;
-          }
         });
 
-        // Second pass: resolve selected pair after all reports are indexed.
         stats.forEach((report) => {
           if (
             report.type === "transport" &&
@@ -764,7 +793,14 @@ export default function CallPage(props = {}) {
         isDrainingIceRef.current = false;
         callFullyConnectedRef.current = false;
 
-        const iceConfig = getIceConfig();
+        // IMPORTANT:
+        // Fetch Metered TURN credentials before creating PeerConnection.
+        const iceConfig = await getIceConfig();
+
+        // If call ended while fetching TURN credentials, don't create PC.
+        if (callEndedRef.current) {
+          throw new Error("Call ended before PeerConnection creation");
+        }
 
         const peer = new RTCPeerConnection(iceConfig);
         pc.current = peer;
@@ -788,6 +824,7 @@ export default function CallPage(props = {}) {
           if (peer.connectionState === "failed") {
             callFullyConnectedRef.current = false;
             setCallStatus("Connection failed");
+
             console.error(
               "[USER][RTC] Peer connection failed. Check TURN server connectivity."
             );
@@ -796,6 +833,7 @@ export default function CallPage(props = {}) {
           if (peer.connectionState === "disconnected") {
             callFullyConnectedRef.current = false;
             setCallStatus("Reconnecting...");
+
             console.warn(
               "[USER][RTC] Peer disconnected. Waiting for ICE recovery."
             );
@@ -916,9 +954,6 @@ export default function CallPage(props = {}) {
 
           await attachRemoteAudio(remoteStream);
 
-          // Do not mark the call Connected here.
-          // ontrack only confirms track negotiation, not media connectivity.
-
           event.track.onunmute = () => {
             console.log(
               "[USER][AUDIO] Remote audio track is now unmuted"
@@ -945,7 +980,7 @@ export default function CallPage(props = {}) {
           }
         };
 
-        // Send serialized ICE candidates through Socket.IO.
+        // Send ICE candidates through Socket.IO.
         peer.onicecandidate = (event) => {
           if (!event.candidate) {
             console.log(
@@ -1108,7 +1143,6 @@ export default function CallPage(props = {}) {
 
         if (callEndedRef.current) return;
 
-        // Avoid creating multiple offers for duplicate peer_joined events.
         if (offerInProgressRef.current) {
           console.warn(
             "[USER][SDP] Offer creation is already in progress"
@@ -1196,7 +1230,6 @@ export default function CallPage(props = {}) {
           signalingStateBefore: pc.current.signalingState,
         });
 
-        // Ensure call details are available before recording begins.
         try {
           const stored = localStorage.getItem(
             `call_request_${roomId}`
@@ -1279,7 +1312,6 @@ export default function CallPage(props = {}) {
           return;
         }
 
-        // Candidate can arrive before the peer or remote answer exists.
         if (!pc.current || !pc.current.remoteDescription) {
           pendingIceCandidatesRef.current.push(candidate);
 
@@ -1480,7 +1512,7 @@ export default function CallPage(props = {}) {
   }, [remoteAudioStream]);
 
   // --------------------------------------------------
-  // CALL TIMER
+  // END CALL
   // --------------------------------------------------
 
   const handleEndCall = useCallback(() => {
@@ -1516,6 +1548,10 @@ export default function CallPage(props = {}) {
     router.push("/astrologer/call");
   }, [roomId, stopRecording, cleanup, dispatch, router]);
 
+  // --------------------------------------------------
+  // CALL TIMER
+  // --------------------------------------------------
+
   useEffect(() => {
     if (callStatus !== "Connected" || remainingTime <= 0) {
       return;
@@ -1531,7 +1567,6 @@ export default function CallPage(props = {}) {
           clearInterval(timerRef.current);
           timerRef.current = null;
 
-          // Defer ending the call until after the state update.
           setTimeout(() => {
             handleEndCall();
           }, 0);
