@@ -73,6 +73,8 @@ export default function CallPage(
     useMutation(UPLOAD_CALL_RECORDING);
 
   const pc = useRef(null);
+  // Hold remote ICE candidates until setRemoteDescription() has completed.
+  const pendingIceCandidatesRef = useRef([]);
 
   const remoteAudio = useRef(null);
 
@@ -372,42 +374,24 @@ export default function CallPage(
         return pc.current;
       }
 
-      // const iceConfig = {
-      //   iceServers: [
-      //     { urls: "stun:stun.l.google.com:19302" },
-      //     { urls: "stun:stun1.l.google.com:19302" },
-      //     { urls: "stun:stun2.l.google.com:19302" },
-      //     {
-      //       urls: "turn:openrelay.metered.ca:80",
-      //       username: "openrelayproject",
-      //       credential: "openrelayproject",
-      //     },
-      //     {
-      //       urls: "turn:openrelay.metered.ca:443",
-      //       username: "openrelayproject",
-      //       credential: "openrelayproject",
-      //     },
-      //   ],
-      //   iceCandidatePoolSize: 10,
-      //   bundlePolicy: "max-bundle",
-      //   rtcpMuxPolicy: "require",
-      // };
+
+      // Reset candidates whenever a new RTCPeerConnection is created.
+      pendingIceCandidatesRef.current = [];
 
       const iceConfig = {
         iceServers: [
-          // STUN — keep these
           { urls: "stun:stun.l.google.com:19302" },
           { urls: "stun:stun1.l.google.com:19302" },
-
-          // TURN — the actual relay; MUST be a working server
+          { urls: "stun:stun2.l.google.com:19302" },
           {
-            urls: [
-              "turn:turn.staging.dhwaniastro.com:3478?transport=udp",
-              "turn:turn.staging.dhwaniastro.com:3478?transport=tcp",
-              "turns:turn.staging.dhwaniastro.com:5349",
-            ],
-            username: "webrtc",
-            credential: "yourStrongPassword",
+            urls: "turn:openrelay.metered.ca:80",
+            username: "openrelayproject",
+            credential: "openrelayproject",
+          },
+          {
+            urls: "turn:openrelay.metered.ca:443",
+            username: "openrelayproject",
+            credential: "openrelayproject",
           },
         ],
         iceCandidatePoolSize: 10,
@@ -415,9 +399,16 @@ export default function CallPage(
         rtcpMuxPolicy: "require",
       };
 
+      
+
       pc.current = new RTCPeerConnection(iceConfig);
+      console.log("[USER][RTC] PeerConnection created", {
+        roomId,
+        iceServers: iceConfig.iceServers.map((server) => server.urls),
+      });
 
       pc.current.onconnectionstatechange = () => {
+        console.log("[USER][RTC] connectionState:", pc.current?.connectionState);
         // When connection is fully established, trigger recording
         if (pc.current.connectionState === "connected") {
           callFullyConnectedRef.current = true;
@@ -432,6 +423,7 @@ export default function CallPage(
       };
 
       pc.current.oniceconnectionstatechange = () => {
+        console.log("[USER][RTC] iceConnectionState:", pc.current?.iceConnectionState);
         if (pc.current.iceConnectionState === "connected") {
           callFullyConnectedRef.current = true;
 
@@ -450,9 +442,23 @@ export default function CallPage(
         }
       };
 
-      pc.current.onsignalingstatechange = () => {};
+      pc.current.onsignalingstatechange = () => {
+        console.log("[USER][RTC] signalingState:", pc.current?.signalingState);
+      };
 
-      pc.current.onicegatheringstatechange = () => {};
+      pc.current.onicegatheringstatechange = () => {
+        console.log("[USER][RTC] iceGatheringState:", pc.current?.iceGatheringState);
+      };
+
+      pc.current.onicecandidateerror = (event) => {
+        console.error("[USER][RTC] ICE candidate error:", {
+          url: event.url,
+          errorCode: event.errorCode,
+          errorText: event.errorText,
+          address: event.address,
+          port: event.port,
+        });
+      };
 
       try {
         localStream.current = await navigator.mediaDevices.getUserMedia({
@@ -466,7 +472,12 @@ export default function CallPage(
 
         const tracks = localStream.current.getAudioTracks();
         tracks.forEach((track) => {
-          const sender = pc.current.addTrack(track, localStream.current);
+          pc.current.addTrack(track, localStream.current);
+          console.log("[USER][RTC] Local audio track added:", {
+            label: track.label,
+            enabled: track.enabled,
+            readyState: track.readyState,
+          });
         });
 
         // Verify senders
@@ -484,6 +495,11 @@ export default function CallPage(
 
       pc.current.ontrack = async (event) => {
         const remoteStream = event.streams[0];
+        console.log("[USER][RTC] Remote track received:", {
+          kind: event.track?.kind,
+          readyState: event.track?.readyState,
+          streamId: remoteStream?.id,
+        });
 
         // Store remote stream for recording
         remoteStreamRef.current = remoteStream;
@@ -515,12 +531,19 @@ export default function CallPage(
 
       pc.current.onicecandidate = (event) => {
         if (event.candidate) {
+          console.log("[USER][ICE] Sending candidate:", {
+            type: event.candidate.type,
+            protocol: event.candidate.protocol,
+            address: event.candidate.address,
+            port: event.candidate.port,
+            candidate: event.candidate.candidate,
+          });
           activeSocket.emit("ice-candidate", {
             room_id: roomId,
             candidate: event.candidate,
           });
         } else {
-          console.log(" All ICE candidates gathered");
+          console.log("[USER][ICE] ICE candidate gathering completed");
         }
       };
 
@@ -542,7 +565,8 @@ export default function CallPage(
       return pc.current;
     };
 
-    activeSocket.on("peer_joined", async () => {
+    activeSocket.on("peer_joined", async (data) => {
+      console.log("[USER][SOCKET] peer_joined received:", data);
       setCallStatus("Ringing...");
 
       const peer = await createPeer();
@@ -561,10 +585,15 @@ export default function CallPage(
         });
 
         await peer.setLocalDescription(offer);
+        console.log("[USER][SDP] Local offer set; sending offer", {
+          roomId,
+          signalingState: peer.signalingState,
+          sdpType: peer.localDescription?.type,
+        });
 
         activeSocket.emit("offer", {
           room_id: roomId,
-          offer,
+          offer: peer.localDescription,
         });
       } catch (error) {
         console.error("Error creating offer:", error);
@@ -579,9 +608,32 @@ export default function CallPage(
       }
 
       try {
+        console.log("[USER][SDP] Answer received:", {
+          roomId,
+          answerType: answer?.type,
+          signalingStateBefore: pc.current.signalingState,
+        });
+
         await pc.current.setRemoteDescription(
           new RTCSessionDescription(answer),
         );
+
+        console.log("[USER][SDP] Remote answer applied:", {
+          signalingState: pc.current.signalingState,
+          remoteDescriptionType: pc.current.remoteDescription?.type,
+          queuedCandidates: pendingIceCandidatesRef.current.length,
+        });
+
+        // Apply candidates that arrived before the answer.
+        const queuedCandidates = pendingIceCandidatesRef.current.splice(0);
+        for (const candidate of queuedCandidates) {
+          try {
+            await pc.current.addIceCandidate(new RTCIceCandidate(candidate));
+            console.log("[USER][ICE] Queued candidate added successfully");
+          } catch (iceError) {
+            console.error("[USER][ICE] Failed to add queued candidate:", iceError, candidate);
+          }
+        }
 
         setCallStatus("Connected");
         const stored = localStorage.getItem(`call_request_${roomId}`);
@@ -618,23 +670,44 @@ export default function CallPage(
     });
 
     activeSocket.on("ice-candidate", async ({ candidate, room_id }) => {
-      if (!pc.current) {
-        return;
-      }
-
       try {
+        if (room_id !== roomId) {
+          console.warn("[USER][ICE] Ignoring candidate for another room:", {
+            receivedRoomId: room_id,
+            currentRoomId: roomId,
+          });
+          return;
+        }
+
+        if (!candidate) {
+          console.warn("[USER][ICE] Empty candidate received");
+          return;
+        }
+
+        if (!pc.current) {
+          console.warn("[USER][ICE] PeerConnection not ready; candidate queued");
+          pendingIceCandidatesRef.current.push(candidate);
+          return;
+        }
+
         if (!pc.current.remoteDescription) {
-          setTimeout(async () => {
-            if (pc.current && pc.current.remoteDescription) {
-              await pc.current.addIceCandidate(new RTCIceCandidate(candidate));
-            }
-          }, 800);
+          pendingIceCandidatesRef.current.push(candidate);
+          console.log("[USER][ICE] Candidate queued until remote answer is applied", {
+            queueLength: pendingIceCandidatesRef.current.length,
+            candidateType: candidate.type,
+            protocol: candidate.protocol,
+          });
           return;
         }
 
         await pc.current.addIceCandidate(new RTCIceCandidate(candidate));
+        console.log("[USER][ICE] Remote candidate added successfully", {
+          candidateType: candidate.type,
+          protocol: candidate.protocol,
+          queueLength: pendingIceCandidatesRef.current.length,
+        });
       } catch (err) {
-        console.error("ICE error:", err);
+        console.error("[USER][ICE] Failed to add remote candidate:", err, candidate);
       }
     });
 
@@ -755,8 +828,9 @@ export default function CallPage(
       stopRecording();
     }
 
-    // Reset connection flag
+    // Reset connection and pending ICE state.
     callFullyConnectedRef.current = false;
+    pendingIceCandidatesRef.current = [];
 
     // CLEAR STATS
     if (statsIntervalRef.current) {
