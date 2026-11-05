@@ -277,7 +277,7 @@ export default function CallPage(
         setUploadStatus("No recording data to upload");
         return;
       }
-     console.log("111111111111111--------");
+      console.log("111111111111111--------");
       // Create blob from recorded chunks
       const blob = new Blob(recordedChunksRef.current, {
         type: mediaRecorderRef.current?.mimeType || "audio/webm",
@@ -291,21 +291,21 @@ export default function CallPage(
       try {
         const user = JSON.parse(localStorage.getItem("user"));
         userId = user?.id || "";
-       console.log("----222222222----",userId);
+        console.log("----222222222----", userId);
         astroId = callInfoRef.current.astroId || "";
         astroName = callInfoRef.current.astroName || "";
-        console.log("----333333333333----",astroId,astroName);
+        console.log("----333333333333----", astroId, astroName);
       } catch (e) {
         console.warn("Could not parse data from localStorage:", e);
       }
 
       if (!astroId) {
       }
-      
+
       const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
       const filename = `call-${roomId}-${timestamp}.webm`;
 
-      console.log("----filename----",filename);
+      console.log("----filename----", filename);
 
       const file = new File([blob], filename, {
         type: mediaRecorderRef.current?.mimeType || "audio/webm",
@@ -328,7 +328,7 @@ export default function CallPage(
       });
 
       if (errors) {
-         console.log("----errr----",errors);
+        console.log("----errr----", errors);
         console.error("GraphQL errors:", errors);
         setUploadStatus(
           `Upload failed: ${errors[0]?.message || "Unknown error"}`,
@@ -372,20 +372,42 @@ export default function CallPage(
         return pc.current;
       }
 
+      // const iceConfig = {
+      //   iceServers: [
+      //     { urls: "stun:stun.l.google.com:19302" },
+      //     { urls: "stun:stun1.l.google.com:19302" },
+      //     { urls: "stun:stun2.l.google.com:19302" },
+      //     {
+      //       urls: "turn:openrelay.metered.ca:80",
+      //       username: "openrelayproject",
+      //       credential: "openrelayproject",
+      //     },
+      //     {
+      //       urls: "turn:openrelay.metered.ca:443",
+      //       username: "openrelayproject",
+      //       credential: "openrelayproject",
+      //     },
+      //   ],
+      //   iceCandidatePoolSize: 10,
+      //   bundlePolicy: "max-bundle",
+      //   rtcpMuxPolicy: "require",
+      // };
+
       const iceConfig = {
         iceServers: [
+          // STUN — keep these
           { urls: "stun:stun.l.google.com:19302" },
           { urls: "stun:stun1.l.google.com:19302" },
-          { urls: "stun:stun2.l.google.com:19302" },
+
+          // TURN — the actual relay; MUST be a working server
           {
-            urls: "turn:openrelay.metered.ca:80",
-            username: "openrelayproject",
-            credential: "openrelayproject",
-          },
-          {
-            urls: "turn:openrelay.metered.ca:443",
-            username: "openrelayproject",
-            credential: "openrelayproject",
+            urls: [
+              "turn:turn.staging.dhwaniastro.com:3478?transport=udp",
+              "turn:turn.staging.dhwaniastro.com:3478?transport=tcp",
+              "turns:turn.staging.dhwaniastro.com:5349",
+            ],
+            username: "webrtc",
+            credential: "yourStrongPassword",
           },
         ],
         iceCandidatePoolSize: 10,
@@ -629,7 +651,6 @@ export default function CallPage(
     });
 
     activeSocket.on("call_ended_by_admin", () => {
-     
       // Stop recording before cleanup (hidden)
       if (isRecordingRef.current) {
         stopRecording();
@@ -661,7 +682,7 @@ export default function CallPage(
 
       cleanup();
     };
-  }, []);// eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // call status time
   useEffect(() => {
@@ -806,25 +827,22 @@ export default function CallPage(
       <div className="md:w-3/5 overflow-hidden w-full shadow-lg rounded-3xl  flex flex-col md:h-[95vh] h-[100vh]">
         <div className="flex flex-col w-full  rounded-3xl shadow-xl items-center justify-between py-10    h-full bg-gray-900 text-white">
           <div className="flex flex-col  items-center gap-3">
-             <Image width={100} height={100} 
-              src={
-                astroImage
-                  ? `${BASE_URL}${astroImage}`
-                  : "/man.png"
-              }
-              alt={astroData?.astrologer?.name || "Astrologer"} 
-            
+            <Image
+              width={100}
+              height={100}
+              src={astroImage ? `${BASE_URL}${astroImage}` : "/man.png"}
+              alt={astroData?.astrologer?.name || "Astrologer"}
               className="rounded-full object-cover"
             />
 
             <h2 className="text-xl">{astroData?.astrologer?.name}</h2>
-                  <div className="flex items-center gap-2 mt-2 text-green-400">
-                    <span className="w-2 h-2 bg-green-400 rounded-full text-xs animate-pulse" />{callStatus}</div>
+            <div className="flex items-center gap-2 mt-2 text-green-400">
+              <span className="w-2 h-2 bg-green-400 rounded-full text-xs animate-pulse" />
+              {callStatus}
+            </div>
           </div>
           <div className="flex flex-col items-center ">
             {/* <h2 className="text-2xl mb-4">📞 Call Status</h2> */}
-
-
 
             {callStatus === "Connected" && (
               <p className="mb-2 text-lg">
