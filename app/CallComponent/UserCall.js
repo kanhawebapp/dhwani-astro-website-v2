@@ -16,9 +16,10 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 // Rotate your exposed Coturn password.
 // This is only a temporary testing configuration.
 // For production, fetch short-lived TURN credentials from your backend.
-
+console.log("passssssssssss",process.env.NEXT_PUBLIC_TURN_USERNAME,process.env.NEXT_PUBLIC_TURN_CREDENTIAL);
 const TURN_USERNAME = "turnuser";
-const TURN_CREDENTIAL = "Shiva@2025#";
+const TURN_CREDENTIAL ="Shiva@2025#";
+//const TURN_CREDENTIAL = process.env.NEXT_PUBLIC_WEB_RTC_PASSWORD;
 
 const ICE_SERVERS = [
   {
