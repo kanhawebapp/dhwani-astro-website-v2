@@ -18,7 +18,7 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 // For production, fetch short-lived TURN credentials from your backend.
 
 const TURN_USERNAME = "turnuser";
-const TURN_CREDENTIAL = "REPLACE_WITH_ROTATED_TURN_PASSWORD";
+const TURN_CREDENTIAL = "Shiva@2025#";
 
 const ICE_SERVERS = [
   {
