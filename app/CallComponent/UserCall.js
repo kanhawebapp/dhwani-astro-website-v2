@@ -12,23 +12,14 @@ import { gql } from "@apollo/client";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
-// IMPORTANT:
-// Rotate your exposed Coturn password.
-// This is only a temporary testing configuration.
-// For production, fetch short-lived TURN credentials from your backend.
-console.log("passssssssssss",process.env.NEXT_PUBLIC_TURN_USERNAME,process.env.NEXT_PUBLIC_TURN_CREDENTIAL);
-const TURN_USERNAME = "turnuser";
-const TURN_CREDENTIAL ="Shiva@2025#";
-//const TURN_CREDENTIAL = process.env.NEXT_PUBLIC_WEB_RTC_PASSWORD;
-
 const ICE_SERVERS = [
   {
     urls: "stun:162.214.102.56:3478",
   },
   {
     urls: "turn:162.214.102.56:3478?transport=udp",
-    username: TURN_USERNAME,
-    credential: TURN_CREDENTIAL,
+   username: process.env.NEXT_PUBLIC_TURN_USERNAME,
+    credential: process.env.NEXT_PUBLIC_TURN_CREDENTIAL,
   },
 ];
 
@@ -336,6 +327,7 @@ export default function CallPage(
       };
 
       mediaRecorder.onstop = () => {
+        console.log("call recording tooooooooooooooooooo");
         sendRecordingToServer();
         setIsRecording(false);
         recordingInitializedRef.current = false;
@@ -368,6 +360,7 @@ export default function CallPage(
 
   const stopRecording = () => {
     try {
+      console.log("commitn in stop call recording---------------------");
       const recorder = mediaRecorderRef.current;
 
       if (
@@ -396,6 +389,7 @@ export default function CallPage(
 
   const sendRecordingToServer = async () => {
     try {
+      console.log("---------------------sendRecordingToServer--------------");
       if (recordedChunksRef.current.length === 0) {
         setUploadStatus("No recording data to upload");
         return;
