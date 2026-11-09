@@ -363,28 +363,22 @@ export default function CallPage(
         return pc.current;
       }
 
-      const iceConfig = {
-        iceServers: [
-          { urls: "stun:stun.l.google.com:19302" },
-          { urls: "stun:stun1.l.google.com:19302" },
-          { urls: "stun:stun2.l.google.com:19302" },
-          {
-            urls: "turn:openrelay.metered.ca:80",
-            username: "openrelayproject",
-            credential: "openrelayproject",
-          },
-          {
-            urls: "turn:openrelay.metered.ca:443",
-            username: "openrelayproject",
-            credential: "openrelayproject",
-          },
-        ],
-        iceCandidatePoolSize: 10,
-        bundlePolicy: "max-bundle",
-        rtcpMuxPolicy: "require",
-      };
+      // ✅ LOCAL STUN SERVER (coturn on 192.168.1.39)
+      const iceServers = [
+        {
+          urls: "stun:162.214.102.56:3478",
+        },
+        {
+          urls: [
+            "turn:162.214.102.56:3478?transport=udp",
+            "turn:162.214.102.56:3478?transport=tcp",
+          ],
+          username: "turnuser",
+          credential: "Shiva@2025#",
+        },
+      ];
 
-      pc.current = new RTCPeerConnection(iceConfig);
+      pc.current = new RTCPeerConnection(iceServers);
 
       pc.current.onconnectionstatechange = () => {
         // When connection is fully established, trigger recording
@@ -620,7 +614,6 @@ export default function CallPage(
     });
 
     activeSocket.on("call_ended_by_admin", () => {
-     
       // Stop recording before cleanup (hidden)
       if (isRecordingRef.current) {
         stopRecording();
@@ -652,7 +645,7 @@ export default function CallPage(
 
       cleanup();
     };
-  }, []);// eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // call status time
   useEffect(() => {
@@ -797,25 +790,22 @@ export default function CallPage(
       <div className="md:w-3/5 overflow-hidden w-full shadow-lg rounded-3xl  flex flex-col md:h-[95vh] h-[100vh]">
         <div className="flex flex-col w-full  rounded-3xl shadow-xl items-center justify-between py-10    h-full bg-gray-900 text-white">
           <div className="flex flex-col  items-center gap-3">
-             <Image width={100} height={100} 
-              src={
-                astroImage
-                  ? `${BASE_URL}${astroImage}`
-                  : "/man.png"
-              }
-              alt={astroData?.astrologer?.name || "Astrologer"} 
-            
+            <Image
+              width={100}
+              height={100}
+              src={astroImage ? `${BASE_URL}${astroImage}` : "/man.png"}
+              alt={astroData?.astrologer?.name || "Astrologer"}
               className="rounded-full object-cover"
             />
 
             <h2 className="text-xl">{astroData?.astrologer?.name}</h2>
-                  <div className="flex items-center gap-2 mt-2 text-green-400">
-                    <span className="w-2 h-2 bg-green-400 rounded-full text-xs animate-pulse" />{callStatus}</div>
+            <div className="flex items-center gap-2 mt-2 text-green-400">
+              <span className="w-2 h-2 bg-green-400 rounded-full text-xs animate-pulse" />
+              {callStatus}
+            </div>
           </div>
           <div className="flex flex-col items-center ">
             {/* <h2 className="text-2xl mb-4">📞 Call Status</h2> */}
-
-
 
             {callStatus === "Connected" && (
               <p className="mb-2 text-lg">
