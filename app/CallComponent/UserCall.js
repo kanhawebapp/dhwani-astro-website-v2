@@ -11,7 +11,6 @@ import { useMutation } from "@apollo/client/react";
 import { gql } from "@apollo/client";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
-console.log("ennnnnnnnnnnnnnnnnnnnnnnv",process.env.NEXT_PUBLIC_TURN_USERNAME,process.env.NEXT_PUBLIC_TURN_CREDENTIAL);
 
 const ICE_SERVERS = [
   {
