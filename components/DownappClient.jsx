@@ -17,8 +17,47 @@ export default function DownappClient({ messages }) {
           __html: messages?.download?.heading || "• Download Dhwani App •",
         }}
       />
+      <span
+        dangerouslySetInnerHTML={{
+          __html: t?.download?.tagline || "about download",
+        }}
+        className="text-black head-wrap text-[16px] align-center"
+      />
 
-      <div className="app-img-content  flex  flex-col sm:flex-row items-center  justify-around ">
+      <div className="app-img-content flex items-center   justify-around ">
+        <div className="rounded-lg p-1 md:p-5  flex flex-col gap-1 items-center justify-between">
+          <div className="grid grid-cols-1 z-10">
+            <div className="flex flex-col items-center justify-center">
+              <div className="scan-image head-wrap">
+                <Image
+                  className="w-32 h-32 sm:w-48 sm:h-48 rounded-lg"
+                  src="/ds-img/scanner-app.webp"
+                  alt="scanner image"
+                  unoptimized
+                  loading="lazy"
+                  width={50}
+                  height={50}
+                />
+              </div>
+              <Link
+                href="https://play.google.com/store/apps/details?id=com.DhwaniAstro.app"
+                target="_blank"
+                className="download-ios-ps head-wrap cursor-pointer"
+               >
+                <Image
+                  className="w-35  h-17 sm:w-40 sm:h-18 cursor-pointer"
+                  src="/ds-img/gply.png"
+                  unoptimized
+                  alt="playstore image"
+                  loading="lazy"
+                  width={50}
+                  height={50}
+                />
+              </Link>
+            </div>
+          </div>
+        </div>
+
         <div className="content-wrapper-spin-im">
           <div className="spinn-app-img head-wrap overflow-hidden">
             <Image
@@ -42,43 +81,8 @@ export default function DownappClient({ messages }) {
           </div>
         </div>
 
-        <div className="down-app-scan   rounded-lg p-1 md:p-5  flex flex-col gap-1 items-center justify-between">
-          <h3
-            dangerouslySetInnerHTML={{
-              __html: t?.download?.tagline || "about download",
-            }}
-            className="text-black head-wrap text-[18px] align-center"
-          />
-
-          <div className="grid grid-cols-2 gap-10 z-10">
-            <div className="flex flex-col items-center justify-center">
-              <div className="scan-image head-wrap">
-                <Image
-                  className="w-32 h-32 sm:w-48 sm:h-48 rounded-lg"
-                  src="/ds-img/scanner-app.webp"
-                  alt="scanner image"
-                  unoptimized
-                  loading="lazy"
-                  width={50}
-                  height={50}
-                />
-              </div>
-              <Link
-                href="https://play.google.com/store/apps/details?id=com.DhwaniAstro.app"
-                target="_blank"
-                className="download-ios-ps head-wrap cursor-pointer"
-              >
-                <Image
-                  className="w-35  h-17 sm:w-40 sm:h-18 cursor-pointer"
-                  src="/ds-img/gply.png"
-                  unoptimized
-                  alt="playstore image"
-                  loading="lazy"
-                  width={50}
-                  height={50}
-                />
-              </Link>
-            </div>
+        <div className="rounded-lg p-1 md:p-5 gap-1 items-center justify-between">
+          <div className="grid grid-cols-1 z-10">
             <div className="flex flex-col items-center gap-2.5">
               <div className="scan-image head-wrap">
                 <Image

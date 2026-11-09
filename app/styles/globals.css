@@ -1530,6 +1530,19 @@ body {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+@keyframes shimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 150%;
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 1.2s linear infinite;
+}
 @keyframes puja-marquee {
   0% {
     transform: translateX(-10%);

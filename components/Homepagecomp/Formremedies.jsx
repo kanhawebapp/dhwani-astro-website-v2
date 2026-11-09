@@ -538,13 +538,13 @@ useEffect(() => {
     try {
       const startTime = Date.now();
 
-      // Start actual calculation
+    
       const resultPromise = createKundliAction(fd);
 
-      // Random duration between 5 and 6 seconds
+  
       const targetDuration = 5000 + Math.random() * 1000;
 
-      // Progress animation
+   
       await new Promise((resolve) => {
         const start = Date.now();
 
