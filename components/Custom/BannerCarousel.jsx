@@ -67,6 +67,25 @@ export default function BannerCarousel({ slides = [] }) {
               })
             : null;
 
+          const bannerContent = (
+            <picture>
+              {mobileProps && (
+                <source
+                  media="(max-width: 767px)"
+                  srcSet={mobileProps.props.srcSet}
+                  sizes="100vw"
+                />
+              )}
+
+              <img
+                {...desktopProps.props}
+                alt={slide.heading || "Featured banner"}
+                className="absolute inset-0 block w-full h-full object-cover"
+                decoding="async"
+              />
+            </picture>
+          );
+
           return (
             <SwiperSlide key={slide.id}>
               <div
@@ -77,22 +96,19 @@ export default function BannerCarousel({ slides = [] }) {
                   bg-[#fff5f2]
                 "
               >
-                <picture>
-                  {mobileProps && (
-                    <source
-                      media="(max-width: 767px)"
-                      srcSet={mobileProps.props.srcSet}
-                      sizes="100vw"
-                    />
-                  )}
-
-                  <img
-                    {...desktopProps.props}
-                    alt={slide.heading || "Featured banner"}
-                    className="absolute inset-0 block w-full h-full object-cover"
-                    decoding="async"
-                  />
-                </picture>
+                {slide.bannerlink ? (
+                  <a
+                    href={slide.bannerlink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`Open ${slide.heading || "banner"}`}
+                    className="absolute inset-0 z-10 block cursor-pointer"
+                  >
+                    {bannerContent}
+                  </a>
+                ) : (
+                  bannerContent
+                )}
               </div>
             </SwiperSlide>
           );

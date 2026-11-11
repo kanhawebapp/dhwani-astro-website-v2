@@ -13,9 +13,7 @@ export default function RemedyContent({ content }) {
 
   return (
     <section className="relative mt-14 overflow-hidden text-[#24152d]">
-      {/* =========================================================
-          BACKGROUND
-      ========================================================= */}
+     
 
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div

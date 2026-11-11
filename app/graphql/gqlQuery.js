@@ -500,6 +500,7 @@ export const GET_BANNERS = gql`
         heading
         language
         bannerType
+        bannerlink
       }
     }
   }
