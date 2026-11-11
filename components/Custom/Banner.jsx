@@ -23,7 +23,7 @@ async function getBanners() {
         query: print(GET_BANNERS),
         variables: { language: "en" },
       }),
-      next: { revalidate: 30000 },
+      next: { revalidate: 300 },
     });
 
     const result = await response.json();
