@@ -250,142 +250,190 @@ export default function CallPage(
   // RECORDING
   // ========================================
 
-  const startRecording = () => {
-    try {
-      if (recordingInitializedRef.current) return;
 
-      if (!window.MediaRecorder) {
-        console.warn("MediaRecorder is not supported");
-        return;
-      }
+  const audioContextRef = useRef(null);
+const recordingDestinationRef = useRef(null);
 
-      if (!callFullyConnectedRef.current) return;
+const startRecording = async () => {
+  try {
+    if (recordingInitializedRef.current) return;
 
-      const remoteStream =
-        remoteAudio.current?.srcObject ||
-        remoteStreamRef.current;
+    if (!window.MediaRecorder) {
+      console.warn("MediaRecorder is not supported");
+      return;
+    }
 
-      if (!localStream.current || !remoteStream) {
-        console.warn("Recording streams are not ready");
-        return;
-      }
+    if (!callFullyConnectedRef.current) return;
 
-      const combinedStream = new MediaStream();
+    const local = localStream.current;
 
-      localStream.current
-        .getAudioTracks()
-        .forEach((track) => {
-          if (track.readyState === "live") {
-            combinedStream.addTrack(track);
-          }
-        });
+    const remote =
+      remoteAudio.current?.srcObject ||
+      remoteStreamRef.current;
 
-      remoteStream.getAudioTracks().forEach((track) => {
-        if (track.readyState === "live") {
-          combinedStream.addTrack(track);
-        }
-      });
+    if (!local || !remote) {
+      console.warn("Local or remote audio stream is not ready");
+      return;
+    }
 
-      if (combinedStream.getAudioTracks().length === 0) {
-        console.warn("No audio tracks available for recording");
-        return;
-      }
+    const localTracks = local.getAudioTracks().filter(
+      (track) => track.readyState === "live"
+    );
 
-      combinedStreamRef.current = combinedStream;
+    const remoteTracks = remote.getAudioTracks().filter(
+      (track) => track.readyState === "live"
+    );
 
-      const mimeTypes = [
-        "audio/webm;codecs=opus",
-        "audio/webm",
-        "audio/ogg;codecs=opus",
-        "audio/mp4",
-      ];
+    if (!localTracks.length || !remoteTracks.length) {
+      console.warn("Both participant audio tracks are required");
+      return;
+    }
 
-      let mimeType = "";
+    // Create AudioContext
+    const audioContext = new AudioContext();
 
-      for (const type of mimeTypes) {
-        if (MediaRecorder.isTypeSupported(type)) {
-          mimeType = type;
-          break;
-        }
-      }
+    audioContextRef.current = audioContext;
 
-      const mediaRecorder = new MediaRecorder(
-        combinedStream,
-        {
-          mimeType: mimeType || undefined,
-          audioBitsPerSecond: 128000,
-        }
+    // Resume context if suspended
+    if (audioContext.state === "suspended") {
+      await audioContext.resume();
+    }
+
+    // Create mixed audio destination
+    const destination =
+      audioContext.createMediaStreamDestination();
+
+    recordingDestinationRef.current = destination;
+
+    // User microphone audio
+    const localStreamForRecording = new MediaStream(localTracks);
+
+    const localSource =
+      audioContext.createMediaStreamSource(
+        localStreamForRecording
       );
 
-      mediaRecorderRef.current = mediaRecorder;
-      recordedChunksRef.current = [];
+    // Astrologer remote audio
+    const remoteStreamForRecording = new MediaStream(
+      remoteTracks
+    );
 
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data && event.data.size > 0) {
-          recordedChunksRef.current.push(event.data);
-        }
-      };
+    const remoteSource =
+      audioContext.createMediaStreamSource(
+        remoteStreamForRecording
+      );
 
-      mediaRecorder.onstop = () => {
-        console.log("call recording tooooooooooooooooooo");
-        sendRecordingToServer();
-        setIsRecording(false);
-        recordingInitializedRef.current = false;
-      };
+    // Separate gain controls
+    const localGain = audioContext.createGain();
+    const remoteGain = audioContext.createGain();
 
-      mediaRecorder.onerror = (error) => {
-        console.error("Recording error:", error);
+    localGain.gain.value = 1;
+    remoteGain.gain.value = 1;
 
-        setIsRecording(false);
-        recordingInitializedRef.current = false;
-        setUploadStatus("Recording error occurred");
-      };
+    // Mix both participants into one audio track
+    localSource.connect(localGain);
+    remoteSource.connect(remoteGain);
 
-      mediaRecorder.start(1000);
+    localGain.connect(destination);
+    remoteGain.connect(destination);
 
-      isRecordingRef.current = true;
-      recordingInitializedRef.current = true;
+    const combinedStream = destination.stream;
 
-      setIsRecording(true);
-      callStartTimeRef.current = Date.now();
+    combinedStreamRef.current = combinedStream;
 
-      console.log("🔴 Call recording started");
-    } catch (error) {
-      console.error("Failed to start recording:", error);
+    const mimeTypes = [
+      "audio/webm;codecs=opus",
+      "audio/webm",
+      "audio/ogg;codecs=opus",
+      "audio/mp4",
+    ];
 
-      recordingInitializedRef.current = false;
-      setUploadStatus("Failed to start recording");
-    }
-  };
+    const mimeType = mimeTypes.find((type) =>
+      MediaRecorder.isTypeSupported(type)
+    );
 
-  const stopRecording = () => {
-    try {
-      console.log("commitn in stop call recording---------------------");
-      const recorder = mediaRecorderRef.current;
-
-      if (
-        recorder &&
-        recorder.state !== "inactive"
-      ) {
-        recorder.stop();
+    const mediaRecorder = new MediaRecorder(
+      combinedStream,
+      {
+        mimeType: mimeType || undefined,
+        audioBitsPerSecond: 128000,
       }
+    );
 
-      isRecordingRef.current = false;
+    mediaRecorderRef.current = mediaRecorder;
+
+    recordedChunksRef.current = [];
+
+    mediaRecorder.ondataavailable = (event) => {
+      if (event.data && event.data.size > 0) {
+        recordedChunksRef.current.push(event.data);
+      }
+    };
+
+    mediaRecorder.onstop = async () => {
+      console.log("Call recording stopped");
+
+      await sendRecordingToServer();
+
       setIsRecording(false);
 
-      if (combinedStreamRef.current) {
-        combinedStreamRef.current
-          .getTracks()
-          .forEach((track) => {
-            track.stop();
-          });
+      recordingInitializedRef.current = false;
 
-        combinedStreamRef.current = null;
+      // Release AudioContext
+      if (audioContextRef.current) {
+        await audioContextRef.current.close().catch(console.error);
+        audioContextRef.current = null;
       }
-    } catch (error) {
-      console.error("Error stopping recording:", error);
+
+      recordingDestinationRef.current = null;
+    };
+
+    mediaRecorder.onerror = (error) => {
+      console.error("Recording error:", error);
+
+      setIsRecording(false);
+      recordingInitializedRef.current = false;
+
+      setUploadStatus("Recording error occurred");
+    };
+
+    mediaRecorder.start(1000);
+
+    isRecordingRef.current = true;
+    recordingInitializedRef.current = true;
+
+    setIsRecording(true);
+
+    callStartTimeRef.current = Date.now();
+
+    console.log("Recording started: User + Astrologer");
+  } catch (error) {
+    console.error("Failed to start recording:", error);
+
+    recordingInitializedRef.current = false;
+
+    setUploadStatus("Failed to start recording");
+  }
+};
+
+  const stopRecording = () => {
+  try {
+    const recorder = mediaRecorderRef.current;
+
+    if (recorder && recorder.state !== "inactive") {
+      recorder.stop();
     }
-  };
+
+    isRecordingRef.current = false;
+    setIsRecording(false);
+
+    // Do not stop recording destination tracks here.
+    // MediaRecorder needs to finish processing its final data.
+
+  } catch (error) {
+    console.error("Error stopping recording:", error);
+  }
+};
 
   const sendRecordingToServer = async () => {
     try {
