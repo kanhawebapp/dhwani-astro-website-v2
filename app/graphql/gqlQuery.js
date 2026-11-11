@@ -602,6 +602,7 @@ export const GET_FOLLOWED_ASTROLOGERS = gql`
         profilePic
         rating
         skills
+        createdAt
       }
       total
       page

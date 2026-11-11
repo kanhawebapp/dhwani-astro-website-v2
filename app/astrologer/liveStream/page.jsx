@@ -8,19 +8,151 @@ import { GET_UPCOMING_LIVES } from "@/app/graphql/gqlQuery";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "";
 
-// Supports ISO date strings and numeric millisecond timestamps.
 function parseLiveDate(value) {
   if (value === null || value === undefined || value === "") {
     return null;
   }
 
   const date =
-    typeof value === "number" ||
-    /^\d+$/.test(String(value))
+    typeof value === "number" || /^\d+$/.test(String(value))
       ? new Date(Number(value))
       : new Date(value);
 
   return Number.isNaN(date.getTime()) ? null : date;
+}
+
+// Reusable card component
+function LiveCard({ live }) {
+  const astrologer = live.astrologer;
+  const isLive = live.status === "LIVE";
+  const liveDate = parseLiveDate(live.scheduledAt);
+
+  const profileImage = astrologer?.profilePic
+    ? astrologer.profilePic.startsWith("http")
+      ? astrologer.profilePic
+      : `${BASE_URL}${astrologer.profilePic}`
+    : "/man.png";
+
+  return (
+    <article className="group relative isolate overflow-hidden rounded-2xl border border-white/30 shadow-lg transition-all duration-300 hover:shadow-2xl">
+      <div className="absolute inset-0 -z-20">
+        <Image
+          src={isLive ? "/ds-img/bgas.png" : "/ds-img/bgas1.jpeg"}
+          alt={
+            isLive ? "Live session background" : "Scheduled session background"
+          }
+          fill
+          priority={false}
+          sizes="(max-width: 768px) 100vw, 50vw"
+          className="object-cover transition-transform duration-700 group-hover:scale-105"
+        />
+      </div>
+
+      <div className="absolute inset-0 -z-10 " />
+
+      <div className="relative rounded-2xl p-5 backdrop-blur">
+        <div className="flex gap-4">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-start gap-3">
+                <Image
+                  src={profileImage}
+                  alt={astrologer?.displayName || "Astrologer"}
+                  width={70}
+                  height={70}
+                  unoptimized={profileImage.startsWith("http")}
+                  className="h-[70px] w-[70px] rounded-full border-2 border-yellow-400 object-cover shadow-md"
+                />
+                <div className="flex flex-col items-start gap-1">
+                  <p className="text-lg font-semibold text-gray-900">
+                    {astrologer?.displayName ||
+                      astrologer?.name ||
+                      "Astrologer"}
+                  </p>
+
+                  <div className="flex  gap-1">
+                    <span className="text-sm">⭐</span>
+                    <span className="font-medium text-sm  text-gray-900">
+                      {astrologer?.rating.toFixed(2) ?? 0}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              {isLive ? (
+                <img
+                  src="/ds-img/live.gif"
+                  className="h-10 w-11 rounded-xl"
+                  alt=""
+                />
+              ) : (
+                <span className="shrink-0 rounded-full border border-blue-200 bg-blue-100/90 px-2 py-1 text-xs font-semibold text-blue-800">
+                  Scheduled
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+        <div className="mt-5 space-y-2 rounded-xl border border-white/10 bg-white/25 p-3 backdrop-blur-md">
+          <h3 className="break-words text-lg font-bold text-gray-900">
+            {live.title || "Live Astrology Session"}
+          </h3>
+
+          {!isLive && (
+            <div className="space-y-2">
+              {/* Date */}
+              <div className="flex justify-between gap-3 text-sm">
+                <span className="font-medium text-gray-600">Date</span>
+                <span className="text-right font-semibold text-gray-900">
+                  {liveDate
+                    ? liveDate.toLocaleDateString("en-IN")
+                    : "Not scheduled"}
+                </span>
+              </div>
+
+              {/* Time */}
+              <div className="flex justify-between gap-3 text-sm">
+                <span className="font-medium text-gray-600">Time</span>
+                <span className="text-right font-semibold text-gray-900">
+                  {liveDate
+                    ? liveDate.toLocaleTimeString("en-IN", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                    : "Not scheduled"}
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="mt-5 flex gap-2">
+          {/* <Link
+            href={astrologer?.id ? `/astrologerprofile/${astrologer.id}` : "#"}
+            aria-disabled={!astrologer?.id}
+            className={`flex flex-1 text-sm items-center justify-center rounded-full bg-yellow-500 py-2 text-center font-semibold text-black shadow-md transition hover:bg-yellow-600 ${
+              !astrologer?.id ? "pointer-events-none opacity-50" : ""
+            }`}
+          >
+            View Astrologer
+          </Link> */}
+
+          {isLive && live.channelName && (
+            <Link
+              href={`/live/${encodeURIComponent(live.channelName)}`}
+              className="relative flex flex-1 items-center justify-center overflow-hidden rounded-full bg-red-600 py-2 text-center text-sm font-semibold text-white shadow-md transition hover:bg-red-700"
+            >
+              {/* Full-width shimmer */}
+              <span className="pointer-events-none absolute inset-0 overflow-hidden">
+                <span className="absolute -inset-y-full left-[-100%] h-[300%] w-1/2 -skew-x-[25deg] animate-shimmer bg-gradient-to-r from-transparent via-white/50 to-transparent" />
+              </span>
+
+              <span className="relative z-10">Watch Live</span>
+            </Link>
+          )}
+        </div>
+      </div>
+    </article>
+  );
 }
 
 export default function UpcomingLives() {
@@ -36,6 +168,7 @@ export default function UpcomingLives() {
   const result = data?.getUpcomingLives;
   const lives = result?.data || [];
 
+  // Loading state
   if (loading) {
     return (
       <div className="py-10 text-center text-gray-600">
@@ -44,6 +177,7 @@ export default function UpcomingLives() {
     );
   }
 
+  // Error state
   if (error && !result) {
     return (
       <div className="py-10 text-center text-red-600">
@@ -52,151 +186,86 @@ export default function UpcomingLives() {
     );
   }
 
+  // Separate sessions by status
+  const liveSessions = lives.filter((live) => live.status === "LIVE");
+
+  const scheduledSessions = lives.filter((live) => live.status === "SCHEDULED");
+
+  const hasSessions = liveSessions.length > 0 || scheduledSessions.length > 0;
+
   return (
-    <section className="w-full py-6">
-      <div className="mb-5 flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-black">
-          Live Sessions
-        </h2>
+    <section className="w-full text-black bg-[#f7efff] py-6">
+      <div className="mx-auto max-w-7xl px-4">
+        {/* Header */}
+        <div className="mb-8 flex flex-col items-center justify-center">
+          <h2 className="text-center text-2xl font-bold text-black">
+            Live Sessions
+          </h2>
 
-        <span className="text-sm text-gray-500">
-          {result?.totalCount ?? lives.length} Sessions
-        </span>
-      </div>
+          <div className="mt-3 text-center text-sm text-black md:px-20">
+            <p className="text-lg font-bold">
+              Get Personalized Astrology Guidance Live! Connect with Top
+              Astrologers for Free Now.
+            </p>
 
-      {lives.length === 0 ? (
-        <div className="rounded-xl bg-white p-6 text-center shadow">
-          No live sessions available.
+            <p>
+              Experience a free live session with India's leading Astrologers,
+              Tarot readers, Vaastu experts, Numerologists, and life coaches.
+              Ask your questions about love, relationships, career, marriage,
+              finance, and more through a live call today!
+            </p>
+          </div>
         </div>
-      ) : (
-        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-          {lives.map((live) => {
-            const astrologer = live.astrologer;
-            const isLive = live.status === "LIVE";
-            const liveDate = parseLiveDate(live.scheduledAt);
 
-            const profileImage = astrologer?.profilePic
-              ? astrologer.profilePic.startsWith("http")
-                ? astrologer.profilePic
-                : `${BASE_URL}${astrologer.profilePic}`
-              : "/man.png";
+        {!hasSessions ? (
+          <div className="rounded-xl bg-white p-6 text-center shadow">
+            No live or scheduled sessions available.
+          </div>
+        ) : (
+          <div className="space-y-10">
 
-            return (
-              <article
-                key={live.id}
-                className="overflow-hidden rounded-2xl border bg-white shadow-md transition-shadow hover:shadow-xl"
-              >
-                <div
-                  className={`h-2 ${
-                    isLive
-                      ? "bg-red-500"
-                      : "bg-gradient-to-r from-purple-500 to-pink-500"
-                  }`}
-                />
+            {liveSessions.length > 0 && (
+              <section>
+                <div className="mb-5 flex flex-wrap items-center gap-3">
+                  <h4 className=" ">
+                    <b>Ongoing Live Sessions </b>
+                  </h4>
 
-                <div className="p-5">
-                  <div className="flex gap-4">
-                    <Image
-                      src={profileImage}
-                      alt={astrologer?.displayName || "Astrologer"}
-                      width={70}
-                      height={70}
-                      unoptimized={profileImage.startsWith("http")}
-                      className="h-[70px] w-[70px] rounded-full border-2 border-yellow-400 object-cover"
-                    />
-
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-start justify-between gap-2">
-                        <h3 className="break-words text-lg font-bold text-black">
-                          {live.title || "Live Astrology Session"}
-                        </h3>
-
-                        {isLive ? (
-                          <span className="shrink-0 animate-pulse rounded-full bg-red-500 px-2 py-1 text-xs text-white">
-                            🔴 LIVE
-                          </span>
-                        ) : (
-                          <span className="shrink-0 rounded-full bg-blue-100 px-2 py-1 text-xs text-blue-700">
-                            Scheduled
-                          </span>
-                        )}
-                      </div>
-
-                      <p className="text-sm text-gray-600">
-                        By{" "}
-                        {astrologer?.displayName ||
-                          astrologer?.name ||
-                          "Astrologer"}
-                      </p>
-
-                      <div className="mt-1 flex items-center gap-1">
-                        <span>⭐</span>
-                        <span className="font-medium">
-                          {astrologer?.rating ?? 0}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mt-5 space-y-2">
-                    <div className="flex justify-between gap-3 text-sm">
-                      <span className="text-gray-500">Date</span>
-
-                      <span className="text-right font-medium">
-                        {liveDate
-                          ? liveDate.toLocaleDateString("en-IN")
-                          : "Not scheduled"}
-                      </span>
-                    </div>
-
-                    <div className="flex justify-between gap-3 text-sm">
-                      <span className="text-gray-500">Time</span>
-
-                      <span className="text-right font-medium">
-                        {liveDate
-                          ? liveDate.toLocaleTimeString("en-IN", {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })
-                          : "Not scheduled"}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="mt-5 flex gap-2">
-                    <Link
-                      href={
-                        astrologer?.id
-                          ? `/astrologerprofile/${astrologer.id}`
-                          : "#"
-                      }
-                      aria-disabled={!astrologer?.id}
-                      className={`flex flex-1 items-center justify-center rounded-xl bg-yellow-500 py-3 text-center font-semibold text-black hover:bg-yellow-600 ${
-                        !astrologer?.id
-                          ? "pointer-events-none opacity-50"
-                          : ""
-                      }`}
-                    >
-                      View Astrologer
-                    </Link>
-
-                    {isLive && (
-                      <Link
-                        href={`/live/${encodeURIComponent(
-                          live.channelName
-                        )}`}
-                        className="flex flex-1 items-center justify-center rounded-xl bg-red-600 py-3 text-center font-semibold text-white hover:bg-red-700"
-                      >
-                        🔴 Watch Live
-                      </Link>
-                    )}
-                  </div>
+                  <span className="rounded-full bg-red-100 px-3 py-1 text-sm font-semibold text-red-600">
+                    {liveSessions.length} Live
+                  </span>
                 </div>
-              </article>
-            );
-          })}
-        </div>
-      )}
+
+                <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+                  {liveSessions.map((live) => (
+                    <LiveCard key={live.id} live={live} />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {scheduledSessions.length > 0 && (
+              <section>
+                <div className="mb-5 flex flex-wrap items-center gap-3">
+                  <h3 className="text-xl font-bold text-black md:text-2xl">
+                    Upcoming Scheduled Lives
+                  </h3>
+
+                  <span className="rounded-full bg-blue-100 px-3 py-1 text-sm font-semibold text-blue-700">
+                    {scheduledSessions.length} Scheduled
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+                  {scheduledSessions.map((live) => (
+                    <LiveCard key={live.id} live={live} />
+                  ))}
+                </div>
+              </section>
+            )}
+          </div>
+        )}
+      </div>
     </section>
   );
 }
