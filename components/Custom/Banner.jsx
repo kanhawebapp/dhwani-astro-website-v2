@@ -11,8 +11,6 @@ async function getBanners() {
     throw new Error("GRAPHQL_API_URL is not configured");
   }
 
-  const start = performance.now();
-
   try {
     const response = await fetch(GRAPHQL_URL, {
       method: "POST",
@@ -23,12 +21,15 @@ async function getBanners() {
         query: print(GET_BANNERS),
         variables: { language: "en" },
       }),
-      next: { revalidate: 30000 },
+      next: { revalidate: 300 },
     });
 
     const result = await response.json();
 
-
+    console.log(
+      "[Banner] API Response:",
+      JSON.stringify(result, null, 2)
+    );
 
     if (!response.ok || result.errors?.length) {
       throw new Error("Banner request failed");
@@ -66,14 +67,25 @@ export default async function Banner() {
 
       return {
         id: desktopBanner?.id ?? mobileBanner?.id,
+
         heading:
-          desktopBanner?.heading ?? mobileBanner?.heading ?? "Banner",
+          desktopBanner?.heading ??
+          mobileBanner?.heading ??
+          "Banner",
+
         desktopImage: desktopBanner?.imageUrl
           ? `${BASE_URL}${desktopBanner.imageUrl}`
           : null,
+
         mobileImage: mobileBanner?.imageUrl
           ? `${BASE_URL}${mobileBanner.imageUrl}`
           : null,
+
+        // Desktop link preferred, mobile fallback
+        bannerlink:
+          desktopBanner?.bannerlink ||
+          mobileBanner?.bannerlink ||
+          null,
       };
     }
   ).filter((slide) => slide.desktopImage || slide.mobileImage);
