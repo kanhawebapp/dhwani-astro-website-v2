@@ -61,10 +61,10 @@ function LiveCard({ live }) {
                   width={70}
                   height={70}
                   unoptimized={profileImage.startsWith("http")}
-                  className="h-[70px] w-[70px] rounded-full border-2 border-yellow-400 object-cover shadow-md"
+                  className="h-18 w-18 rounded-full border-2 border-yellow-400 object-cover shadow-md"
                 />
                 <div className="flex flex-col items-start gap-1">
-                  <p className="text-lg font-semibold text-gray-900">
+                  <p className={`text-md font-semibold  ${isLive ? "text-black-600" : "text-gray-300"}`}>
                     {astrologer?.displayName ||
                       astrologer?.name ||
                       "Astrologer"}
@@ -72,7 +72,7 @@ function LiveCard({ live }) {
 
                   <div className="flex  gap-1">
                     <span className="text-sm">⭐</span>
-                    <span className="font-medium text-sm  text-gray-900">
+                    <span className={`font-medium text-sm  ${isLive ? "text-black-600" : "text-gray-300"}`}>
                       {astrologer?.rating.toFixed(2) ?? 0}
                     </span>
                   </div>
@@ -93,26 +93,29 @@ function LiveCard({ live }) {
           </div>
         </div>
         <div className="mt-5 space-y-2 rounded-xl border border-white/10 bg-white/25 p-3 backdrop-blur-md">
-          <h3 className="break-words text-lg font-bold text-gray-900">
+          <h3
+            className={`wrap-break-word text-md font-semibold ${
+              isLive ? "text-black-600" : "text-gray-200"
+            }`}
+          >
             {live.title || "Live Astrology Session"}
           </h3>
 
           {!isLive && (
-            <div className="space-y-2">
+            <div className=" flex items-center justify-between ">
               {/* Date */}
-              <div className="flex justify-between gap-3 text-sm">
-                <span className="font-medium text-gray-600">Date</span>
-                <span className="text-right font-semibold text-gray-900">
+              <div className="flex justify-between gap-3 text-xs">
+                <span className=" text-gray-300">Date :</span>
+                <span className=" text-gray-300">
                   {liveDate
                     ? liveDate.toLocaleDateString("en-IN")
                     : "Not scheduled"}
                 </span>
               </div>
 
-              {/* Time */}
-              <div className="flex justify-between gap-3 text-sm">
-                <span className="font-medium text-gray-600">Time</span>
-                <span className="text-right font-semibold text-gray-900">
+              <div className="flex justify-between gap-3 text-xs">
+                <span className=" text-gray-300">Time :</span>
+                <span className="text-right  text-gray-300">
                   {liveDate
                     ? liveDate.toLocaleTimeString("en-IN", {
                         hour: "2-digit",
@@ -125,23 +128,12 @@ function LiveCard({ live }) {
           )}
         </div>
 
-        <div className="mt-5 flex gap-2">
-          {/* <Link
-            href={astrologer?.id ? `/astrologerprofile/${astrologer.id}` : "#"}
-            aria-disabled={!astrologer?.id}
-            className={`flex flex-1 text-sm items-center justify-center rounded-full bg-yellow-500 py-2 text-center font-semibold text-black shadow-md transition hover:bg-yellow-600 ${
-              !astrologer?.id ? "pointer-events-none opacity-50" : ""
-            }`}
-          >
-            View Astrologer
-          </Link> */}
-
+        <div className="mt-5  flex gap-2">
           {isLive && live.channelName && (
             <Link
               href={`/live/${encodeURIComponent(live.channelName)}`}
-              className="relative flex flex-1 items-center justify-center overflow-hidden rounded-full bg-red-600 py-2 text-center text-sm font-semibold text-white shadow-md transition hover:bg-red-700"
+              className="relative  flex flex-1 items-center justify-center overflow-hidden rounded-full bg-red-600 py-2 text-center text-sm font-semibold text-white shadow-md transition hover:bg-red-700"
             >
-              {/* Full-width shimmer */}
               <span className="pointer-events-none absolute inset-0 overflow-hidden">
                 <span className="absolute -inset-y-full left-[-100%] h-[300%] w-1/2 -skew-x-[25deg] animate-shimmer bg-gradient-to-r from-transparent via-white/50 to-transparent" />
               </span>
@@ -202,11 +194,8 @@ export default function UpcomingLives() {
             Live Sessions
           </h2>
 
-          <div className="mt-3 text-center text-sm text-black md:px-20">
-            <p className="text-lg font-bold">
-              Get Personalized Astrology Guidance Live! Connect with Top
-              Astrologers for Free Now.
-            </p>
+          <div className="mt-2 text-center text-sm text-black md:px-20">
+       
 
             <p>
               Experience a free live session with India's leading Astrologers,
@@ -223,17 +212,16 @@ export default function UpcomingLives() {
           </div>
         ) : (
           <div className="space-y-10">
-
             {liveSessions.length > 0 && (
               <section>
                 <div className="mb-5 flex flex-wrap items-center gap-3">
-                  <h4 className=" ">
+                  <h4 className="text-sm ">
                     <b>Ongoing Live Sessions </b>
                   </h4>
 
-                  <span className="rounded-full bg-red-100 px-3 py-1 text-sm font-semibold text-red-600">
+                  {/* <span className="rounded-full bg-red-100 px-3 py-1 text-sm font-semibold text-red-600">
                     {liveSessions.length} Live
-                  </span>
+                  </span> */}
                 </div>
 
                 <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
@@ -247,13 +235,9 @@ export default function UpcomingLives() {
             {scheduledSessions.length > 0 && (
               <section>
                 <div className="mb-5 flex flex-wrap items-center gap-3">
-                  <h3 className="text-xl font-bold text-black md:text-2xl">
+                  <h3 className="text-sm font-bold text-black ">
                     Upcoming Scheduled Lives
                   </h3>
-
-                  <span className="rounded-full bg-blue-100 px-3 py-1 text-sm font-semibold text-blue-700">
-                    {scheduledSessions.length} Scheduled
-                  </span>
                 </div>
 
                 <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">

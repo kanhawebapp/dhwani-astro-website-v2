@@ -23,6 +23,51 @@ import RecentRequestPopup from "./RecentRequestPopUp";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
+function AstrologerSkeleton() {
+  return (
+    <div
+      className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5 w-full"
+      role="status"
+      aria-label="Loading astrologers"
+    >
+      {Array.from({ length: 4 }).map((_, index) => (
+        <div
+          key={index}
+          className="h-68 sm:h-88 md:h-77 lg:h-80 rounded-lg shadow-lg p-3 bg-purple-50 animate-pulse"
+        >
+          <div className="flex justify-center mt-2">
+            <div className="w-16 h-16 sm:w-[88px] sm:h-[88px] rounded-full bg-purple-200" />
+          </div>
+
+          <div className="flex flex-col items-center gap-2 mt-4">
+            <div className="h-4 w-28 rounded bg-purple-200" />
+            <div className="h-3 w-36 rounded bg-purple-100" />
+            <div className="h-3 w-24 rounded bg-purple-100" />
+          </div>
+
+          <div className="flex justify-center gap-2 mt-4">
+            <div className="h-5 w-16 rounded bg-purple-200" />
+            <div className="h-5 w-12 rounded bg-purple-200" />
+          </div>
+
+          <div className="flex justify-center mt-5">
+            <div className="h-5 w-24 rounded bg-purple-200" />
+          </div>
+
+          <div className="flex justify-around mt-8">
+            <div className="h-11 w-11 rounded-full bg-purple-200" />
+            <div className="h-11 w-11 rounded-full bg-purple-200" />
+          </div>
+        </div>
+      ))}
+
+      <span className="sr-only">
+        Loading astrologers...
+      </span>
+    </div>
+  );
+}
+
 export default function AstrologerCarousel({
   initialAstrologers = [],
   initialUserData = null,
@@ -43,7 +88,6 @@ export default function AstrologerCarousel({
     initialUserData ?? { user_status: 0, balance_amount: 0 },
   );
 
-
   useEffect(() => {
     if (initialUserData) setUserData(initialUserData);
   }, [initialUserData]);
@@ -60,7 +104,7 @@ export default function AstrologerCarousel({
 
   const handleClick = ({ id, mode, price, astro }) => {
     const goToRequest = () => {
-      if (!mode ) return;
+      if (!mode) return;
 
       openRecentPopup({
         astroId: id,
@@ -77,7 +121,11 @@ export default function AstrologerCarousel({
     const isSocketBusy = busyAstros.includes(Number(astro?.id));
 
     if (!astro?.isOnline || !isServiceActive) {
-      return { color: "bg-red-600", disabled: true };
+      return {
+        color: "bg-red-600",
+        disabled: true,
+        title: "Online but Unavailable for Call/Chat",
+      };
     }
 
     if (astro?.isBusy || isSocketBusy) {
@@ -87,7 +135,6 @@ export default function AstrologerCarousel({
     return { color: "bg-green-600", disabled: false };
   };
 
- 
   const selectedQuery = isLoggedIn
     ? GET_ASTROLOGERS_USER
     : GET_ASTROLOGERS_GUEST;
@@ -106,28 +153,21 @@ export default function AstrologerCarousel({
     notifyOnNetworkStatusChange: true,
   });
 
-
   const responseData = isLoggedIn
     ? data?.getAstrologerListForUser
     : data?.getAstrologerListBySearch;
 
   const astrologerList = useMemo(() => {
- 
-    if (authLoading) {
-      return initialAstrologers;
-    }
-
-  
-    if (!data) {
-      return isLoggedIn ? [] : initialAstrologers;
+    // Initial data: show only online astrologers
+    if (authLoading || !data) {
+      return initialAstrologers.filter((astro) => astro?.isOnline === true);
     }
 
     const list = responseData?.data ?? [];
 
-
-    return isLoggedIn ? list.filter((astro) => astro.isOnline) : list;
-  }, [authLoading, initialAstrologers, isLoggedIn, data, responseData]);
-
+    // Always show online astrologers, regardless of login status
+    return list.filter((astro) => astro?.isOnline === true);
+  }, [authLoading, initialAstrologers, data, responseData]);
 
   useEffect(() => {
     if (!socket) return;
@@ -145,7 +185,9 @@ export default function AstrologerCarousel({
       const id = Number(payload?.astro_id);
       if (!Number.isFinite(id)) return;
 
-      setBusyAstros((previous) => previous.filter((astroId) => Number(astroId) !== id));
+      setBusyAstros((previous) =>
+        previous.filter((astroId) => Number(astroId) !== id),
+      );
     };
 
     socket.on("astrologer_request_busy", handleBusy);
@@ -157,18 +199,17 @@ export default function AstrologerCarousel({
     };
   }, [socket]);
 
-  if (!authLoading && loading && astrologerList.length === 0) {
-    return <div className="min-h-40" aria-label="Loading astrologers" />;
-  }
+const showAstrologerSkeleton =
+  astrologerList.length === 0 &&
+  (authLoading || loading);
 
   if (error && astrologerList.length === 0) {
     console.error("Failed to fetch astrologers:", error);
     return null;
   }
-const maxSlidesPerView = 4;
+  const maxSlidesPerView = 4;
 
-const canLoop =
-  astrologerList.length > maxSlidesPerView;
+  const canLoop = astrologerList.length > maxSlidesPerView;
   return (
     <section className="flex-col items-center self-center w-full sm:max-w-7xl">
       <div className="flex flex-col items-center justify-center rounded-full px- sm:py-4 py-0 sm:max-w-7xl">
@@ -279,41 +320,48 @@ const canLoop =
       </div>
 
       <div className="relative p-4 astrocard-swipe sm:max-w-7xl">
-        <div className="absolute top-1/2 left-0 sm:-left-1px lg:left-[-50px] transform -translate-y-1/2 z-10">
-          <button
-            aria-label="Previous Astrologer"
-            className="swiper-button-prev-astro"
-          >
-            ‹
-          </button>
-        </div>
+      {showAstrologerSkeleton ? (
+    <AstrologerSkeleton />
+  ) : (
+    <>
+      {/* Previous Navigation */}
+      <div className="absolute top-1/2 left-0 sm:-left-1px lg:left-[-50px] transform -translate-y-1/2 z-10">
+        <button
+          aria-label="Previous Astrologer"
+          className="swiper-button-prev-astro"
+        >
+          ‹
+        </button>
+      </div>
 
-        <div className="absolute top-1/2 right-0 sm:-right-1px lg:right-[-50px] transform -translate-y-1/2 z-10">
-          <button
-            aria-label="Next Astrologer"
-            className="swiper-button-next-astro"
-          >
-            ›
-          </button>
-        </div>
+      {/* Next Navigation */}
+      <div className="absolute top-1/2 right-0 sm:-right-1px lg:right-[-50px] transform -translate-y-1/2 z-10">
+        <button
+          aria-label="Next Astrologer"
+          className="swiper-button-next-astro"
+        >
+          ›
+        </button>
+      </div>
 
-  <Swiper
-  modules={[Navigation]}
-  slidesPerView={2}
-  slidesPerGroup={1}
-  spaceBetween={10}
-  navigation={{
-    nextEl: ".swiper-button-next-astro",
-    prevEl: ".swiper-button-prev-astro",
-  }}
-  loop={canLoop}
-  breakpoints={{
-    480: { slidesPerView: 2, spaceBetween: 15 },
-    768: { slidesPerView: 3, spaceBetween: 15 },
-    1024: { slidesPerView: 4, spaceBetween: 20 },
-  }}
-  className="mySwiperhoro"
->
+      {/* Your existing Swiper */}
+      <Swiper
+        modules={[Navigation]}
+        slidesPerView={2}
+        slidesPerGroup={1}
+        spaceBetween={10}
+        navigation={{
+          nextEl: ".swiper-button-next-astro",
+          prevEl: ".swiper-button-prev-astro",
+        }}
+        loop={canLoop}
+        breakpoints={{
+          480: { slidesPerView: 2, spaceBetween: 15 },
+          768: { slidesPerView: 3, spaceBetween: 15 },
+          1024: { slidesPerView: 4, spaceBetween: 20 },
+        }}
+        className="mySwiperhoro"
+      >
           {astrologerList?.map((astro, index) => (
             <SwiperSlide key={astro.id}>
               <div>
@@ -432,7 +480,6 @@ const canLoop =
                     </div>
 
                     <div className="flex justify-around w-full mt-1 space-x-4 md:mt-1">
-                   
                       {(() => {
                         const callStatus = getAstroStatus(astro, "call");
 
@@ -442,6 +489,7 @@ const canLoop =
 
                         return (
                           <CustomButton
+                            title={callStatus.title}
                             disabled={callStatus.disabled}
                             aria-label="Call Astrologer"
                             className={`${callStatus.color} rounded-full p-3 ${
@@ -487,7 +535,6 @@ const canLoop =
                         );
                       })()}
 
-                  
                       {(() => {
                         const chatStatus = getAstroStatus(astro, "chat");
 
@@ -497,6 +544,7 @@ const canLoop =
 
                         return (
                           <CustomButton
+                            title={chatStatus.title}
                             disabled={chatStatus.disabled}
                             aria-label="Chat with Astrologer"
                             className={`${chatStatus.color} rounded-full p-3 ${
@@ -539,6 +587,8 @@ const canLoop =
             </SwiperSlide>
           ))}
         </Swiper>
+           </>
+  )}
       </div>
 
       <RecentRequestPopup

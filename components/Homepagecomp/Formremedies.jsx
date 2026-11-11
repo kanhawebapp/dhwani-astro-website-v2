@@ -2,13 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-// import CustomButton from "../Custom/CustomButton";
 import CustomInput from "../Custom/CustomInput";
 import Kundlioth from "../Smcompo/Kundlioth";
-// import Bestsell from "../Smcompo/Bestsell/Bestsell";
-// import Sidebanner from "../Smcompo/Sidebanner";
-// import Freereport from "../Smcompo/Freereport";
-// import Recastro from "../Smcompo/Recastro";
 import FAQue from "../FAQue";
 import Callchatsec from "../Smcompo/Callchatsec";
 import { useLanguage } from "@/app/context/LangContext";
@@ -19,6 +14,7 @@ import { useRouter } from "next/navigation";
 import { loadAstroContent } from "./remedy-content/index";
 import RemedyContent from "./RemedyContent";
 import LocationSelector from "@/app/common/LocationSelector";
+import CustomButton from "../Custom/CustomButton";
 const CURRENT_YEAR = new Date().getFullYear();
 
 const DAY_OPTIONS = Array.from({ length: 31 }, (_, i) => ({
@@ -1159,7 +1155,7 @@ useEffect(() => {
 
                   {/* SUBMIT BUTTON */}
 
-                  <button
+                  <CustomButton
                     type="submit"
                     className="
                     group                    
@@ -1204,7 +1200,7 @@ useEffect(() => {
                     />
 
                     <span className="relative">{content.buttonText}</span>
-                  </button>
+                  </CustomButton>
 
                   <p className="text-center text-[11px] text-[#8a7a91]">
                     ✦ Personalized based on your birth details

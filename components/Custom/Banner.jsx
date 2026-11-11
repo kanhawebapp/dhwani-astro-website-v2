@@ -28,9 +28,7 @@ async function getBanners() {
 
     const result = await response.json();
 
-//     console.log(
-//       `[Banner] GraphQL request: ${Math.round(performance.now() - start)} ms`
-//     );
+
 
     if (!response.ok || result.errors?.length) {
       throw new Error("Banner request failed");
