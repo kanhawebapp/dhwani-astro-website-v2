@@ -24,96 +24,130 @@ export default function DownappClient({ messages }) {
         className="text-black head-wrap text-[16px] align-center"
       />
 
-      <div className="app-img-content flex items-center   justify-around ">
-        <div className="rounded-lg p-1 md:p-5  flex flex-col gap-1 items-center justify-between">
-          <div className="grid grid-cols-1 z-10">
-            <div className="flex flex-col items-center justify-center">
-              <div className="scan-image head-wrap">
-                <Image
-                  className="w-32 h-32 sm:w-48 sm:h-48 rounded-lg"
-                  src="/ds-img/scanner-app.webp"
-                  alt="scanner image"
-                  unoptimized
-                  loading="lazy"
-                  width={50}
-                  height={50}
-                />
-              </div>
-              <Link
-                href="https://play.google.com/store/apps/details?id=com.DhwaniAstro.app"
-                target="_blank"
-                className="download-ios-ps head-wrap cursor-pointer"
-               >
-                <Image
-                  className="w-35  h-17 sm:w-40 sm:h-18 cursor-pointer"
-                  src="/ds-img/gply.png"
-                  unoptimized
-                  alt="playstore image"
-                  loading="lazy"
-                  width={50}
-                  height={50}
-                />
-              </Link>
-            </div>
-          </div>
+   
+<div
+  className="
+    app-img-content
+    grid grid-cols-2
+    items-center justify-items-center
+    gap-y-4
+
+    md:flex md:justify-around
+    md:gap-y-0
+  "
+>
+
+  {/* First child */}
+<div className="
+  col-start-1 row-start-1
+  rounded-lg p-1 md:p-5
+  flex flex-col gap-1
+  items-center justify-between
+  md:col-auto md:row-auto
+">
+    <div className="grid grid-cols-1 z-10">
+      <div className="flex flex-col items-center justify-center">
+        <div className="scan-image head-wrap">
+          <Image
+            className="w-32 h-32 sm:w-48 sm:h-48 rounded-lg"
+            src="/ds-img/scanner-app.webp"
+            alt="scanner image"
+            unoptimized
+            loading="lazy"
+            width={50}
+            height={50}
+          />
         </div>
 
-        <div className="content-wrapper-spin-im">
-          <div className="spinn-app-img head-wrap overflow-hidden">
-            <Image
-              className="spin-image-back w-full  h-90 sm:h-120"
-              src="/ds-img/image.png"
-              alt="spin chakra image"
-              unoptimized
-              loading="lazy"
-              width={50}
-              height={50}
-            />
-            <Image
-              className="mob-app-image w-42 h-72 sm:w-53 sm:h-92"
-              src="/ds-img/bckmob.jpg"
-              alt="app image"
-              loading="lazy"
-              unoptimized
-              width={50}
-              height={50}
-            />
-          </div>
-        </div>
-
-        <div className="rounded-lg p-1 md:p-5 gap-1 items-center justify-between">
-          <div className="grid grid-cols-1 z-10">
-            <div className="flex flex-col items-center gap-2.5">
-              <div className="scan-image head-wrap">
-                <Image
-                  className="w-32  h-32 sm:w-48 sm:h-48 rounded-lg"
-                  src="/ds-img/ios2.png"
-                  alt="scanner image"
-                  unoptimized
-                  loading="lazy"
-                  width={50}
-                  height={50}
-                />
-              </div>
-              <Link
-                href="https://apps.apple.com/in/app/dhwaniastro/id6467093479"
-                target="_blank"
-                className="download-ios-ps head-wrap cursor-pointer"
-              >
-                <Image
-                  className="w-35 h-11 sm:w-38 sm:h-13"
-                  src="/ds-img/apd.webp"
-                  unoptimized
-                  alt="playstore image"
-                  loading="lazy"
-                  width={50}
-                  height={50}
-                />
-              </Link>
-            </div>
-          </div>
-        </div>
+        <Link
+          href="https://play.google.com/store/apps/details?id=com.DhwaniAstro.app"
+          target="_blank"
+          className="download-ios-ps head-wrap cursor-pointer"
+        >
+          <Image
+            className="w-35 h-17 sm:w-40 sm:h-18 cursor-pointer"
+            src="/ds-img/gply.png"
+            unoptimized
+            alt="playstore image"
+            loading="lazy"
+            width={50}
+            height={50}
+          />
+        </Link>
       </div>
+    </div>
+  </div>
+
+<div className="
+  content-wrapper-spin-im
+  col-span-2 col-start-1 row-start-2
+  flex justify-center
+  md:col-auto md:row-auto
+">
+    <div className="spinn-app-img head-wrap overflow-hidden">
+      <Image
+        className="spin-image-back w-full h-90 sm:h-120"
+        src="/ds-img/image.png"
+        alt="spin chakra image"
+        unoptimized
+        loading="lazy"
+        width={50}
+        height={50}
+      />
+
+      <Image
+        className="mob-app-image w-42 h-72 sm:w-53 sm:h-92"
+        src="/ds-img/bckmob.jpg"
+        alt="app image"
+        loading="lazy"
+        unoptimized
+        width={50}
+        height={50}
+      />
+    </div>
+  </div>
+
+<div className="
+  col-start-2 row-start-1
+  rounded-lg p-1 md:p-5
+  gap-1 items-center justify-between
+  md:col-auto md:row-auto
+">
+    <div className="grid grid-cols-1 z-10">
+      <div className="flex flex-col items-center gap-2.5">
+        <div className="scan-image head-wrap">
+          <Image
+            className="w-32 h-32 sm:w-48 sm:h-48 rounded-lg"
+            src="/ds-img/ios2.png"
+            alt="scanner image"
+            unoptimized
+            loading="lazy"
+            width={50}
+            height={50}
+          />
+        </div>
+
+        <Link
+          href="https://apps.apple.com/in/app/dhwaniastro/id6467093479"
+          target="_blank"
+          className="download-ios-ps head-wrap cursor-pointer"
+        >
+          <Image
+            className="w-35 h-11 sm:w-38 sm:h-13"
+            src="/ds-img/apd.webp"
+            unoptimized
+            alt="app store image"
+            loading="lazy"
+            width={50}
+            height={50}
+          />
+        </Link>
+      </div>
+    </div>
+  </div>
+
+</div>
+
     </div>
   );
 }

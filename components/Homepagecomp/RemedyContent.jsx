@@ -80,9 +80,6 @@ export default function RemedyContent({ content }) {
 
       <div className="relative mx-auto max-w-7xl space-y-7 px-4 sm:px-6 lg:px-8">
 
-        {/* =========================================================
-            INTRO
-        ========================================================= */}
 
         {content.intro && (
           <article
@@ -152,9 +149,6 @@ export default function RemedyContent({ content }) {
           </article>
         )}
 
-        {/* =========================================================
-            ABOUT
-        ========================================================= */}
 
         {content.about && (
           <article
@@ -189,9 +183,7 @@ export default function RemedyContent({ content }) {
           </article>
         )}
 
-        {/* =========================================================
-            CALCULATOR / HOW TO
-        ========================================================= */}
+
 
         {content.calculator && (
           <article
@@ -293,10 +285,7 @@ export default function RemedyContent({ content }) {
           </article>
         )}
 
-        {/* =========================================================
-            REPORT
-            Used by Gemstone etc.
-        ========================================================= */}
+   
 
         {content.report && (
           <article
@@ -345,13 +334,6 @@ export default function RemedyContent({ content }) {
           </article>
         )}
 
-        {/* =========================================================
-            GENERIC ITEM COLLECTION
-            Works for:
-            gemstones
-            rudrakshas
-            future collections
-        ========================================================= */}
 
         {content.gemstones && (
           <CollectionSection
@@ -367,25 +349,18 @@ export default function RemedyContent({ content }) {
           />
         )}
 
-        {/* =========================================================
-            ASTROLOGY
-        ========================================================= */}
+
 
         {content.astrology && (
           <TextSection data={content.astrology} />
         )}
 
-        {/* =========================================================
-            ZODIAC
-        ========================================================= */}
+     
 
         {content.zodiac && (
           <TextSection data={content.zodiac} />
         )}
 
-        {/* =========================================================
-            BENEFITS
-        ========================================================= */}
 
         {content.benefits && (
           <article
@@ -440,9 +415,6 @@ export default function RemedyContent({ content }) {
           </article>
         )}
 
-        {/* =========================================================
-            WEARING
-        ========================================================= */}
 
         {content.wearing && (
           <article
@@ -537,9 +509,6 @@ export default function RemedyContent({ content }) {
           </article>
         )}
 
-        {/* =========================================================
-            AUTHENTICITY
-        ========================================================= */}
 
         {content.authenticity && (
           <article
@@ -600,9 +569,6 @@ export default function RemedyContent({ content }) {
           </article>
         )}
 
-        {/* =========================================================
-            CONSULTATION
-        ========================================================= */}
 
         {content.consultation && (
           <article
@@ -685,9 +651,6 @@ export default function RemedyContent({ content }) {
           </article>
         )}
 
-        {/* =========================================================
-            FAQ
-        ========================================================= */}
 
         {content.faqs &&
           ((Array.isArray(content.faqs) && content.faqs.length > 0) ||
@@ -805,9 +768,6 @@ export default function RemedyContent({ content }) {
             </article>
           )}
 
-        {/* =========================================================
-            DISCLAIMER
-        ========================================================= */}
 
         {content.disclaimer && (
           <div
@@ -832,10 +792,6 @@ export default function RemedyContent({ content }) {
   );
 }
 
-
-/* ================================================================
-   SECTION HEADING
-================================================================ */
 
 function SectionHeading({ title }) {
   if (!title) return null;
@@ -868,11 +824,6 @@ function SectionHeading({ title }) {
   );
 }
 
-
-/* ================================================================
-   TEXT SECTION
-   Used for Astrology / Zodiac etc.
-================================================================ */
 
 function TextSection({ data }) {
   return (
@@ -909,11 +860,6 @@ function TextSection({ data }) {
   );
 }
 
-
-/* ================================================================
-   COLLECTION SECTION
-   Gemstones / Rudrakshas / future collections
-================================================================ */
 
 function CollectionSection({ data, type }) {
   if (!data) return null;
@@ -976,7 +922,7 @@ function CollectionSection({ data, type }) {
               hover:shadow-[0_18px_40px_rgba(65,35,85,.10)]
             "
           >
-            {/* Number */}
+      
             {item.number && (
               <div
                 className="
@@ -993,7 +939,7 @@ function CollectionSection({ data, type }) {
               </div>
             )}
 
-            {/* Icon */}
+      
             <div
               className="
                 flex h-14 w-14
@@ -1011,7 +957,7 @@ function CollectionSection({ data, type }) {
               {isRudraksha ? "ॐ" : "✦"}
             </div>
 
-            {/* Title */}
+       
             <h3
               className="
                 mt-5 pr-8
@@ -1022,7 +968,7 @@ function CollectionSection({ data, type }) {
               {item.name || item.title}
             </h3>
 
-            {/* Secondary information */}
+     
             {(item.hindiName || item.planet || item.deity) && (
               <div className="mt-3 flex flex-wrap gap-2">
                 {item.hindiName && (
@@ -1069,7 +1015,7 @@ function CollectionSection({ data, type }) {
               </div>
             )}
 
-            {/* Description */}
+    
             {item.description && (
               <p
                 className="
@@ -1082,7 +1028,7 @@ function CollectionSection({ data, type }) {
               </p>
             )}
 
-            {/* Additional */}
+         
             {item.additional && (
               <p
                 className="
@@ -1104,9 +1050,7 @@ function CollectionSection({ data, type }) {
 }
 
 
-/* ================================================================
-   INFO CARD
-================================================================ */
+
 
 function InfoCard({ icon = "✦", title, description }) {
   return (
@@ -1164,9 +1108,7 @@ function InfoCard({ icon = "✦", title, description }) {
 }
 
 
-/* ================================================================
-   INFO NOTE
-================================================================ */
+
 
 function InfoNote({ children, variant = "purple" }) {
   const classes =

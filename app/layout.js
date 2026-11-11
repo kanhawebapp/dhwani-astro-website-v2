@@ -16,10 +16,7 @@ import LayoutWrapper from "./LayoutWrapper";
 
 // SEO JSON-LD
 import JsonLd from "@/components/seo/JsonLd";
-import {
-  organizationSchema,
-  websiteSchema,
-} from "@/utils/schema";
+import { organizationSchema, websiteSchema } from "@/utils/schema";
 import { BlogProvider } from "./context/blogContext";
 
 const poppins = Poppins({
@@ -125,18 +122,13 @@ export default function RootLayout({ children }) {
               <Providers>
                 <SocketProvider>
                   <SignInModalWrapper>
-                       <BlogProvider>
-                    <LayoutWrapper>
-                      {children}
-                    </LayoutWrapper>
-</BlogProvider>
+                    <BlogProvider>
+                      <LayoutWrapper>{children}</LayoutWrapper>
+                    </BlogProvider>
                     <GlobalChatPopup />
                   </SignInModalWrapper>
 
-                  <Toaster
-                    position="top-center"
-                    reverseOrder={false}
-                  />
+                  <Toaster position="top-center" reverseOrder={false} />
                 </SocketProvider>
 
                 <ScrollToTop />

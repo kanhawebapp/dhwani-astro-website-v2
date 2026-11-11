@@ -14,7 +14,7 @@ export default function BannerCarousel({ slides = [] }) {
 
   return (
     <section
-      className="w-full slider-banner-home overflow-hidden"
+      className="w-full overflow-hidden slider-banner-home"
       aria-label="Featured banners"
     >
       <Swiper
@@ -36,40 +36,47 @@ export default function BannerCarousel({ slides = [] }) {
         className="w-full"
       >
         {slides.map((slide, index) => {
-          const fallbackImage =
-            slide.desktopImage ?? slide.mobileImage;
+          const desktopImage =
+            slide.desktopImage || slide.mobileImage;
 
-          if (!fallbackImage) return null;
+          if (!desktopImage) return null;
 
-          const priority = index === 0;
+          const isFirstSlide = index === 0;
 
           const desktopProps = getImageProps({
-            src: fallbackImage,
-            alt: slide.heading || "Banner",
-            width: 1920,
+            src: desktopImage,
+            alt: slide.heading || "Featured banner",
+            width: 1600,
             height: 600,
             sizes: "100vw",
-            quality: 75,
-            loading: priority ? "eager" : "lazy",
-            fetchPriority: priority ? "high" : "auto",
+            quality: 90,
+            loading: isFirstSlide ? "eager" : "lazy",
+            fetchPriority: isFirstSlide ? "high" : "auto",
           });
 
           const mobileProps = slide.mobileImage
             ? getImageProps({
                 src: slide.mobileImage,
-                alt: slide.heading || "Banner",
+                alt: slide.heading || "Featured banner",
                 width: 768,
                 height: 432,
                 sizes: "100vw",
-                quality: 75,
-                loading: priority ? "eager" : "lazy",
-                fetchPriority: priority ? "high" : "auto",
+                quality: 90,
+                loading: isFirstSlide ? "eager" : "lazy",
+                fetchPriority: isFirstSlide ? "high" : "auto",
               })
             : null;
 
           return (
             <SwiperSlide key={slide.id}>
-              <div className="relative w-full aspect-[16/9] sm:aspect-[16/5] min-h-[180px] max-h-[450px] overflow-hidden">
+              <div
+                className="
+                  relative w-full overflow-hidden
+                  aspect-[7/2]
+                  max-md:aspect-[16/9]
+                  bg-[#fff5f2]
+                "
+              >
                 <picture>
                   {mobileProps && (
                     <source
@@ -81,8 +88,9 @@ export default function BannerCarousel({ slides = [] }) {
 
                   <img
                     {...desktopProps.props}
-                    alt={slide.heading || "Banner"}
-                    className="absolute inset-0 h-full w-full object-cover"
+                    alt={slide.heading || "Featured banner"}
+                    className="absolute inset-0 block w-full h-full object-cover"
+                    decoding="async"
                   />
                 </picture>
               </div>
