@@ -197,12 +197,12 @@ export default function UpcomingLives() {
           <div className="mt-2 text-center text-sm text-black md:px-20">
        
 
-            <p>
+            {/* <p>
               Experience a free live session with India's leading Astrologers,
               Tarot readers, Vaastu experts, Numerologists, and life coaches.
               Ask your questions about love, relationships, career, marriage,
               finance, and more through a live call today!
-            </p>
+            </p> */}
           </div>
         </div>
 
