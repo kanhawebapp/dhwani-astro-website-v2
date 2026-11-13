@@ -246,6 +246,78 @@ export default function WatchLive() {
     );
   }, []);
 
+  // =====================================================
+  // SAFE CAMERA INITIALIZATION
+  // =====================================================
+
+  const createCameraTrackSafely = useCallback(async (AgoraRTC) => {
+    try {
+      if (
+        typeof navigator === "undefined" ||
+        !navigator.mediaDevices?.enumerateDevices
+      ) {
+        throw new Error(
+          "Camera access is not supported. Please use HTTPS and a supported browser.",
+        );
+      }
+
+      const devices = await navigator.mediaDevices.enumerateDevices();
+
+      const cameras = devices.filter((device) => device.kind === "videoinput");
+
+      console.log("Available cameras:", cameras);
+
+      if (cameras.length === 0) {
+        throw new Error("No camera detected on this device.");
+      }
+
+      const cameraTrack = await AgoraRTC.createCameraVideoTrack({
+        encoderConfig: "720p_1",
+      });
+
+      if (!cameraTrack) {
+        throw new Error("Unable to initialize camera.");
+      }
+
+      console.log("Camera initialized successfully.");
+
+      return cameraTrack;
+    } catch (error) {
+      console.error("Camera initialization failed:", error);
+
+      const errorName = error?.name || error?.data?.name || "";
+      const errorCode = error?.code || error?.data?.code || "";
+      const errorMessage = String(error?.message || "").toLowerCase();
+
+      if (
+        errorName === "NotReadableError" ||
+        errorCode === "NOT_READABLE" ||
+        errorMessage.includes("not readable") ||
+        errorMessage.includes("could not start video source")
+      ) {
+        throw new Error(
+          "Camera is currently being used by another application or browser tab. Close other applications using the camera and try again.",
+        );
+      }
+
+      if (
+        errorName === "NotAllowedError" ||
+        errorCode === "PERMISSION_DENIED" ||
+        errorMessage.includes("permission denied")
+      ) {
+        throw new Error(
+          "Camera permission denied. Please allow camera access in your browser settings.",
+        );
+      }
+
+      if (errorName === "NotFoundError" || errorCode === "DEVICE_NOT_FOUND") {
+        throw new Error("No camera was found on this device.");
+      }
+
+      throw error;
+    }
+  }, []);
+
   const isValidLiveResponse = useCallback((live) => {
     if (!live) {
       throw new Error("Live stream not found or has already ended.");
@@ -522,7 +594,10 @@ export default function WatchLive() {
       void startInteractionPublishing(interactionSession).catch((err) => {
         console.error("Interaction publishing error:", err);
 
-        setInteractionNotice(getErrorMessage(err));
+        setInteractionNotice(err?.message || getErrorMessage(err));
+
+        setInteractionPanelOpen(true);
+        setIsInteractionPublishing(false);
       });
 
       return;
@@ -1761,10 +1836,44 @@ export default function WatchLive() {
                           </div>
                         )}
 
+                        {/* ACCEPTED BUT CAMERA / MICROPHONE FAILED */}
+
+                        {interactionStatus === "ACCEPTED" &&
+                          !isInteractionPublishing && (
+                            <div className="text-center">
+                              <div className="mb-3 text-lg font-semibold text-yellow-400">
+                                Interaction Accepted
+                              </div>
+
+                              {interactionNotice && (
+                                <p className="mb-4 rounded-lg bg-red-500/10 p-3 text-sm text-red-300">
+                                  {interactionNotice}
+                                </p>
+                              )}
+
+                              <p className="text-sm text-gray-400">
+                                Your interaction was accepted, but your
+                                microphone or camera could not be initialized.
+                              </p>
+
+                              <button
+                                type="button"
+                                onClick={handleEndInteraction}
+                                disabled={interactionLoading}
+                                className="mt-5 w-full rounded-xl bg-red-600 px-5 py-3 font-bold text-white hover:bg-red-700 disabled:opacity-50"
+                              >
+                                {interactionLoading
+                                  ? "Ending..."
+                                  : "End Interaction"}
+                              </button>
+                            </div>
+                          )}
+
                         {/* NEW REQUEST */}
 
                         {!isInteractionPublishing &&
-                          interactionStatus !== "PENDING" && (
+                          interactionStatus !== "PENDING" &&
+                          interactionStatus !== "ACCEPTED" && (
                             <div className="text-center">
                               {interactionNotice && (
                                 <p className="mb-4 text-sm text-yellow-300">
