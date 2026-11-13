@@ -1006,3 +1006,58 @@ export const GET_LIVE_STATUS = gql`
     }
   }
 `;
+export const CREATE_LIVE_INTERACTION_REQUEST = gql`
+  mutation CreateLiveInteractionRequest(
+    $liveStreamId: ID!
+    $interactionType: LiveInteractionType!
+  ) {
+    createLiveInteractionRequest(
+      liveStreamId: $liveStreamId
+      interactionType: $interactionType
+    ) {
+      id
+      liveStreamId
+      userId
+      astrologerId
+      agoraUid
+      interactionType
+      status
+      requestedAt
+      acceptedAt
+      endedAt
+    }
+  }
+`;
+
+export const GET_MY_LIVE_INTERACTION = gql`
+  query GetMyLiveInteraction($liveStreamId: ID!) {
+    getMyLiveInteraction(liveStreamId: $liveStreamId) {
+      request {
+        id
+        liveStreamId
+        userId
+        astrologerId
+        agoraUid
+        interactionType
+        status
+        requestedAt
+        acceptedAt
+        endedAt
+      }
+      appId
+      channelName
+      uid
+      rtcToken
+    }
+  }
+`;
+
+export const END_LIVE_INTERACTION = gql`
+  mutation EndLiveInteraction($requestId: ID!) {
+    endLiveInteraction(requestId: $requestId) {
+      id
+      status
+      endedAt
+    }
+  }
+`;

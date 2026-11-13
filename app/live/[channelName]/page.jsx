@@ -14,6 +14,9 @@ import {
   FOLLOW_ASTROLOGER,
   UNFOLLOW_ASTROLOGER,
   GET_LIVE_STATUS,
+  CREATE_LIVE_INTERACTION_REQUEST,
+  GET_MY_LIVE_INTERACTION,
+  END_LIVE_INTERACTION,
 } from "@/app/graphql/gqlQuery";
 
 export default function WatchLive() {
@@ -23,9 +26,9 @@ export default function WatchLive() {
   const channelName =
     typeof params?.channelName === "string" ? params.channelName : "";
 
-  // =======================================================
+  // =====================================================
   // STATE
-  // =======================================================
+  // =====================================================
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -35,22 +38,36 @@ export default function WatchLive() {
   const [message, setMessage] = useState("");
   const [liveInfo, setLiveInfo] = useState(null);
 
-  // Gift state
+  // Gift states
   const [giftPanelOpen, setGiftPanelOpen] = useState(false);
   const [selectedGiftId, setSelectedGiftId] = useState("");
   const [giftQuantity, setGiftQuantity] = useState(1);
   const [sendingGift, setSendingGift] = useState(false);
   const [giftNotice, setGiftNotice] = useState("");
 
+  // Follow states
   const [followNotice, setFollowNotice] = useState("");
+
+  // Stream states
   const [streamEnded, setStreamEnded] = useState(false);
 
-  // =======================================================
+  // Interaction states
+  const [interactionType, setInteractionType] = useState("AUDIO");
+  const [interactionNotice, setInteractionNotice] = useState("");
+  const [interactionLoading, setInteractionLoading] = useState(false);
+  const [interactionStatus, setInteractionStatus] = useState(null);
+  const [isInteractionPublishing, setIsInteractionPublishing] = useState(false);
+
+  // New call UI state
+  const [interactionPanelOpen, setInteractionPanelOpen] = useState(false);
+
+  // =====================================================
   // REFS
-  // =======================================================
+  // =====================================================
 
   const chatRef = useRef(null);
   const remoteVideoRef = useRef(null);
+  const guestVideoRef = useRef(null);
   const pendingVideoTrackRef = useRef(null);
 
   const agoraClientRef = useRef(null);
@@ -66,21 +83,23 @@ export default function WatchLive() {
   const liveInfoRef = useRef(null);
 
   const leavingRef = useRef(false);
-
-  // Prevent duplicate ended-session handling.
   const endingRef = useRef(false);
 
-  // Store automatic redirect timer.
   const redirectTimeoutRef = useRef(null);
 
-  // Keep current live information accessible to event handlers.
+  const localAudioTrackRef = useRef(null);
+  const localVideoTrackRef = useRef(null);
+
+  const publishingInteractionRef = useRef(false);
+  const activeInteractionIdRef = useRef(null);
+
   useEffect(() => {
     liveInfoRef.current = liveInfo;
   }, [liveInfo]);
 
-  // =======================================================
+  // =====================================================
   // GRAPHQL: JOIN LIVE
-  // =======================================================
+  // =====================================================
 
   const [joinLive] = useLazyQuery(JOIN_LIVE_STREAM, {
     fetchPolicy: "network-only",
@@ -93,9 +112,37 @@ export default function WatchLive() {
     joinLiveRef.current = joinLive;
   }, [joinLive]);
 
-  // =======================================================
+  // =====================================================
+  // GRAPHQL: INTERACTION
+  // =====================================================
+
+  const [createInteractionRequest] = useMutation(
+    CREATE_LIVE_INTERACTION_REQUEST,
+  );
+
+  const [endInteractionRequest] = useMutation(END_LIVE_INTERACTION);
+
+  const {
+    data: interactionData,
+    loading: interactionQueryLoading,
+    refetch: refetchInteraction,
+  } = useQuery(GET_MY_LIVE_INTERACTION, {
+    variables: {
+      liveStreamId: liveInfo?.id || "",
+    },
+    skip: !liveInfo?.id || streamEnded,
+    fetchPolicy: "network-only",
+    pollInterval: liveInfo?.id && !streamEnded ? 3000 : 0,
+    errorPolicy: "all",
+  });
+
+  const interactionSession = interactionData?.getMyLiveInteraction ?? null;
+
+  const interactionRequest = interactionSession?.request ?? null;
+
+  // =====================================================
   // GRAPHQL: GIFTS
-  // =======================================================
+  // =====================================================
 
   const {
     data: giftData,
@@ -107,9 +154,25 @@ export default function WatchLive() {
     errorPolicy: "all",
   });
 
-  // =======================================================
+  const gifts = giftData?.getLiveGifts ?? [];
+
+  const getGiftImage = (gift) => gift?.icon || gift?.image || "";
+
+  const getGiftPrice = (gift) => Number(gift?.price ?? gift?.amount ?? 0);
+
+  const selectedGift = gifts.find(
+    (gift) => String(gift.id) === String(selectedGiftId),
+  );
+
+  const quantityNumber = giftQuantity === "" ? 0 : Number(giftQuantity);
+
+  const totalGiftCoins = selectedGift
+    ? getGiftPrice(selectedGift) * quantityNumber
+    : 0;
+
+  // =====================================================
   // GRAPHQL: LIVE STATUS
-  // =======================================================
+  // =====================================================
 
   const [getLiveStatus] = useLazyQuery(GET_LIVE_STATUS, {
     fetchPolicy: "network-only",
@@ -121,21 +184,9 @@ export default function WatchLive() {
   const [leaveLiveStream, { loading: leavingLive }] =
     useMutation(LEAVE_LIVE_STREAM);
 
-  const gifts = giftData?.getLiveGifts ?? [];
-
-  const selectedGift = gifts.find(
-    (gift) => String(gift.id) === String(selectedGiftId),
-  );
-
-  const quantityNumber = giftQuantity === "" ? 0 : Number(giftQuantity);
-
-  const totalGiftCoins = selectedGift
-    ? Number(selectedGift.price) * quantityNumber
-    : 0;
-
-  // =======================================================
-  // GRAPHQL: FOLLOW / UNFOLLOW
-  // =======================================================
+  // =====================================================
+  // GRAPHQL: FOLLOW
+  // =====================================================
 
   const astrologerId = liveInfo?.astrologerId;
 
@@ -177,9 +228,9 @@ export default function WatchLive() {
 
   const followActionLoading = followingLoading || unfollowingLoading;
 
-  // =======================================================
+  // =====================================================
   // HELPERS
-  // =======================================================
+  // =====================================================
 
   const isCurrentGeneration = useCallback((generation) => {
     return mountedRef.current && generationRef.current === generation;
@@ -201,9 +252,7 @@ export default function WatchLive() {
     }
 
     if (!live.id) {
-      throw new Error(
-        "Stream database ID is missing from the joinLive response.",
-      );
+      throw new Error("Stream database ID is missing from joinLive response.");
     }
 
     if (
@@ -224,24 +273,329 @@ export default function WatchLive() {
       throw new Error("Required Agora Chat configuration is missing.");
     }
 
-    if (!live.astrologerId) {
-      console.warn(
-        "astrologerId is missing from the joinLive response. Follow functionality will be unavailable.",
-      );
-    }
-
     return true;
   }, []);
 
-  // =======================================================
-  // FOLLOW / UNFOLLOW HANDLER
-  // =======================================================
+  // =====================================================
+  // STOP INTERACTION
+  // =====================================================
+
+  const stopInteractionPublishing = useCallback(async () => {
+    const rtcClient = agoraClientRef.current;
+
+    const audioTrack = localAudioTrackRef.current;
+    const videoTrack = localVideoTrackRef.current;
+
+    const tracks = [audioTrack, videoTrack].filter(Boolean);
+
+    try {
+      if (rtcClient && tracks.length > 0) {
+        try {
+          await rtcClient.unpublish(tracks);
+        } catch (err) {
+          console.warn("Unable to unpublish interaction tracks:", err);
+        }
+      }
+
+      if (audioTrack) {
+        try {
+          audioTrack.stop();
+          audioTrack.close();
+        } catch (err) {
+          console.warn("Audio cleanup error:", err);
+        }
+
+        localAudioTrackRef.current = null;
+      }
+
+      if (videoTrack) {
+        try {
+          videoTrack.stop();
+          videoTrack.close();
+        } catch (err) {
+          console.warn("Video cleanup error:", err);
+        }
+
+        localVideoTrackRef.current = null;
+      }
+
+      if (guestVideoRef.current) {
+        guestVideoRef.current.innerHTML = "";
+      }
+
+      if (rtcClient && !streamEnded) {
+        try {
+          await rtcClient.setClientRole("audience");
+        } catch (err) {
+          console.warn("Unable to switch back to audience:", err);
+        }
+      }
+    } finally {
+      publishingInteractionRef.current = false;
+      activeInteractionIdRef.current = null;
+
+      if (mountedRef.current) {
+        setIsInteractionPublishing(false);
+      }
+    }
+  }, [streamEnded]);
+
+  // =====================================================
+  // START AUDIO / VIDEO PUBLISHING
+  // =====================================================
+
+  const startInteractionPublishing = useCallback(
+    async (session) => {
+      const rtcClient = agoraClientRef.current;
+      const AgoraRTC = agoraRTCRef.current;
+
+      if (!rtcClient || !AgoraRTC || !session) {
+        throw new Error("Agora RTC connection is unavailable.");
+      }
+
+      const request = session.request;
+
+      if (request?.status !== "ACCEPTED") {
+        return;
+      }
+
+      if (
+        activeInteractionIdRef.current === request.id ||
+        publishingInteractionRef.current
+      ) {
+        return;
+      }
+
+      if (!session.rtcToken || !session.channelName || session.uid == null) {
+        throw new Error("Publisher RTC configuration is missing.");
+      }
+
+      if (Number(session.uid) !== Number(liveInfoRef.current?.uid)) {
+        throw new Error(
+          "Interaction UID does not match your live viewer UID. Please reconnect.",
+        );
+      }
+
+      if (session.channelName !== liveInfoRef.current?.channelName) {
+        throw new Error(
+          "Interaction channel does not match the current live stream.",
+        );
+      }
+
+      publishingInteractionRef.current = true;
+
+      try {
+        // Switch audience to host.
+        await rtcClient.setClientRole("host");
+
+        // Renew publisher token.
+        await rtcClient.renewToken(session.rtcToken);
+
+        // Create microphone.
+        const audioTrack = await AgoraRTC.createMicrophoneAudioTrack();
+
+        localAudioTrackRef.current = audioTrack;
+
+        const tracksToPublish = [audioTrack];
+
+        // Create camera only for video calls.
+        if (request.interactionType === "VIDEO") {
+          const videoTrack = await AgoraRTC.createCameraVideoTrack();
+
+          localVideoTrackRef.current = videoTrack;
+
+          tracksToPublish.push(videoTrack);
+
+          if (guestVideoRef.current) {
+            guestVideoRef.current.innerHTML = "";
+            videoTrack.play(guestVideoRef.current);
+          }
+        }
+
+        await rtcClient.publish(tracksToPublish);
+
+        activeInteractionIdRef.current = request.id;
+
+        if (mountedRef.current) {
+          setInteractionType(request.interactionType);
+          setInteractionStatus("ACCEPTED");
+          setInteractionPanelOpen(true);
+          setIsInteractionPublishing(true);
+
+          setInteractionNotice(
+            request.interactionType === "VIDEO"
+              ? "You are connected through video."
+              : "You are connected through audio.",
+          );
+        }
+      } catch (err) {
+        console.error("Unable to start interaction:", err);
+
+        await stopInteractionPublishing();
+
+        throw err;
+      } finally {
+        publishingInteractionRef.current = false;
+      }
+    },
+    [stopInteractionPublishing],
+  );
+
+  // =====================================================
+  // REQUEST AUDIO / VIDEO INTERACTION
+  // =====================================================
+
+  const handleRequestInteraction = async (requestedType = interactionType) => {
+    if (!liveInfo?.id || streamEnded) {
+      return;
+    }
+
+    if (
+      interactionStatus === "PENDING" ||
+      interactionStatus === "ACCEPTED" ||
+      isInteractionPublishing ||
+      interactionLoading
+    ) {
+      return;
+    }
+
+    try {
+      setInteractionLoading(true);
+      setInteractionNotice("");
+      setInteractionType(requestedType);
+      setInteractionPanelOpen(true);
+
+      const response = await createInteractionRequest({
+        variables: {
+          liveStreamId: liveInfo.id,
+          interactionType: requestedType,
+        },
+      });
+
+      const result = response?.data?.createLiveInteractionRequest;
+
+      if (!result?.id) {
+        throw new Error("Unable to create interaction request.");
+      }
+
+      setInteractionStatus(result.status);
+
+      setInteractionNotice(
+        result.status === "PENDING"
+          ? `Your ${requestedType.toLowerCase()} call request has been sent. Waiting for astrologer's approval.`
+          : `Request status: ${result.status}`,
+      );
+
+      await refetchInteraction();
+    } catch (err) {
+      console.error("Interaction request error:", err);
+
+      setInteractionNotice(getErrorMessage(err));
+    } finally {
+      setInteractionLoading(false);
+    }
+  };
+
+  // =====================================================
+  // WATCH INTERACTION STATUS
+  // =====================================================
+
+  useEffect(() => {
+    if (!interactionRequest || streamEnded) {
+      return;
+    }
+
+    const status = interactionRequest.status;
+
+    setInteractionStatus(status);
+
+    if (status === "ACCEPTED") {
+      setInteractionPanelOpen(true);
+
+      if (
+        activeInteractionIdRef.current === interactionRequest.id ||
+        publishingInteractionRef.current
+      ) {
+        return;
+      }
+
+      void startInteractionPublishing(interactionSession).catch((err) => {
+        console.error("Interaction publishing error:", err);
+
+        setInteractionNotice(getErrorMessage(err));
+      });
+
+      return;
+    }
+
+    if (status === "REJECTED" || status === "CANCELLED" || status === "ENDED") {
+      void stopInteractionPublishing();
+
+      const statusMessages = {
+        REJECTED: "The astrologer has rejected your call request.",
+        CANCELLED: "Your call request has been cancelled.",
+        ENDED: "Your interaction with the astrologer has ended.",
+      };
+
+      setInteractionNotice(statusMessages[status] || "");
+    }
+  }, [
+    interactionRequest,
+    interactionSession,
+    streamEnded,
+    startInteractionPublishing,
+    stopInteractionPublishing,
+    getErrorMessage,
+  ]);
+
+  // =====================================================
+  // END INTERACTION
+  // =====================================================
+
+  const handleEndInteraction = async () => {
+    if (!interactionRequest?.id || interactionLoading) {
+      return;
+    }
+
+    try {
+      setInteractionLoading(true);
+      setInteractionNotice("");
+
+      await stopInteractionPublishing();
+
+      const response = await endInteractionRequest({
+        variables: {
+          requestId: interactionRequest.id,
+        },
+      });
+
+      const result = response?.data?.endLiveInteraction;
+
+      if (!result) {
+        throw new Error("Unable to end interaction.");
+      }
+
+      setInteractionStatus(result.status);
+
+      setInteractionNotice("You have left the interaction.");
+
+      await refetchInteraction();
+    } catch (err) {
+      console.error("End interaction error:", err);
+
+      setInteractionNotice(getErrorMessage(err));
+    } finally {
+      setInteractionLoading(false);
+    }
+  };
+
+  // =====================================================
+  // FOLLOW / UNFOLLOW
+  // =====================================================
 
   const handleFollowToggle = async () => {
     if (!astrologerId) {
-      setFollowNotice(
-        "Astrologer information is unavailable. Check the joinLive response.",
-      );
+      setFollowNotice("Astrologer information is unavailable.");
       return;
     }
 
@@ -265,10 +619,7 @@ export default function WatchLive() {
       const result = response?.data?.[resultKey];
 
       if (!result?.success) {
-        throw new Error(
-          result?.message ||
-            `Unable to ${isFollowing ? "unfollow" : "follow"} astrologer.`,
-        );
+        throw new Error(result?.message || "Unable to update follow status.");
       }
 
       setFollowNotice(
@@ -281,13 +632,14 @@ export default function WatchLive() {
       await Promise.all([refetchFollowingStatus(), refetchFollowersCount()]);
     } catch (err) {
       console.error("Follow/unfollow error:", err);
+
       setFollowNotice(getErrorMessage(err));
     }
   };
 
-  // =======================================================
-  // CHAT AUTO-SCROLL
-  // =======================================================
+  // =====================================================
+  // CHAT AUTO SCROLL
+  // =====================================================
 
   useEffect(() => {
     if (chatRef.current) {
@@ -295,14 +647,12 @@ export default function WatchLive() {
     }
   }, [messages]);
 
-  // =======================================================
-  // INCOMING CHAT MESSAGES AND GIFT NOTIFICATIONS
-  // =======================================================
+  // =====================================================
+  // INCOMING CHAT MESSAGES
+  // =====================================================
 
   const handleIncomingTextMessage = useCallback((msg) => {
-    if (!mountedRef.current) {
-      return;
-    }
+    if (!mountedRef.current) return;
 
     const rawMessage = msg?.msg || "";
     const currentLive = liveInfoRef.current;
@@ -315,10 +665,9 @@ export default function WatchLive() {
     try {
       payload = JSON.parse(rawMessage);
     } catch {
-      // Ordinary text message.
+      // Normal text message.
     }
 
-    // Gift notifications sent by the backend through Agora Chat.
     if (payload?.type === "GIFT") {
       const messageId = msg?.id
         ? `gift-${msg.id}`
@@ -347,10 +696,7 @@ export default function WatchLive() {
       return;
     }
 
-    // Do not duplicate ordinary messages sent by the current user.
-    if (isOwnMessage) {
-      return;
-    }
+    if (isOwnMessage) return;
 
     const messageId = msg?.id
       ? `message-${msg.id}`
@@ -374,9 +720,9 @@ export default function WatchLive() {
     });
   }, []);
 
-  // =======================================================
+  // =====================================================
   // DISPOSE AGORA CLIENTS
-  // =======================================================
+  // =====================================================
 
   const disposeLocalClients = useCallback(
     async (chatClient, rtcClient, roomId) => {
@@ -397,7 +743,7 @@ export default function WatchLive() {
           try {
             await chatClient.leaveChatRoom({ roomId });
           } catch (err) {
-            console.warn("Unable to leave Agora Chat room:", err?.message);
+            console.warn("Unable to leave chat room:", err?.message);
           }
         }
 
@@ -411,53 +757,76 @@ export default function WatchLive() {
       if (rtcClient) {
         try {
           rtcClient.removeAllListeners();
-        } catch {
-          // Client may already be closed.
-        }
+        } catch {}
 
         try {
           await rtcClient.leave();
-        } catch {
-          // Client may not have joined yet.
-        }
+        } catch {}
       }
     },
     [],
   );
 
-  // =======================================================
-  // CLEANUP CURRENT CONNECTION
-  // =======================================================
+  // =====================================================
+  // CLEANUP
+  // =====================================================
 
   const cleanup = useCallback(async () => {
-    const chatClient = chatClientRef.current;
-    const rtcClient = agoraClientRef.current;
-    const roomId = chatRoomIdRef.current;
+    const audioTrack = localAudioTrackRef.current;
+    const videoTrack = localVideoTrackRef.current;
 
-    chatClientRef.current = null;
-    agoraClientRef.current = null;
+    if (audioTrack) {
+      try {
+        audioTrack.stop();
+        audioTrack.close();
+      } catch (err) {
+        console.warn(err);
+      }
 
-    agoraRTCRef.current = null;
-    agoraChatRef.current = null;
-
-    chatRoomIdRef.current = null;
-    pendingVideoTrackRef.current = null;
-
-    if (mountedRef.current) {
-      setHostJoined(false);
+      localAudioTrackRef.current = null;
     }
 
+    if (videoTrack) {
+      try {
+        videoTrack.stop();
+        videoTrack.close();
+      } catch (err) {
+        console.warn(err);
+      }
+
+      localVideoTrackRef.current = null;
+    }
+
+    if (guestVideoRef.current) {
+      guestVideoRef.current.innerHTML = "";
+    }
+
+    publishingInteractionRef.current = false;
+    activeInteractionIdRef.current = null;
+
+    if (mountedRef.current) {
+      setIsInteractionPublishing(false);
+    }
+
+    const rtcClient = agoraClientRef.current;
+    const chatClient = chatClientRef.current;
+    const roomId = chatRoomIdRef.current;
+
     await disposeLocalClients(chatClient, rtcClient, roomId);
+
+    pendingVideoTrackRef.current = null;
+
+    if (remoteVideoRef.current) {
+      remoteVideoRef.current.innerHTML = "";
+    }
   }, [disposeLocalClients]);
 
-  // =======================================================
-  // HANDLE AUTOMATIC STREAM END
-  // =======================================================
+  // =====================================================
+  // AUTOMATIC STREAM END
+  // =====================================================
 
   const handleStreamEnded = useCallback(
     async (generation) => {
-      console.log("22222222222222222");
-      // Prevent duplicate execution.
       if (endingRef.current || !isCurrentGeneration(generation)) {
         return;
       }
@@ -465,41 +834,31 @@ export default function WatchLive() {
       endingRef.current = true;
       leavingRef.current = true;
 
-      console.log("Live session ended. Cleaning up viewer connection.");
-
       setStreamEnded(true);
       setHostJoined(false);
       setGiftPanelOpen(false);
+      setInteractionPanelOpen(false);
       setSelectedGiftId("");
       setGiftNotice("");
       setError("");
 
-      // Invalidate existing Agora event handlers.
       generationRef.current++;
-      console.log("333333333333333");
+
       try {
-        // Record that the viewer has left the live stream.
         try {
-          const { data } = await leaveLiveStream({
+          await leaveLiveStream({
             variables: {
               channelName,
             },
           });
-
-          if (data?.leaveLive?.success) {
-            console.log("Viewer leave recorded:", data.leaveLive.message);
-          }
         } catch (err) {
           console.error("Failed to record viewer leaving:", err);
         }
-        console.log("4444444444444");
-        // Clean up Agora RTC and Chat connections.
+
         await cleanup();
       } catch (err) {
-        console.error("Error during ended-stream cleanup:", err);
+        console.error("Ended-stream cleanup error:", err);
       } finally {
-        console.log("55555555555555555");
-        // Redirect only if this component is still mounted.
         if (mountedRef.current) {
           redirectTimeoutRef.current = setTimeout(() => {
             if (mountedRef.current) {
@@ -512,9 +871,9 @@ export default function WatchLive() {
     [channelName, cleanup, isCurrentGeneration, leaveLiveStream, router],
   );
 
-  // =======================================================
+  // =====================================================
   // SUBSCRIBE TO ASTROLOGER VIDEO / AUDIO
-  // =======================================================
+  // =====================================================
 
   const subscribeToUser = useCallback(
     async (user, mediaType, generation) => {
@@ -532,15 +891,13 @@ export default function WatchLive() {
         }
 
         if (mediaType === "video") {
-          if (!user.videoTrack) {
-            console.warn("Astrologer video track is unavailable.");
-            return;
-          }
+          if (!user.videoTrack) return;
 
           pendingVideoTrackRef.current = user.videoTrack;
 
           if (remoteVideoRef.current) {
             remoteVideoRef.current.innerHTML = "";
+
             user.videoTrack.play(remoteVideoRef.current);
 
             setHostJoined(true);
@@ -552,13 +909,14 @@ export default function WatchLive() {
 
         if (mediaType === "audio" && user.audioTrack) {
           user.audioTrack.play();
+          setHostJoined(true);
         }
       } catch (err) {
         console.error(`Agora ${mediaType} subscription failed:`, err);
 
         if (isCurrentGeneration(generation)) {
           setError(
-            `Unable to receive the astrologer's ${mediaType}. Please try reconnecting.`,
+            `Unable to receive astrologer's ${mediaType}. Please reconnect.`,
           );
         }
       }
@@ -566,9 +924,9 @@ export default function WatchLive() {
     [isCurrentGeneration],
   );
 
-  // =======================================================
-  // INITIALIZE LIVE STREAM
-  // =======================================================
+  // =====================================================
+  // INITIALIZE LIVE
+  // =====================================================
 
   const initializeLive = useCallback(
     async (generation) => {
@@ -577,22 +935,22 @@ export default function WatchLive() {
       let localChatRoomId = null;
 
       try {
-        if (!isCurrentGeneration(generation)) {
-          return;
-        }
+        if (!isCurrentGeneration(generation)) return;
 
-        // Reset state when connecting or retrying.
         endingRef.current = false;
         leavingRef.current = false;
+
         setStreamEnded(false);
         setGiftPanelOpen(false);
-
+        setInteractionPanelOpen(false);
         setLoading(true);
         setError("");
         setHostJoined(false);
         setLiveInfo(null);
         setMessages([]);
         setFollowNotice("");
+        setInteractionNotice("");
+        setInteractionStatus(null);
 
         liveInfoRef.current = null;
 
@@ -603,9 +961,7 @@ export default function WatchLive() {
         const [{ default: AgoraRTC }, { default: AgoraChat }] =
           await Promise.all([import("agora-rtc-sdk-ng"), import("agora-chat")]);
 
-        if (!isCurrentGeneration(generation)) {
-          return;
-        }
+        if (!isCurrentGeneration(generation)) return;
 
         agoraRTCRef.current = AgoraRTC;
         agoraChatRef.current = AgoraChat;
@@ -616,9 +972,7 @@ export default function WatchLive() {
           },
         });
 
-        if (!isCurrentGeneration(generation)) {
-          return;
-        }
+        if (!isCurrentGeneration(generation)) return;
 
         const live = response?.data?.joinLive;
 
@@ -630,7 +984,7 @@ export default function WatchLive() {
         localChatRoomId = live.chatRoomId;
         chatRoomIdRef.current = live.chatRoomId;
 
-        // Initialize RTC client.
+        // Create RTC client.
         const rtcClient = AgoraRTC.createClient({
           mode: "live",
           codec: "vp8",
@@ -648,9 +1002,7 @@ export default function WatchLive() {
         });
 
         rtcClient.on("user-unpublished", (user, mediaType) => {
-          if (!isCurrentGeneration(generation)) {
-            return;
-          }
+          if (!isCurrentGeneration(generation)) return;
 
           if (mediaType === "video") {
             setHostJoined(false);
@@ -658,17 +1010,11 @@ export default function WatchLive() {
           }
         });
 
-        // =================================================
-        // IMPORTANT: CHECK BACKEND STATUS WHEN USER LEAVES
-        // =================================================
-
+        // Astrologer leaves.
         rtcClient.on("user-left", async (user, reason) => {
-          console.log("---------user---",user,reason);
-          if (!isCurrentGeneration(generation)) {
-            return;
-          }
-
           console.log("Agora user left:", user?.uid, reason);
+
+          if (!isCurrentGeneration(generation)) return;
 
           setHostJoined(false);
           pendingVideoTrackRef.current = null;
@@ -676,19 +1022,11 @@ export default function WatchLive() {
           try {
             const chatRoomId = chatRoomIdRef.current;
 
-            if (!chatRoomId) {
-              console.warn("Chat room ID not available.");
-              return;
-            }
-
-            // Wait 5 seconds for the backend to update the live status
-            console.log("Waiting 5 seconds before checking live status...");
+            if (!chatRoomId) return;
 
             await new Promise((resolve) => setTimeout(resolve, 5000));
 
-            if (!isCurrentGeneration(generation)) {
-              return;
-            }
+            if (!isCurrentGeneration(generation)) return;
 
             const { data, errors } = await getLiveStatus({
               variables: {
@@ -696,39 +1034,23 @@ export default function WatchLive() {
               },
             });
 
-            if (!isCurrentGeneration(generation)) {
-              return;
-            }
+            if (!isCurrentGeneration(generation)) return;
 
             if (errors?.length) {
-              console.error("Live status GraphQL errors:", errors);
+              console.error(errors);
               return;
             }
 
             const statusResponse = data?.getLiveStatus;
 
-            if (!statusResponse?.success) {
-              console.warn(
-                "Unable to fetch live status:",
-                statusResponse?.message,
-              );
-              return;
-            }
+            if (!statusResponse?.success) return;
 
             const status = statusResponse.data?.status;
 
-            console.log("Current live status:", status);
-
             if (status === "ENDED") {
-              console.log("Live stream has ended.");
-
               await handleStreamEnded(generation);
             } else if (status === "LIVE") {
-              console.log(
-                "Live session is still active. Host may have temporarily disconnected.",
-              );
-            } else {
-              console.warn("Unknown live stream status:", status);
+              console.log("Live session is still active.");
             }
           } catch (err) {
             console.error("Error checking live status:", err);
@@ -773,7 +1095,7 @@ export default function WatchLive() {
           return;
         }
 
-        // Initialize Agora Chat client.
+        // Agora Chat.
         const chatClient = new AgoraChat.connection({
           appKey: live.chatAppKey,
         });
@@ -824,11 +1146,9 @@ export default function WatchLive() {
           return;
         }
 
-        // Subscribe to already-published tracks.
+        // Subscribe to existing host tracks.
         for (const user of rtcClient.remoteUsers) {
-          if (!isCurrentGeneration(generation)) {
-            break;
-          }
+          if (!isCurrentGeneration(generation)) break;
 
           if (user.hasVideo) {
             await subscribeToUser(user, "video", generation);
@@ -874,9 +1194,9 @@ export default function WatchLive() {
     ],
   );
 
-  // =======================================================
-  // LIVE STREAM LIFECYCLE
-  // =======================================================
+  // =====================================================
+  // LIVE LIFECYCLE
+  // =====================================================
 
   useEffect(() => {
     mountedRef.current = true;
@@ -899,7 +1219,6 @@ export default function WatchLive() {
       mountedRef.current = false;
       generationRef.current++;
 
-      // Cancel pending automatic redirect.
       if (redirectTimeoutRef.current) {
         clearTimeout(redirectTimeoutRef.current);
         redirectTimeoutRef.current = null;
@@ -909,9 +1228,9 @@ export default function WatchLive() {
     };
   }, [channelName, initializeLive, cleanup]);
 
-  // =======================================================
-  // PLAY VIDEO WHEN THE CONTAINER IS READY
-  // =======================================================
+  // =====================================================
+  // PLAY PENDING VIDEO
+  // =====================================================
 
   useEffect(() => {
     if (
@@ -937,9 +1256,9 @@ export default function WatchLive() {
     }
   }, [loading, liveInfo]);
 
-  // =======================================================
+  // =====================================================
   // SEND CHAT MESSAGE
-  // =======================================================
+  // =====================================================
 
   const sendMessage = async () => {
     const trimmedMessage = message.trim();
@@ -985,19 +1304,15 @@ export default function WatchLive() {
     }
   };
 
-  // =======================================================
+  // =====================================================
   // SEND GIFT
-  // =======================================================
+  // =====================================================
 
   const handleSendGift = async () => {
-    if (streamEnded) {
-      return;
-    }
+    if (streamEnded) return;
 
     if (!liveInfo?.id) {
-      setGiftNotice(
-        "Stream database ID is missing from the joinLive response.",
-      );
+      setGiftNotice("Stream database ID is missing.");
       return;
     }
 
@@ -1013,9 +1328,7 @@ export default function WatchLive() {
       return;
     }
 
-    if (sendingGift) {
-      return;
-    }
+    if (sendingGift) return;
 
     try {
       setSendingGift(true);
@@ -1055,22 +1368,18 @@ export default function WatchLive() {
       setSelectedGiftId("");
       setGiftQuantity(1);
 
-      try {
-        await refetchGifts();
-      } catch (refreshError) {
-        console.warn("Unable to refresh gifts:", refreshError);
-      }
+      await refetchGifts();
     } catch (err) {
-      console.error("Send live gift error:", err);
+      console.error("Send gift error:", err);
       setGiftNotice(getErrorMessage(err));
     } finally {
       setSendingGift(false);
     }
   };
 
-  // =======================================================
-  // MANUAL LEAVE LIVE STREAM
-  // =======================================================
+  // =====================================================
+  // LEAVE LIVE
+  // =====================================================
 
   const handleLeaveLive = async () => {
     if (leavingRef.current || leavingLive || streamEnded) {
@@ -1080,33 +1389,39 @@ export default function WatchLive() {
     leavingRef.current = true;
 
     try {
-      const { data } = await leaveLiveStream({
+      if (interactionRequest?.id) {
+        try {
+          await stopInteractionPublishing();
+
+          await endInteractionRequest({
+            variables: {
+              requestId: interactionRequest.id,
+            },
+          });
+        } catch (err) {
+          console.warn("Unable to end interaction:", err);
+        }
+      }
+
+      await leaveLiveStream({
         variables: {
           channelName,
         },
       });
-
-      if (data?.leaveLive?.success) {
-        console.log(data.leaveLive.message);
-      }
     } catch (err) {
-      console.error("Failed to leave live API:", err);
+      console.error("Failed to leave live:", err);
     } finally {
       generationRef.current++;
 
-      try {
-        await cleanup();
-      } catch (err) {
-        console.error("Agora cleanup error:", err);
-      }
+      await cleanup();
 
       router.push("/astrologer/liveStream");
     }
   };
 
-  // =======================================================
-  // GIFT QUANTITY HELPERS
-  // =======================================================
+  // =====================================================
+  // GIFT QUANTITY
+  // =====================================================
 
   const decreaseGiftQuantity = () => {
     setGiftQuantity((previous) => {
@@ -1126,9 +1441,9 @@ export default function WatchLive() {
     setGiftNotice("");
   };
 
-  // =======================================================
+  // =====================================================
   // UI DATA
-  // =======================================================
+  // =====================================================
 
   const astrologerName =
     liveInfo?.astrologer?.displayName ||
@@ -1139,16 +1454,27 @@ export default function WatchLive() {
   const astrologerProfilePic =
     liveInfo?.astrologer?.profilePic || liveInfo?.profilePic || "";
 
-  // =======================================================
-  // UI
-  // =======================================================
+  const canRequestInteraction =
+    !streamEnded &&
+    interactionStatus !== "PENDING" &&
+    interactionStatus !== "ACCEPTED" &&
+    !isInteractionPublishing &&
+    !interactionLoading;
+
+  // =====================================================
+  // MAIN UI
+  // =====================================================
 
   return (
-    <div className="relative flex min-h-[70vh] w-full flex-col bg-gradient-to-b from-gray-950 to-black text-white lg:flex-row">
-      {/* VIDEO PANEL */}
+    <div className="relative flex min-h-[70vh] w-full flex-col bg-black text-white lg:flex-row">
+      {/* ============================================
+          VIDEO SECTION
+      ============================================ */}
+
       <div className="flex min-w-0 flex-1 flex-col">
-        {/* Header */}
-        <div className="sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-gray-800 bg-black/80 px-4 py-3 backdrop-blur">
+        {/* HEADER */}
+
+        <div className="sticky top-0 z-20 flex items-center justify-between border-b border-gray-800 bg-black/90 px-4 py-3 backdrop-blur">
           <div className="flex items-center gap-3">
             <span className="animate-pulse rounded-full bg-red-600 px-3 py-1 text-sm font-semibold">
               🔴 LIVE
@@ -1156,21 +1482,23 @@ export default function WatchLive() {
 
             <div>
               <h2 className="text-lg font-semibold">Live Session</h2>
+
               <p className="text-xs text-gray-400">Watch astrologer live</p>
             </div>
           </div>
 
-          <span className="rounded-full bg-gray-800 px-3 py-1 text-sm">
+          <span className="rounded-full bg-gray-800 px-3 py-1 text-xs">
             {hostJoined ? "● Connected" : loading ? "Connecting..." : "Waiting"}
           </span>
         </div>
 
-        <div className="flex flex-col p-3 sm:p-4">
-          {/* Loading */}
+        <div className="flex flex-col p-2 sm:p-4">
+          {/* LOADING */}
+
           {loading && (
             <div className="flex min-h-[400px] items-center justify-center">
               <div className="text-center">
-                <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-red-500 border-t-transparent" />
+                <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-yellow-500 border-t-transparent" />
 
                 <p className="text-lg">Connecting to live stream...</p>
 
@@ -1181,9 +1509,10 @@ export default function WatchLive() {
             </div>
           )}
 
-          {/* Error */}
+          {/* ERROR */}
+
           {error && !loading && (
-            <div className="mb-4 rounded-xl bg-red-600 px-5 py-4 shadow-lg">
+            <div className="mb-4 rounded-xl bg-red-600 p-4">
               <p>{error}</p>
 
               {!liveInfo && (
@@ -1205,7 +1534,8 @@ export default function WatchLive() {
             </div>
           )}
 
-          {/* Connected stream */}
+          {/* LIVE VIDEO */}
+
           {!loading && liveInfo && (
             <>
               {!hostJoined && (
@@ -1214,46 +1544,18 @@ export default function WatchLive() {
                 </div>
               )}
 
-              <div className="relative isolate h-[65vh] min-h-[450px] w-full overflow-hidden rounded-2xl bg-black sm:h-[75vh]">
-                {/* Agora remote video */}
+              <div className="relative isolate h-[65vh] min-h-[450px] w-full overflow-hidden rounded-xl bg-black sm:h-[75vh]">
+                {/* REMOTE VIDEO */}
+
                 <div
                   ref={remoteVideoRef}
                   id="remote-video"
                   className="absolute inset-0 z-0 h-full w-full bg-black"
                 />
 
-                {/* Leave button */}
-                <button
-                  type="button"
-                  onClick={handleLeaveLive}
-                  disabled={leavingLive}
-                  aria-label="Leave live stream"
-                  title={leavingLive ? "Leaving live..." : "Leave live stream"}
-                  className="absolute right-3 top-3 z-50 flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/70 text-white shadow-lg backdrop-blur transition duration-200 hover:scale-105 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400 disabled:cursor-not-allowed disabled:opacity-60 sm:right-4 sm:top-4 sm:h-11 sm:w-11"
-                >
-                  {leavingLive ? (
-                    <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-                  ) : (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={2.5}
-                      className="h-6 w-6"
-                      aria-hidden="true"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M6 6l12 12M18 6L6 18"
-                      />
-                    </svg>
-                  )}
-                </button>
+                {/* ASTROLOGER HEADER */}
 
-                {/* Stream header overlay */}
-                <div className="absolute left-0 right-0 top-0 z-10 flex flex-wrap items-start justify-between gap-3 bg-gradient-to-b from-black/90 to-transparent p-3 pr-16 sm:p-4 sm:pr-20">
+                <div className="absolute left-0 right-0 top-0 z-20 flex flex-wrap items-start justify-between gap-3 bg-gradient-to-b from-black/90 to-transparent p-3 pr-14 sm:p-4 sm:pr-16">
                   <div className="flex min-w-0 items-center gap-3">
                     {astrologerProfilePic ? (
                       <img
@@ -1275,34 +1577,22 @@ export default function WatchLive() {
                       <p className="text-xs text-gray-300">Live Consultation</p>
 
                       <div className="mt-2 flex flex-wrap items-center gap-3 text-sm">
-                        <span
-                          className="inline-flex items-center gap-1"
-                          title="Total views"
-                        >
-                          👁️
-                          <strong>
-                            {Number(liveInfo.totalViews ?? 0).toLocaleString(
-                              "en-IN",
-                            )}
-                          </strong>
-                          <span className="text-gray-300">views</span>
+                        <span>
+                          👁️{" "}
+                          {Number(liveInfo.totalViews ?? 0).toLocaleString(
+                            "en-IN",
+                          )}{" "}
+                          views
                         </span>
 
-                        <span
-                          className="inline-flex items-center gap-1"
-                          title="Total followers"
-                        >
-                          👥
-                          <strong>
-                            {Number(totalFollowers).toLocaleString("en-IN")}
-                          </strong>
-                          <span className="text-gray-300">followers</span>
+                        <span>
+                          👥 {Number(totalFollowers).toLocaleString("en-IN")}{" "}
+                          followers
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Follow button */}
                   <div className="flex flex-col items-end gap-2">
                     <span className="animate-pulse rounded-full bg-red-600 px-3 py-1 text-sm font-medium">
                       🔴 LIVE
@@ -1316,10 +1606,10 @@ export default function WatchLive() {
                         followingStatusLoading ||
                         followActionLoading
                       }
-                      className={`rounded-full px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                      className={`rounded-full px-4 py-2 text-sm font-semibold disabled:opacity-50 ${
                         isFollowing
-                          ? "border border-gray-500 bg-gray-800 text-white hover:bg-gray-700"
-                          : "bg-yellow-500 text-black hover:bg-yellow-400"
+                          ? "border border-gray-500 bg-gray-800 text-white"
+                          : "bg-yellow-500 text-black"
                       }`}
                     >
                       {followActionLoading
@@ -1333,75 +1623,249 @@ export default function WatchLive() {
                   </div>
 
                   {followNotice && (
-                    <p
-                      role="status"
-                      aria-live="polite"
-                      className="w-full break-words text-sm text-yellow-300"
-                    >
+                    <p className="w-full text-sm text-yellow-300">
                       {followNotice}
                     </p>
                   )}
                 </div>
 
-                {/* Gift panel */}
+                {/* USER CAMERA PREVIEW */}
+
+                {/* USER CAMERA PREVIEW */}
+
+                <div
+                  className={`absolute right-4 top-28 z-30 h-36 w-28 overflow-hidden rounded-xl border-2 border-yellow-400 bg-black shadow-xl sm:h-44 sm:w-36 ${
+                    isInteractionPublishing && interactionType === "VIDEO"
+                      ? "block"
+                      : "hidden"
+                  }`}
+                >
+                  <div ref={guestVideoRef} className="h-full w-full" />
+
+                  <span className="absolute bottom-1 left-1 rounded bg-black/70 px-2 py-1 text-xs">
+                    You
+                  </span>
+                </div>
+
+                {/* ==================================
+                    CALL REQUEST MODAL
+                ================================== */}
+
+                {interactionPanelOpen && (
+                  <div className="absolute inset-0 z-[60] flex items-center justify-center bg-black/65 p-3 backdrop-blur-sm sm:p-5">
+                    <div className="w-full max-w-md overflow-hidden rounded-2xl border border-gray-700 bg-gray-950 shadow-2xl">
+                      {/* MODAL HEADER */}
+
+                      <div className="flex items-center justify-between border-b border-gray-800 p-4">
+                        <div>
+                          <h3 className="text-lg font-bold">
+                            {isInteractionPublishing
+                              ? "Call Connected"
+                              : interactionStatus === "PENDING"
+                                ? "Waiting for Astrologer"
+                                : "Live Consultation"}
+                          </h3>
+
+                          <p className="mt-1 text-xs text-gray-400">
+                            {astrologerName}
+                          </p>
+                        </div>
+
+                        {!isInteractionPublishing &&
+                          interactionStatus !== "PENDING" && (
+                            <button
+                              type="button"
+                              onClick={() => setInteractionPanelOpen(false)}
+                              className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-800 hover:bg-red-600"
+                            >
+                              ✕
+                            </button>
+                          )}
+                      </div>
+
+                      <div className="p-5">
+                        {/* CALL ICON */}
+
+                        <div className="mb-5 flex justify-center">
+                          <div className="flex h-20 w-20 items-center justify-center rounded-full border border-yellow-500/30 bg-yellow-500/10 text-4xl">
+                            {interactionType === "AUDIO" ? "🎙️" : "📹"}
+                          </div>
+                        </div>
+
+                        {/* PENDING */}
+
+                        {interactionStatus === "PENDING" &&
+                          !isInteractionPublishing && (
+                            <div className="text-center">
+                              <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-yellow-500 border-t-transparent" />
+
+                              <h4 className="text-lg font-semibold text-yellow-400">
+                                Request Sent
+                              </h4>
+
+                              <p className="mt-2 text-sm text-gray-400">
+                                Waiting for {astrologerName} to accept your{" "}
+                                {interactionType.toLowerCase()} call.
+                              </p>
+
+                              <p className="mt-4 text-xs text-gray-500">
+                                Please keep watching the live session.
+                              </p>
+
+                              <button
+                                type="button"
+                                onClick={handleEndInteraction}
+                                disabled={interactionLoading}
+                                className="mt-5 w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-sm font-semibold hover:bg-gray-700 disabled:opacity-50"
+                              >
+                                {interactionLoading
+                                  ? "Cancelling..."
+                                  : "Cancel Request"}
+                              </button>
+                            </div>
+                          )}
+
+                        {/* ACTIVE CALL */}
+
+                        {isInteractionPublishing && (
+                          <div className="text-center">
+                            <div className="mb-3 text-xl font-bold text-green-400">
+                              ✓ Connected Successfully
+                            </div>
+
+                            <p className="text-sm text-gray-300">
+                              Your {interactionType.toLowerCase()} call with{" "}
+                              {astrologerName} is active.
+                            </p>
+
+                            {interactionType === "VIDEO" ? (
+                              <p className="mt-2 text-xs text-gray-400">
+                                Your camera and microphone are connected.
+                              </p>
+                            ) : (
+                              <p className="mt-2 text-xs text-gray-400">
+                                Your microphone is connected.
+                              </p>
+                            )}
+
+                            <button
+                              type="button"
+                              onClick={handleEndInteraction}
+                              disabled={interactionLoading}
+                              className="mt-6 w-full rounded-xl bg-red-600 px-5 py-3 font-bold text-white hover:bg-red-700 disabled:opacity-50"
+                            >
+                              {interactionLoading
+                                ? "Ending Call..."
+                                : "📞 End Call"}
+                            </button>
+                          </div>
+                        )}
+
+                        {/* NEW REQUEST */}
+
+                        {!isInteractionPublishing &&
+                          interactionStatus !== "PENDING" && (
+                            <div className="text-center">
+                              {interactionNotice && (
+                                <p className="mb-4 text-sm text-yellow-300">
+                                  {interactionNotice}
+                                </p>
+                              )}
+
+                              <p className="mb-5 text-sm text-gray-400">
+                                Request an audio or video consultation with the
+                                astrologer.
+                              </p>
+
+                              <div className="grid grid-cols-2 gap-3">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleRequestInteraction("AUDIO")
+                                  }
+                                  disabled={!canRequestInteraction}
+                                  className="rounded-xl border border-yellow-500/40 bg-yellow-500/10 p-4 text-yellow-300 transition hover:bg-yellow-500/20 disabled:opacity-50"
+                                >
+                                  <span className="block text-3xl">🎙️</span>
+
+                                  <span className="mt-2 block font-semibold">
+                                    Audio Call
+                                  </span>
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleRequestInteraction("VIDEO")
+                                  }
+                                  disabled={!canRequestInteraction}
+                                  className="rounded-xl border border-blue-500/40 bg-blue-500/10 p-4 text-blue-300 transition hover:bg-blue-500/20 disabled:opacity-50"
+                                >
+                                  <span className="block text-3xl">📹</span>
+
+                                  <span className="mt-2 block font-semibold">
+                                    Video Call
+                                  </span>
+                                </button>
+                              </div>
+
+                              {interactionLoading && (
+                                <p className="mt-4 text-sm text-yellow-400">
+                                  Sending request...
+                                </p>
+                              )}
+                            </div>
+                          )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* ==================================
+                    GIFT PANEL
+                ================================== */}
+
                 {giftPanelOpen && (
                   <div
                     role="dialog"
-                    aria-modal="false"
                     aria-label="Send a gift"
-                    className="absolute bottom-[76px] right-3 z-40 max-h-[65%] w-[calc(100%-24px)] max-w-[360px] overflow-y-auto rounded-2xl border border-white/10 bg-gray-950/95 p-4 shadow-2xl backdrop-blur-md sm:bottom-[88px] sm:right-4"
+                    className="absolute bottom-20 right-3 z-50 max-h-[65%] w-[calc(100%-24px)] max-w-[360px] overflow-y-auto rounded-2xl border border-white/10 bg-gray-950/95 p-4 shadow-2xl backdrop-blur-md"
                   >
-                    <div className="mb-4 flex items-center justify-between gap-3 border-b border-gray-800 pb-3">
+                    <div className="mb-4 flex items-center justify-between border-b border-gray-800 pb-3">
                       <div>
                         <h3 className="text-lg font-bold">🎁 Send a Gift</h3>
 
                         <p className="mt-1 text-xs text-gray-400">
-                          Choose a gift to support the astrologer.
+                          Support the astrologer.
                         </p>
                       </div>
 
                       <button
                         type="button"
                         onClick={() => setGiftPanelOpen(false)}
-                        aria-label="Close gift panel"
-                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-800 text-gray-300 transition hover:bg-gray-700 hover:text-white"
+                        className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-800"
                       >
                         ✕
                       </button>
                     </div>
 
                     {giftsLoading && gifts.length === 0 && (
-                      <div className="flex items-center justify-center gap-3 py-8">
-                        <span className="h-5 w-5 animate-spin rounded-full border-2 border-yellow-400 border-t-transparent" />
-
-                        <p className="text-sm text-gray-300">
-                          Loading gifts...
-                        </p>
-                      </div>
+                      <p className="py-6 text-center text-sm text-gray-300">
+                        Loading gifts...
+                      </p>
                     )}
 
                     {giftsError && gifts.length === 0 && (
-                      <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3">
-                        <p className="text-sm text-red-300">
-                          Unable to load gifts.
-                        </p>
-
+                      <div className="text-sm text-red-300">
+                        Unable to load gifts.
                         <button
                           type="button"
-                          onClick={() => {
-                            void refetchGifts();
-                          }}
-                          className="mt-2 text-sm font-semibold text-yellow-400 hover:text-yellow-300"
+                          onClick={() => void refetchGifts()}
+                          className="ml-2 text-yellow-400"
                         >
                           Try again
                         </button>
                       </div>
-                    )}
-
-                    {!giftsLoading && !giftsError && gifts.length === 0 && (
-                      <p className="py-6 text-center text-sm text-gray-400">
-                        No gifts are available right now.
-                      </p>
                     )}
 
                     {gifts.length > 0 && (
@@ -1411,6 +1875,14 @@ export default function WatchLive() {
                             const isSelected =
                               String(selectedGiftId) === String(gift.id);
 
+                            const image = getGiftImage(gift);
+
+                            const imageUrl = image
+                              ? image.startsWith("http")
+                                ? image
+                                : `${process.env.NEXT_PUBLIC_BASE_URL}${image}`
+                              : "";
+
                             return (
                               <button
                                 type="button"
@@ -1419,34 +1891,28 @@ export default function WatchLive() {
                                   setSelectedGiftId(gift.id);
                                   setGiftNotice("");
                                 }}
-                                aria-pressed={isSelected}
-                                className={`relative flex min-h-[105px] flex-col items-center justify-center rounded-xl border p-2 text-center transition duration-200 hover:-translate-y-0.5 ${
+                                className={`relative flex min-h-[105px] flex-col items-center justify-center rounded-xl border p-2 text-center ${
                                   isSelected
                                     ? "border-yellow-400 bg-yellow-500/20 ring-2 ring-yellow-400/40"
-                                    : "border-gray-700 bg-gray-900 hover:border-yellow-500/60 hover:bg-gray-800"
+                                    : "border-gray-700 bg-gray-900"
                                 }`}
                               >
-                                {isSelected && (
-                                  <span className="absolute right-1 top-1 text-xs text-yellow-400">
-                                    ✓
-                                  </span>
-                                )}
-
-                                <span className="text-3xl">
+                                {imageUrl ? (
                                   <img
-                                    src={`${process.env.NEXT_PUBLIC_BASE_URL}${gift.icon}`}
+                                    src={imageUrl}
                                     alt={gift.name}
                                     className="h-10 w-10 object-contain"
                                   />
-                                </span>
+                                ) : (
+                                  <span className="text-3xl">🎁</span>
+                                )}
 
-                                <span className="mt-2 line-clamp-2 break-words text-xs font-semibold text-white">
+                                <span className="mt-2 text-xs font-semibold">
                                   {gift.name}
                                 </span>
 
-                                <span className="mt-1 text-xs font-medium text-yellow-400">
-                                  {Number(gift.price).toLocaleString("en-IN")}{" "}
-                                  coins
+                                <span className="mt-1 text-xs text-yellow-400">
+                                  {getGiftPrice(gift)} coins
                                 </span>
                               </button>
                             );
@@ -1455,37 +1921,13 @@ export default function WatchLive() {
 
                         {selectedGift && (
                           <div className="mt-4 rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-3">
-                            <div className="flex items-center gap-3">
-                              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-black/30 text-3xl">
-                                <span>
-                                   <img
-                                    src={
-                                      selectedGift.icon?.startsWith("http")
-                                        ? selectedGift.icon
-                                        : `${process.env.NEXT_PUBLIC_BASE_URL}${selectedGift.icon}`
-                                    }
-                                    alt={selectedGift.name}
-                                    className="h-10 w-10 object-contain"
-                                  />
-                                </span>
-                              </div>
+                            <p className="font-semibold">{selectedGift.name}</p>
 
-                              <div className="min-w-0 flex-1">
-                                <p className="truncate font-semibold">
-                                  {selectedGift.name}
-                                </p>
+                            <p className="text-sm text-yellow-400">
+                              {getGiftPrice(selectedGift)} coins each
+                            </p>
 
-                                <p className="text-sm text-yellow-400">
-                                  {Number(selectedGift.price).toLocaleString(
-                                    "en-IN",
-                                  )}{" "}
-                                  coins each
-                                </p>
-                              </div>
-                            </div>
-
-                            {/* Quantity controls */}
-                            <div className="mt-4 flex items-center justify-between gap-3">
+                            <div className="mt-4 flex items-center justify-between">
                               <span className="text-sm text-gray-300">
                                 Quantity
                               </span>
@@ -1495,31 +1937,26 @@ export default function WatchLive() {
                                   type="button"
                                   onClick={decreaseGiftQuantity}
                                   disabled={sendingGift || quantityNumber <= 1}
-                                  aria-label="Decrease quantity"
-                                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-700 bg-gray-800 text-lg font-bold hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-40"
+                                  className="h-9 w-9 rounded-lg bg-gray-800 text-lg disabled:opacity-40"
                                 >
                                   −
                                 </button>
 
                                 <input
-                                  id="gift-quantity"
                                   type="number"
                                   min="1"
                                   max="100"
-                                  step="1"
                                   value={giftQuantity}
                                   disabled={sendingGift}
                                   onChange={(event) => {
-                                    const rawValue = event.target.value;
+                                    const raw = event.target.value;
 
-                                    setGiftNotice("");
-
-                                    if (rawValue === "") {
+                                    if (raw === "") {
                                       setGiftQuantity("");
                                       return;
                                     }
 
-                                    const value = Number(rawValue);
+                                    const value = Number(raw);
 
                                     if (
                                       Number.isInteger(value) &&
@@ -1540,8 +1977,7 @@ export default function WatchLive() {
                                       setGiftQuantity(1);
                                     }
                                   }}
-                                  aria-label="Gift quantity"
-                                  className="w-14 rounded-lg border border-gray-700 bg-gray-900 p-2 text-center text-white outline-none focus:border-yellow-400"
+                                  className="w-14 rounded-lg border border-gray-700 bg-gray-900 p-2 text-center"
                                 />
 
                                 <button
@@ -1550,38 +1986,27 @@ export default function WatchLive() {
                                   disabled={
                                     sendingGift || quantityNumber >= 100
                                   }
-                                  aria-label="Increase quantity"
-                                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-700 bg-gray-800 text-lg font-bold hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-40"
+                                  className="h-9 w-9 rounded-lg bg-gray-800 text-lg disabled:opacity-40"
                                 >
                                   +
                                 </button>
                               </div>
                             </div>
 
-                            {/* Total coins */}
-                            <div className="mt-4 flex items-center justify-between border-t border-yellow-500/20 pt-3">
+                            <div className="mt-4 flex justify-between border-t border-yellow-500/20 pt-3">
                               <span className="text-sm text-gray-300">
-                                Total cost
+                                Total
                               </span>
 
-                              <span className="text-lg font-bold text-yellow-400">
-                                {Number(totalGiftCoins).toLocaleString("en-IN")}{" "}
-                                coins
+                              <span className="font-bold text-yellow-400">
+                                {totalGiftCoins.toLocaleString("en-IN")} coins
                               </span>
                             </div>
                           </div>
                         )}
 
                         {giftNotice && (
-                          <div
-                            role="status"
-                            aria-live="polite"
-                            className={`mt-3 break-words rounded-lg border p-3 text-sm ${
-                              giftNotice.startsWith("Successfully sent")
-                                ? "border-green-500/30 bg-green-500/10 text-green-300"
-                                : "border-red-500/30 bg-red-500/10 text-red-300"
-                            }`}
-                          >
+                          <div className="mt-3 rounded-lg bg-gray-900 p-3 text-sm text-yellow-300">
                             {giftNotice}
                           </div>
                         )}
@@ -1596,94 +2021,130 @@ export default function WatchLive() {
                             quantityNumber < 1 ||
                             quantityNumber > 100
                           }
-                          className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-400 px-4 py-3 font-bold text-black shadow-lg transition hover:from-yellow-400 hover:to-amber-300 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="mt-4 w-full rounded-xl bg-gradient-to-r from-yellow-500 to-amber-400 px-4 py-3 font-bold text-black disabled:opacity-50"
                         >
-                          {sendingGift ? (
-                            <>
-                              <span className="h-5 w-5 animate-spin rounded-full border-2 border-black/30 border-t-black" />
-                              Sending gift...
-                            </>
-                          ) : (
-                            <>
-                              🎁 Send Gift
-                              {selectedGift
-                                ? ` · ${Number(totalGiftCoins).toLocaleString(
-                                    "en-IN",
-                                  )} coins`
-                                : ""}
-                            </>
-                          )}
+                          {sendingGift
+                            ? "Sending Gift..."
+                            : `🎁 Send Gift${selectedGift ? ` · ${totalGiftCoins} coins` : ""}`}
                         </button>
 
                         <p className="mt-2 text-center text-xs text-gray-500">
-                          Your wallet will be charged when the gift is sent
-                          successfully.
+                          Your wallet will be charged after successful gifting.
                         </p>
                       </>
                     )}
                   </div>
                 )}
 
-                {/* Bottom controls */}
-                <div className="absolute bottom-0 left-0 right-0 z-20 flex items-center justify-between gap-3 bg-gradient-to-t from-black via-black/90 to-transparent px-4 pb-4 pt-10">
-                  <div className="flex items-center gap-2 text-sm text-gray-300">
-                    <span className="h-2 w-2 animate-pulse rounded-full bg-red-500" />
+                {/* ==================================
+                    BOTTOM CONTROLS
+                ================================== */}
 
-                    <span>
-                      {hostJoined ? "Live now" : "Connecting to stream"}
-                    </span>
-                  </div>
+                <div className="absolute bottom-0 left-0 right-0 z-30 bg-gradient-to-t from-black via-black/90 to-transparent px-3 pb-4 pt-12 sm:px-5">
+                  <div className="flex items-center justify-between gap-2">
+                    {/* LIVE STATUS */}
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setGiftPanelOpen((open) => !open);
-                      setGiftNotice("");
-                    }}
-                    aria-label={
-                      giftPanelOpen ? "Close gift panel" : "Open gift panel"
-                    }
-                    aria-expanded={giftPanelOpen}
-                    className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full border shadow-lg transition duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-yellow-400 ${
-                      giftPanelOpen
-                        ? "border-white/20 bg-gray-800 text-white"
-                        : "border-yellow-300 bg-yellow-500 text-2xl text-black hover:bg-yellow-400"
-                    }`}
-                  >
-                    {giftPanelOpen ? (
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth={2.5}
-                        className="h-6 w-6"
-                        aria-hidden="true"
+                    <div className="hidden items-center gap-2 text-sm text-gray-300 sm:flex">
+                      <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-red-500" />
+
+                      {hostJoined ? "Live now" : "Connecting..."}
+                    </div>
+
+                    {/* AUDIO / VIDEO / GIFT */}
+
+                    <div className="flex flex-1 items-center justify-center gap-2 sm:gap-4">
+                      {/* AUDIO CALL */}
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setInteractionType("AUDIO");
+                          setInteractionPanelOpen(true);
+                          setInteractionNotice("");
+                        }}
+                        disabled={
+                          streamEnded ||
+                          interactionStatus === "PENDING" ||
+                          interactionStatus === "ACCEPTED" ||
+                          isInteractionPublishing
+                        }
+                        title="Audio Call"
+                        className="flex flex-col items-center justify-center gap-1 rounded-xl border border-white/20 bg-gray-900/90 px-4 py-2 text-white shadow-lg transition hover:scale-105 hover:bg-yellow-600 disabled:cursor-not-allowed disabled:opacity-40"
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M6 6l12 12M18 6L6 18"
-                        />
-                      </svg>
-                    ) : (
-                      "🎁"
-                    )}
-                  </button>
+                        <span className="text-2xl">🎙️</span>
+
+                        <span className="text-[11px] font-semibold sm:text-xs">
+                          Audio Call
+                        </span>
+                      </button>
+
+                      {/* VIDEO CALL */}
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setInteractionType("VIDEO");
+                          setInteractionPanelOpen(true);
+                          setInteractionNotice("");
+                        }}
+                        disabled={
+                          streamEnded ||
+                          interactionStatus === "PENDING" ||
+                          interactionStatus === "ACCEPTED" ||
+                          isInteractionPublishing
+                        }
+                        title="Video Call"
+                        className="flex flex-col items-center justify-center gap-1 rounded-xl border border-white/20 bg-gray-900/90 px-4 py-2 text-white shadow-lg transition hover:scale-105 hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        <span className="text-2xl">📹</span>
+
+                        <span className="text-[11px] font-semibold sm:text-xs">
+                          Video Call
+                        </span>
+                      </button>
+
+                      {/* GIFT */}
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setGiftPanelOpen((open) => !open);
+                          setGiftNotice("");
+                        }}
+                        aria-label="Send Gift"
+                        className="flex flex-col items-center justify-center gap-1 rounded-xl border border-yellow-400/40 bg-yellow-500 px-4 py-2 text-black shadow-lg transition hover:scale-105 hover:bg-yellow-400"
+                      >
+                        <span className="text-2xl">🎁</span>
+
+                        <span className="text-[11px] font-bold sm:text-xs">
+                          Gift
+                        </span>
+                      </button>
+                    </div>
+
+                    {/* LEAVE LIVE */}
+
+                    <button
+                      type="button"
+                      onClick={handleLeaveLive}
+                      disabled={leavingLive}
+                      title="Leave Live"
+                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-red-500/40 bg-red-600 text-white shadow-lg hover:bg-red-700 disabled:opacity-50"
+                    >
+                      {leavingLive ? (
+                        <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                      ) : (
+                        <span className="text-xl">✕</span>
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              {/* Gift notice outside the video when panel is closed */}
+              {/* GIFT NOTICE */}
+
               {giftNotice && !giftPanelOpen && (
-                <div
-                  role="status"
-                  aria-live="polite"
-                  className={`mt-3 break-words rounded-lg border p-3 text-sm ${
-                    giftNotice.startsWith("Successfully sent")
-                      ? "border-green-500/30 bg-green-500/10 text-green-300"
-                      : "border-red-500/30 bg-red-500/10 text-red-300"
-                  }`}
-                >
+                <div className="mt-3 rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3 text-sm text-yellow-300">
                   {giftNotice}
                 </div>
               )}
@@ -1692,15 +2153,21 @@ export default function WatchLive() {
         </div>
       </div>
 
-      {/* CHAT PANEL */}
+      {/* ================================================
+          RIGHT SIDE CHAT
+      ================================================ */}
+
       <aside className="flex w-full min-w-0 flex-col border-t border-gray-800 bg-gray-950 lg:w-[350px] lg:shrink-0 lg:border-l lg:border-t-0">
+        {/* CHAT HEADER */}
+
         <div className="border-b border-gray-800 px-4 py-3">
           <h3 className="font-semibold">Live Chat</h3>
 
           <p className="text-xs text-gray-400">Chat with the community</p>
         </div>
 
-        {/* Messages */}
+        {/* MESSAGES */}
+
         <div
           ref={chatRef}
           className="h-[300px] space-y-3 overflow-y-auto px-3 py-3 lg:h-[calc(75vh-120px)]"
@@ -1760,7 +2227,8 @@ export default function WatchLive() {
           )}
         </div>
 
-        {/* Chat input */}
+        {/* CHAT INPUT */}
+
         <div className="mt-auto flex items-center gap-2 border-t border-gray-800 bg-black/80 p-3">
           <input
             value={message}
@@ -1781,17 +2249,16 @@ export default function WatchLive() {
             type="button"
             onClick={() => void sendMessage()}
             disabled={!message.trim() || !liveInfo || loading || streamEnded}
-            className="rounded-full bg-red-600 px-5 py-3 text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-full bg-red-600 px-5 py-3 text-white hover:bg-red-700 disabled:opacity-50"
           >
             Send
           </button>
         </div>
       </aside>
 
-      {/* =====================================================
-          FULL-SCREEN LIVE ENDED MESSAGE
-          Covers BOTH video and chat panels.
-      ===================================================== */}
+      {/* ================================================
+          LIVE ENDED SCREEN
+      ================================================ */}
 
       {streamEnded && (
         <div
@@ -1803,9 +2270,7 @@ export default function WatchLive() {
             <span className="text-5xl">📴</span>
           </div>
 
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-            Live Session Ended
-          </h2>
+          <h2 className="text-3xl font-bold sm:text-4xl">Live Session Ended</h2>
 
           <p className="mt-4 max-w-md text-base leading-7 text-gray-300">
             The astrologer has ended the live session. Thank you for joining!
@@ -1829,7 +2294,7 @@ export default function WatchLive() {
 
               router.push("/astrologer/liveStream");
             }}
-            className="mt-8 rounded-xl bg-red-600 px-6 py-3 font-semibold text-white transition hover:bg-red-700"
+            className="mt-8 rounded-xl bg-red-600 px-6 py-3 font-semibold text-white hover:bg-red-700"
           >
             Go Back Now
           </button>
