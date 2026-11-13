@@ -56,9 +56,9 @@ export default function WatchLive() {
   const [interactionNotice, setInteractionNotice] = useState("");
   const [interactionLoading, setInteractionLoading] = useState(false);
   const [interactionStatus, setInteractionStatus] = useState(null);
-  const [isInteractionPublishing, setIsInteractionPublishing] = useState(false);
+  const [isInteractionPublishing, setIsInteractionPublishing] =
+    useState(false);
 
-  // New call UI state
   const [interactionPanelOpen, setInteractionPanelOpen] = useState(false);
 
   // =====================================================
@@ -92,6 +92,10 @@ export default function WatchLive() {
 
   const publishingInteractionRef = useRef(false);
   const activeInteractionIdRef = useRef(null);
+
+  // Prevent repeatedly attempting to publish the same accepted request
+  // after camera/microphone initialization or publishing fails.
+  const failedInteractionIdRef = useRef(null);
 
   useEffect(() => {
     liveInfoRef.current = liveInfo;
@@ -136,7 +140,8 @@ export default function WatchLive() {
     errorPolicy: "all",
   });
 
-  const interactionSession = interactionData?.getMyLiveInteraction ?? null;
+  const interactionSession =
+    interactionData?.getMyLiveInteraction ?? null;
 
   const interactionRequest = interactionSession?.request ?? null;
 
@@ -158,13 +163,15 @@ export default function WatchLive() {
 
   const getGiftImage = (gift) => gift?.icon || gift?.image || "";
 
-  const getGiftPrice = (gift) => Number(gift?.price ?? gift?.amount ?? 0);
+  const getGiftPrice = (gift) =>
+    Number(gift?.price ?? gift?.amount ?? 0);
 
   const selectedGift = gifts.find(
     (gift) => String(gift.id) === String(selectedGiftId),
   );
 
-  const quantityNumber = giftQuantity === "" ? 0 : Number(giftQuantity);
+  const quantityNumber =
+    giftQuantity === "" ? 0 : Number(giftQuantity);
 
   const totalGiftCoins = selectedGift
     ? getGiftPrice(selectedGift) * quantityNumber
@@ -203,17 +210,17 @@ export default function WatchLive() {
     errorPolicy: "all",
   });
 
-  const { data: followersData, refetch: refetchFollowersCount } = useQuery(
-    GET_ASTROLOGER_FOLLOWERS_COUNT,
-    {
-      variables: {
-        astrologerId: astrologerId || "",
-      },
-      skip: !astrologerId,
-      fetchPolicy: "network-only",
-      errorPolicy: "all",
+  const {
+    data: followersData,
+    refetch: refetchFollowersCount,
+  } = useQuery(GET_ASTROLOGER_FOLLOWERS_COUNT, {
+    variables: {
+      astrologerId: astrologerId || "",
     },
-  );
+    skip: !astrologerId,
+    fetchPolicy: "network-only",
+    errorPolicy: "all",
+  });
 
   const [followAstrologer, { loading: followingLoading }] =
     useMutation(FOLLOW_ASTROLOGER);
@@ -221,19 +228,24 @@ export default function WatchLive() {
   const [unfollowAstrologer, { loading: unfollowingLoading }] =
     useMutation(UNFOLLOW_ASTROLOGER);
 
-  const isFollowing = followingData?.isFollowing?.isFollowing ?? false;
+  const isFollowing =
+    followingData?.isFollowing?.isFollowing ?? false;
 
   const totalFollowers =
     followersData?.getAstrologerFollowersCount?.totalFollowers ?? 0;
 
-  const followActionLoading = followingLoading || unfollowingLoading;
+  const followActionLoading =
+    followingLoading || unfollowingLoading;
 
   // =====================================================
   // HELPERS
   // =====================================================
 
   const isCurrentGeneration = useCallback((generation) => {
-    return mountedRef.current && generationRef.current === generation;
+    return (
+      mountedRef.current &&
+      generationRef.current === generation
+    );
   }, []);
 
   const getErrorMessage = useCallback((err) => {
@@ -250,81 +262,112 @@ export default function WatchLive() {
   // SAFE CAMERA INITIALIZATION
   // =====================================================
 
-  const createCameraTrackSafely = useCallback(async (AgoraRTC) => {
-    try {
-      if (
-        typeof navigator === "undefined" ||
-        !navigator.mediaDevices?.enumerateDevices
-      ) {
-        throw new Error(
-          "Camera access is not supported. Please use HTTPS and a supported browser.",
+  const createCameraTrackSafely = useCallback(
+    async (AgoraRTC) => {
+      try {
+        if (
+          typeof navigator === "undefined" ||
+          !navigator.mediaDevices?.enumerateDevices
+        ) {
+          throw new Error(
+            "Camera access is not supported. Please use HTTPS and a supported browser.",
+          );
+        }
+
+        const devices =
+          await navigator.mediaDevices.enumerateDevices();
+
+        const cameras = devices.filter(
+          (device) => device.kind === "videoinput",
         );
+
+        console.log("Available cameras:", cameras);
+
+        if (cameras.length === 0) {
+          throw new Error("No camera detected on this device.");
+        }
+
+        const cameraTrack =
+          await AgoraRTC.createCameraVideoTrack({
+            encoderConfig: "720p_1",
+          });
+
+        if (!cameraTrack) {
+          throw new Error("Unable to initialize camera.");
+        }
+
+        console.log("Camera initialized successfully.");
+
+        return cameraTrack;
+      } catch (error) {
+        console.error("Camera initialization failed:", error);
+
+        const errorName =
+          error?.name || error?.data?.name || "";
+
+        const errorCode =
+          error?.code || error?.data?.code || "";
+
+        const errorMessage = String(
+          error?.message || "",
+        ).toLowerCase();
+
+        if (
+          errorName === "NotReadableError" ||
+          errorCode === "NOT_READABLE" ||
+          errorMessage.includes("not readable") ||
+          errorMessage.includes("could not start video source")
+        ) {
+          throw new Error(
+            "Camera is currently being used by another application or browser tab. Close other applications using the camera and try again.",
+          );
+        }
+
+        if (
+          errorName === "NotAllowedError" ||
+          errorCode === "PERMISSION_DENIED" ||
+          errorMessage.includes("permission denied")
+        ) {
+          throw new Error(
+            "Camera permission denied. Please allow camera access in your browser settings.",
+          );
+        }
+
+        if (
+          errorName === "NotFoundError" ||
+          errorCode === "DEVICE_NOT_FOUND"
+        ) {
+          throw new Error(
+            "No camera was found on this device.",
+          );
+        }
+
+        if (
+          errorName === "OverconstrainedError" ||
+          errorCode === "CONSTRAINT_NOT_SATISFIED"
+        ) {
+          throw new Error(
+            "The selected camera does not support the requested video settings.",
+          );
+        }
+
+        throw error;
       }
-
-      const devices = await navigator.mediaDevices.enumerateDevices();
-
-      const cameras = devices.filter((device) => device.kind === "videoinput");
-
-      console.log("Available cameras:", cameras);
-
-      if (cameras.length === 0) {
-        throw new Error("No camera detected on this device.");
-      }
-
-      const cameraTrack = await AgoraRTC.createCameraVideoTrack({
-        encoderConfig: "720p_1",
-      });
-
-      if (!cameraTrack) {
-        throw new Error("Unable to initialize camera.");
-      }
-
-      console.log("Camera initialized successfully.");
-
-      return cameraTrack;
-    } catch (error) {
-      console.error("Camera initialization failed:", error);
-
-      const errorName = error?.name || error?.data?.name || "";
-      const errorCode = error?.code || error?.data?.code || "";
-      const errorMessage = String(error?.message || "").toLowerCase();
-
-      if (
-        errorName === "NotReadableError" ||
-        errorCode === "NOT_READABLE" ||
-        errorMessage.includes("not readable") ||
-        errorMessage.includes("could not start video source")
-      ) {
-        throw new Error(
-          "Camera is currently being used by another application or browser tab. Close other applications using the camera and try again.",
-        );
-      }
-
-      if (
-        errorName === "NotAllowedError" ||
-        errorCode === "PERMISSION_DENIED" ||
-        errorMessage.includes("permission denied")
-      ) {
-        throw new Error(
-          "Camera permission denied. Please allow camera access in your browser settings.",
-        );
-      }
-
-      if (errorName === "NotFoundError" || errorCode === "DEVICE_NOT_FOUND") {
-        throw new Error("No camera was found on this device.");
-      }
-
-      throw error;
-    }
-  }, []);
+    },
+    [],
+  );
 
   const isValidLiveResponse = useCallback((live) => {
     if (!live) {
-      throw new Error("Live stream not found or has already ended.");
+      throw new Error(
+        "Live stream not found or has already ended.",
+      );
     }
 
     if (!live.id) {
-      throw new Error("Stream database ID is missing from joinLive response.");
+      throw new Error(
+        "Stream database ID is missing from joinLive response.",
+      );
     }
 
     if (
@@ -333,7 +376,9 @@ export default function WatchLive() {
       !live.rtcToken ||
       live.uid == null
     ) {
-      throw new Error("Required Agora RTC configuration is missing.");
+      throw new Error(
+        "Required Agora RTC configuration is missing.",
+      );
     }
 
     if (
@@ -342,7 +387,9 @@ export default function WatchLive() {
       !live.chatToken ||
       !live.chatRoomId
     ) {
-      throw new Error("Required Agora Chat configuration is missing.");
+      throw new Error(
+        "Required Agora Chat configuration is missing.",
+      );
     }
 
     return true;
@@ -365,7 +412,10 @@ export default function WatchLive() {
         try {
           await rtcClient.unpublish(tracks);
         } catch (err) {
-          console.warn("Unable to unpublish interaction tracks:", err);
+          console.warn(
+            "Unable to unpublish interaction tracks:",
+            err,
+          );
         }
       }
 
@@ -399,7 +449,10 @@ export default function WatchLive() {
         try {
           await rtcClient.setClientRole("audience");
         } catch (err) {
-          console.warn("Unable to switch back to audience:", err);
+          console.warn(
+            "Unable to switch back to audience:",
+            err,
+          );
         }
       }
     } finally {
@@ -422,13 +475,21 @@ export default function WatchLive() {
       const AgoraRTC = agoraRTCRef.current;
 
       if (!rtcClient || !AgoraRTC || !session) {
-        throw new Error("Agora RTC connection is unavailable.");
+        throw new Error(
+          "Agora RTC connection is unavailable.",
+        );
       }
 
       const request = session.request;
 
       if (request?.status !== "ACCEPTED") {
         return;
+      }
+
+      if (!request?.id) {
+        throw new Error(
+          "Interaction request ID is missing.",
+        );
       }
 
       if (
@@ -438,17 +499,41 @@ export default function WatchLive() {
         return;
       }
 
-      if (!session.rtcToken || !session.channelName || session.uid == null) {
-        throw new Error("Publisher RTC configuration is missing.");
+      if (
+        failedInteractionIdRef.current === request.id
+      ) {
+        return;
       }
 
-      if (Number(session.uid) !== Number(liveInfoRef.current?.uid)) {
+      if (
+        !session.rtcToken ||
+        !session.channelName ||
+        session.uid == null
+      ) {
+        throw new Error(
+          "Publisher RTC configuration is missing.",
+        );
+      }
+
+      const currentLive = liveInfoRef.current;
+
+      if (!currentLive) {
+        throw new Error(
+          "Live stream information is unavailable.",
+        );
+      }
+
+      if (
+        Number(session.uid) !== Number(currentLive.uid)
+      ) {
         throw new Error(
           "Interaction UID does not match your live viewer UID. Please reconnect.",
         );
       }
 
-      if (session.channelName !== liveInfoRef.current?.channelName) {
+      if (
+        session.channelName !== currentLive.channelName
+      ) {
         throw new Error(
           "Interaction channel does not match the current live stream.",
         );
@@ -456,23 +541,83 @@ export default function WatchLive() {
 
       publishingInteractionRef.current = true;
 
+      let audioTrack = null;
+      let videoTrack = null;
+      let tracksPublished = false;
+
       try {
-        // Switch audience to host.
+        setInteractionNotice(
+          "Connecting your microphone and camera...",
+        );
+
+        // -------------------------------------------------
+        // 1. Switch audience to host.
+        // -------------------------------------------------
+
         await rtcClient.setClientRole("host");
 
-        // Renew publisher token.
+        // -------------------------------------------------
+        // 2. Renew RTC token.
+        // -------------------------------------------------
+
         await rtcClient.renewToken(session.rtcToken);
 
-        // Create microphone.
-        const audioTrack = await AgoraRTC.createMicrophoneAudioTrack();
+        // -------------------------------------------------
+        // 3. Create microphone.
+        // -------------------------------------------------
+
+        try {
+          audioTrack =
+            await AgoraRTC.createMicrophoneAudioTrack({
+              encoderConfig: "speech_standard",
+            });
+        } catch (audioError) {
+          console.error(
+            "Microphone initialization failed:",
+            audioError,
+          );
+
+          const audioErrorName =
+            audioError?.name || "";
+
+          if (
+            audioErrorName === "NotAllowedError" ||
+            audioErrorName === "PermissionDeniedError"
+          ) {
+            throw new Error(
+              "Microphone permission denied. Please allow microphone access in your browser settings.",
+            );
+          }
+
+          if (audioErrorName === "NotFoundError") {
+            throw new Error(
+              "No microphone was found on this device.",
+            );
+          }
+
+          if (audioErrorName === "NotReadableError") {
+            throw new Error(
+              "Microphone is being used by another application. Close other applications using the microphone and try again.",
+            );
+          }
+
+          throw new Error(
+            audioError?.message ||
+              "Unable to initialize microphone.",
+          );
+        }
 
         localAudioTrackRef.current = audioTrack;
 
         const tracksToPublish = [audioTrack];
 
-        // Create camera only for video calls.
+        // -------------------------------------------------
+        // 4. Create camera only for video interaction.
+        // -------------------------------------------------
+
         if (request.interactionType === "VIDEO") {
-          const videoTrack = await AgoraRTC.createCameraVideoTrack();
+          videoTrack =
+            await createCameraTrackSafely(AgoraRTC);
 
           localVideoTrackRef.current = videoTrack;
 
@@ -484,9 +629,17 @@ export default function WatchLive() {
           }
         }
 
+        // -------------------------------------------------
+        // 5. Publish local tracks.
+        // -------------------------------------------------
+
         await rtcClient.publish(tracksToPublish);
 
+        tracksPublished = true;
+
         activeInteractionIdRef.current = request.id;
+
+        failedInteractionIdRef.current = null;
 
         if (mountedRef.current) {
           setInteractionType(request.interactionType);
@@ -500,24 +653,103 @@ export default function WatchLive() {
               : "You are connected through audio.",
           );
         }
-      } catch (err) {
-        console.error("Unable to start interaction:", err);
 
-        await stopInteractionPublishing();
+        console.log(
+          "Interaction publishing successful:",
+          {
+            requestId: request.id,
+            interactionType: request.interactionType,
+            channelName: session.channelName,
+            uid: session.uid,
+            tracksPublished,
+          },
+        );
+      } catch (err) {
+        console.error(
+          "Unable to start interaction:",
+          err,
+        );
+
+        // -------------------------------------------------
+        // Cleanup partially created/published tracks.
+        // -------------------------------------------------
+
+        if (tracksPublished) {
+          try {
+            await rtcClient.unpublish(
+              [audioTrack, videoTrack].filter(Boolean),
+            );
+          } catch (unpublishError) {
+            console.warn(
+              "Failed to unpublish partially initialized tracks:",
+              unpublishError,
+            );
+          }
+        }
+
+        if (audioTrack) {
+          try {
+            audioTrack.stop();
+            audioTrack.close();
+          } catch (cleanupError) {
+            console.warn(
+              "Audio cleanup failed:",
+              cleanupError,
+            );
+          }
+        }
+
+        if (videoTrack) {
+          try {
+            videoTrack.stop();
+            videoTrack.close();
+          } catch (cleanupError) {
+            console.warn(
+              "Video cleanup failed:",
+              cleanupError,
+            );
+          }
+        }
+
+        localAudioTrackRef.current = null;
+        localVideoTrackRef.current = null;
+
+        if (guestVideoRef.current) {
+          guestVideoRef.current.innerHTML = "";
+        }
+
+        try {
+          if (!streamEnded) {
+            await rtcClient.setClientRole("audience");
+          }
+        } catch (roleError) {
+          console.warn(
+            "Unable to restore audience role:",
+            roleError,
+          );
+        }
+
+        activeInteractionIdRef.current = null;
+
+        if (mountedRef.current) {
+          setIsInteractionPublishing(false);
+        }
 
         throw err;
       } finally {
         publishingInteractionRef.current = false;
       }
     },
-    [stopInteractionPublishing],
+    [createCameraTrackSafely, streamEnded],
   );
 
   // =====================================================
   // REQUEST AUDIO / VIDEO INTERACTION
   // =====================================================
 
-  const handleRequestInteraction = async (requestedType = interactionType) => {
+  const handleRequestInteraction = async (
+    requestedType = interactionType,
+  ) => {
     if (!liveInfo?.id || streamEnded) {
       return;
     }
@@ -537,6 +769,8 @@ export default function WatchLive() {
       setInteractionType(requestedType);
       setInteractionPanelOpen(true);
 
+      failedInteractionIdRef.current = null;
+
       const response = await createInteractionRequest({
         variables: {
           liveStreamId: liveInfo.id,
@@ -544,10 +778,13 @@ export default function WatchLive() {
         },
       });
 
-      const result = response?.data?.createLiveInteractionRequest;
+      const result =
+        response?.data?.createLiveInteractionRequest;
 
       if (!result?.id) {
-        throw new Error("Unable to create interaction request.");
+        throw new Error(
+          "Unable to create interaction request.",
+        );
       }
 
       setInteractionStatus(result.status);
@@ -560,7 +797,10 @@ export default function WatchLive() {
 
       await refetchInteraction();
     } catch (err) {
-      console.error("Interaction request error:", err);
+      console.error(
+        "Interaction request error:",
+        err,
+      );
 
       setInteractionNotice(getErrorMessage(err));
     } finally {
@@ -578,41 +818,82 @@ export default function WatchLive() {
     }
 
     const status = interactionRequest.status;
+    const requestId = interactionRequest.id;
 
     setInteractionStatus(status);
+
+    // A non-accepted status means this request is no longer
+    // waiting for publishing.
+    if (status !== "ACCEPTED") {
+      failedInteractionIdRef.current = null;
+    }
 
     if (status === "ACCEPTED") {
       setInteractionPanelOpen(true);
 
+      // Already publishing this request.
       if (
-        activeInteractionIdRef.current === interactionRequest.id ||
-        publishingInteractionRef.current
+        activeInteractionIdRef.current === requestId
       ) {
         return;
       }
 
-      void startInteractionPublishing(interactionSession).catch((err) => {
-        console.error("Interaction publishing error:", err);
+      // Do not retry a request that already failed.
+      if (
+        failedInteractionIdRef.current === requestId
+      ) {
+        return;
+      }
 
-        setInteractionNotice(err?.message || getErrorMessage(err));
+      // Avoid concurrent publishing attempts.
+      if (publishingInteractionRef.current) {
+        return;
+      }
 
-        setInteractionPanelOpen(true);
-        setIsInteractionPublishing(false);
+      void startInteractionPublishing(
+        interactionSession,
+      ).catch((err) => {
+        console.error(
+          "Interaction publishing error:",
+          err,
+        );
+
+        // Mark this request as failed so the 3-second polling
+        // does not repeatedly request camera/microphone access.
+        failedInteractionIdRef.current = requestId;
+
+        if (mountedRef.current) {
+          setInteractionNotice(
+            err?.message || getErrorMessage(err),
+          );
+
+          setInteractionPanelOpen(true);
+          setIsInteractionPublishing(false);
+        }
       });
 
       return;
     }
 
-    if (status === "REJECTED" || status === "CANCELLED" || status === "ENDED") {
+    if (
+      status === "REJECTED" ||
+      status === "CANCELLED" ||
+      status === "ENDED"
+    ) {
       void stopInteractionPublishing();
 
       const statusMessages = {
-        REJECTED: "The astrologer has rejected your call request.",
-        CANCELLED: "Your call request has been cancelled.",
-        ENDED: "Your interaction with the astrologer has ended.",
+        REJECTED:
+          "The astrologer has rejected your call request.",
+        CANCELLED:
+          "Your call request has been cancelled.",
+        ENDED:
+          "Your interaction with the astrologer has ended.",
       };
 
-      setInteractionNotice(statusMessages[status] || "");
+      setInteractionNotice(
+        statusMessages[status] || "",
+      );
     }
   }, [
     interactionRequest,
@@ -628,7 +909,10 @@ export default function WatchLive() {
   // =====================================================
 
   const handleEndInteraction = async () => {
-    if (!interactionRequest?.id || interactionLoading) {
+    if (
+      !interactionRequest?.id ||
+      interactionLoading
+    ) {
       return;
     }
 
@@ -644,19 +928,33 @@ export default function WatchLive() {
         },
       });
 
-      const result = response?.data?.endLiveInteraction;
+      const result =
+        response?.data?.endLiveInteraction;
 
       if (!result) {
-        throw new Error("Unable to end interaction.");
+        throw new Error(
+          "Unable to end interaction.",
+        );
       }
 
-      setInteractionStatus(result.status);
+      // Reset request-specific refs.
+      failedInteractionIdRef.current = null;
+      activeInteractionIdRef.current = null;
+      publishingInteractionRef.current = false;
 
-      setInteractionNotice("You have left the interaction.");
+      setInteractionStatus(result.status);
+      setIsInteractionPublishing(false);
+
+      setInteractionNotice(
+        "You have left the interaction.",
+      );
 
       await refetchInteraction();
     } catch (err) {
-      console.error("End interaction error:", err);
+      console.error(
+        "End interaction error:",
+        err,
+      );
 
       setInteractionNotice(getErrorMessage(err));
     } finally {
@@ -670,20 +968,29 @@ export default function WatchLive() {
 
   const handleFollowToggle = async () => {
     if (!astrologerId) {
-      setFollowNotice("Astrologer information is unavailable.");
+      setFollowNotice(
+        "Astrologer information is unavailable.",
+      );
       return;
     }
 
-    if (followActionLoading || followingStatusLoading) {
+    if (
+      followActionLoading ||
+      followingStatusLoading
+    ) {
       return;
     }
 
     try {
       setFollowNotice("");
 
-      const action = isFollowing ? unfollowAstrologer : followAstrologer;
+      const action = isFollowing
+        ? unfollowAstrologer
+        : followAstrologer;
 
-      const resultKey = isFollowing ? "unfollowAstrologer" : "followAstrologer";
+      const resultKey = isFollowing
+        ? "unfollowAstrologer"
+        : "followAstrologer";
 
       const response = await action({
         variables: {
@@ -694,7 +1001,10 @@ export default function WatchLive() {
       const result = response?.data?.[resultKey];
 
       if (!result?.success) {
-        throw new Error(result?.message || "Unable to update follow status.");
+        throw new Error(
+          result?.message ||
+            "Unable to update follow status.",
+        );
       }
 
       setFollowNotice(
@@ -704,9 +1014,15 @@ export default function WatchLive() {
             : "You are now following the astrologer."),
       );
 
-      await Promise.all([refetchFollowingStatus(), refetchFollowersCount()]);
+      await Promise.all([
+        refetchFollowingStatus(),
+        refetchFollowersCount(),
+      ]);
     } catch (err) {
-      console.error("Follow/unfollow error:", err);
+      console.error(
+        "Follow/unfollow error:",
+        err,
+      );
 
       setFollowNotice(getErrorMessage(err));
     }
@@ -718,7 +1034,8 @@ export default function WatchLive() {
 
   useEffect(() => {
     if (chatRef.current) {
-      chatRef.current.scrollTop = chatRef.current.scrollHeight;
+      chatRef.current.scrollTop =
+        chatRef.current.scrollHeight;
     }
   }, [messages]);
 
@@ -726,30 +1043,76 @@ export default function WatchLive() {
   // INCOMING CHAT MESSAGES
   // =====================================================
 
-  const handleIncomingTextMessage = useCallback((msg) => {
-    if (!mountedRef.current) return;
+  const handleIncomingTextMessage = useCallback(
+    (msg) => {
+      if (!mountedRef.current) return;
 
-    const rawMessage = msg?.msg || "";
-    const currentLive = liveInfoRef.current;
+      const rawMessage = msg?.msg || "";
+      const currentLive = liveInfoRef.current;
 
-    const isOwnMessage =
-      currentLive?.chatUserId && msg?.from === currentLive.chatUserId;
+      const isOwnMessage =
+        currentLive?.chatUserId &&
+        msg?.from === currentLive.chatUserId;
 
-    let payload = null;
+      let payload = null;
 
-    try {
-      payload = JSON.parse(rawMessage);
-    } catch {
-      // Normal text message.
-    }
+      try {
+        payload = JSON.parse(rawMessage);
+      } catch {
+        // Normal text message.
+      }
 
-    if (payload?.type === "GIFT") {
+      if (payload?.type === "GIFT") {
+        const messageId = msg?.id
+          ? `gift-${msg.id}`
+          : `gift-${Date.now()}-${Math.random()}`;
+
+        setMessages((previous) => {
+          if (
+            previous.some(
+              (item) => item.id === messageId,
+            )
+          ) {
+            return previous;
+          }
+
+          return [
+            ...previous,
+            {
+              id: messageId,
+              kind: "gift",
+              senderName:
+                payload.senderName ||
+                payload.sender ||
+                msg?.from ||
+                "User",
+              giftName: payload.giftName || "Gift",
+              giftIcon:
+                payload.icon ||
+                payload.giftIcon ||
+                "🎁",
+              quantity:
+                Number(payload.quantity) || 1,
+              totalCoins: payload.totalCoins,
+            },
+          ];
+        });
+
+        return;
+      }
+
+      if (isOwnMessage) return;
+
       const messageId = msg?.id
-        ? `gift-${msg.id}`
-        : `gift-${Date.now()}-${Math.random()}`;
+        ? `message-${msg.id}`
+        : `message-${Date.now()}-${Math.random()}`;
 
       setMessages((previous) => {
-        if (previous.some((item) => item.id === messageId)) {
+        if (
+          previous.some(
+            (item) => item.id === messageId,
+          )
+        ) {
           return previous;
         }
 
@@ -757,43 +1120,16 @@ export default function WatchLive() {
           ...previous,
           {
             id: messageId,
-            kind: "gift",
-            senderName:
-              payload.senderName || payload.sender || msg?.from || "User",
-            giftName: payload.giftName || "Gift",
-            giftIcon: payload.icon || payload.giftIcon || "🎁",
-            quantity: Number(payload.quantity) || 1,
-            totalCoins: payload.totalCoins,
+            kind: "text",
+            senderName: msg?.from || "User",
+            message: rawMessage,
+            isOwn: false,
           },
         ];
       });
-
-      return;
-    }
-
-    if (isOwnMessage) return;
-
-    const messageId = msg?.id
-      ? `message-${msg.id}`
-      : `message-${Date.now()}-${Math.random()}`;
-
-    setMessages((previous) => {
-      if (previous.some((item) => item.id === messageId)) {
-        return previous;
-      }
-
-      return [
-        ...previous,
-        {
-          id: messageId,
-          kind: "text",
-          senderName: msg?.from || "User",
-          message: rawMessage,
-          isOwn: false,
-        },
-      ];
-    });
-  }, []);
+    },
+    [],
+  );
 
   // =====================================================
   // DISPOSE AGORA CLIENTS
@@ -816,16 +1152,24 @@ export default function WatchLive() {
       if (chatClient) {
         if (roomId) {
           try {
-            await chatClient.leaveChatRoom({ roomId });
+            await chatClient.leaveChatRoom({
+              roomId,
+            });
           } catch (err) {
-            console.warn("Unable to leave chat room:", err?.message);
+            console.warn(
+              "Unable to leave chat room:",
+              err?.message,
+            );
           }
         }
 
         try {
           await chatClient.close();
         } catch (err) {
-          console.warn("Unable to close Agora Chat:", err?.message);
+          console.warn(
+            "Unable to close Agora Chat:",
+            err?.message,
+          );
         }
       }
 
@@ -878,6 +1222,7 @@ export default function WatchLive() {
 
     publishingInteractionRef.current = false;
     activeInteractionIdRef.current = null;
+    failedInteractionIdRef.current = null;
 
     if (mountedRef.current) {
       setIsInteractionPublishing(false);
@@ -887,7 +1232,11 @@ export default function WatchLive() {
     const chatClient = chatClientRef.current;
     const roomId = chatRoomIdRef.current;
 
-    await disposeLocalClients(chatClient, rtcClient, roomId);
+    await disposeLocalClients(
+      chatClient,
+      rtcClient,
+      roomId,
+    );
 
     pendingVideoTrackRef.current = null;
 
@@ -902,7 +1251,10 @@ export default function WatchLive() {
 
   const handleStreamEnded = useCallback(
     async (generation) => {
-      if (endingRef.current || !isCurrentGeneration(generation)) {
+      if (
+        endingRef.current ||
+        !isCurrentGeneration(generation)
+      ) {
         return;
       }
 
@@ -927,23 +1279,40 @@ export default function WatchLive() {
             },
           });
         } catch (err) {
-          console.error("Failed to record viewer leaving:", err);
+          console.error(
+            "Failed to record viewer leaving:",
+            err,
+          );
         }
 
         await cleanup();
       } catch (err) {
-        console.error("Ended-stream cleanup error:", err);
+        console.error(
+          "Ended-stream cleanup error:",
+          err,
+        );
       } finally {
         if (mountedRef.current) {
-          redirectTimeoutRef.current = setTimeout(() => {
-            if (mountedRef.current) {
-              router.push("/astrologer/liveStream");
-            }
-          }, 3000);
+          redirectTimeoutRef.current = setTimeout(
+            () => {
+              if (mountedRef.current) {
+                router.push(
+                  "/astrologer/liveStream",
+                );
+              }
+            },
+            3000,
+          );
         }
       }
     },
-    [channelName, cleanup, isCurrentGeneration, leaveLiveStream, router],
+    [
+      channelName,
+      cleanup,
+      isCurrentGeneration,
+      leaveLiveStream,
+      router,
+    ],
   );
 
   // =====================================================
@@ -954,7 +1323,10 @@ export default function WatchLive() {
     async (user, mediaType, generation) => {
       const client = agoraClientRef.current;
 
-      if (!client || !isCurrentGeneration(generation)) {
+      if (
+        !client ||
+        !isCurrentGeneration(generation)
+      ) {
         return;
       }
 
@@ -968,12 +1340,15 @@ export default function WatchLive() {
         if (mediaType === "video") {
           if (!user.videoTrack) return;
 
-          pendingVideoTrackRef.current = user.videoTrack;
+          pendingVideoTrackRef.current =
+            user.videoTrack;
 
           if (remoteVideoRef.current) {
             remoteVideoRef.current.innerHTML = "";
 
-            user.videoTrack.play(remoteVideoRef.current);
+            user.videoTrack.play(
+              remoteVideoRef.current,
+            );
 
             setHostJoined(true);
             setError("");
@@ -982,12 +1357,18 @@ export default function WatchLive() {
           }
         }
 
-        if (mediaType === "audio" && user.audioTrack) {
+        if (
+          mediaType === "audio" &&
+          user.audioTrack
+        ) {
           user.audioTrack.play();
           setHostJoined(true);
         }
       } catch (err) {
-        console.error(`Agora ${mediaType} subscription failed:`, err);
+        console.error(
+          `Agora ${mediaType} subscription failed:`,
+          err,
+        );
 
         if (isCurrentGeneration(generation)) {
           setError(
@@ -1010,7 +1391,9 @@ export default function WatchLive() {
       let localChatRoomId = null;
 
       try {
-        if (!isCurrentGeneration(generation)) return;
+        if (!isCurrentGeneration(generation)) {
+          return;
+        }
 
         endingRef.current = false;
         leavingRef.current = false;
@@ -1029,25 +1412,41 @@ export default function WatchLive() {
 
         liveInfoRef.current = null;
 
+        failedInteractionIdRef.current = null;
+        activeInteractionIdRef.current = null;
+        publishingInteractionRef.current = false;
+
         if (!channelName) {
-          throw new Error("Live stream channel name is missing.");
+          throw new Error(
+            "Live stream channel name is missing.",
+          );
         }
 
-        const [{ default: AgoraRTC }, { default: AgoraChat }] =
-          await Promise.all([import("agora-rtc-sdk-ng"), import("agora-chat")]);
+        const [
+          { default: AgoraRTC },
+          { default: AgoraChat },
+        ] = await Promise.all([
+          import("agora-rtc-sdk-ng"),
+          import("agora-chat"),
+        ]);
 
-        if (!isCurrentGeneration(generation)) return;
+        if (!isCurrentGeneration(generation)) {
+          return;
+        }
 
         agoraRTCRef.current = AgoraRTC;
         agoraChatRef.current = AgoraChat;
 
-        const response = await joinLiveRef.current({
-          variables: {
-            channelName,
-          },
-        });
+        const response =
+          await joinLiveRef.current({
+            variables: {
+              channelName,
+            },
+          });
 
-        if (!isCurrentGeneration(generation)) return;
+        if (!isCurrentGeneration(generation)) {
+          return;
+        }
 
         const live = response?.data?.joinLive;
 
@@ -1059,7 +1458,10 @@ export default function WatchLive() {
         localChatRoomId = live.chatRoomId;
         chatRoomIdRef.current = live.chatRoomId;
 
+        // -------------------------------------------------
         // Create RTC client.
+        // -------------------------------------------------
+
         const rtcClient = AgoraRTC.createClient({
           mode: "live",
           codec: "vp8",
@@ -1068,78 +1470,132 @@ export default function WatchLive() {
         localRtcClient = rtcClient;
         agoraClientRef.current = rtcClient;
 
-        rtcClient.on("user-published", async (user, mediaType) => {
-          await subscribeToUser(user, mediaType, generation);
-        });
+        rtcClient.on(
+          "user-published",
+          async (user, mediaType) => {
+            await subscribeToUser(
+              user,
+              mediaType,
+              generation,
+            );
+          },
+        );
 
         rtcClient.on("user-joined", (user) => {
-          console.log("Remote user joined:", user.uid);
+          console.log(
+            "Remote user joined:",
+            user.uid,
+          );
         });
 
-        rtcClient.on("user-unpublished", (user, mediaType) => {
-          if (!isCurrentGeneration(generation)) return;
-
-          if (mediaType === "video") {
-            setHostJoined(false);
-            pendingVideoTrackRef.current = null;
-          }
-        });
-
-        // Astrologer leaves.
-        rtcClient.on("user-left", async (user, reason) => {
-          console.log("Agora user left:", user?.uid, reason);
-
-          if (!isCurrentGeneration(generation)) return;
-
-          setHostJoined(false);
-          pendingVideoTrackRef.current = null;
-
-          try {
-            const chatRoomId = chatRoomIdRef.current;
-
-            if (!chatRoomId) return;
-
-            await new Promise((resolve) => setTimeout(resolve, 5000));
-
-            if (!isCurrentGeneration(generation)) return;
-
-            const { data, errors } = await getLiveStatus({
-              variables: {
-                chatRoomId: String(chatRoomId),
-              },
-            });
-
-            if (!isCurrentGeneration(generation)) return;
-
-            if (errors?.length) {
-              console.error(errors);
+        rtcClient.on(
+          "user-unpublished",
+          (user, mediaType) => {
+            if (
+              !isCurrentGeneration(generation)
+            ) {
               return;
             }
 
-            const statusResponse = data?.getLiveStatus;
-
-            if (!statusResponse?.success) return;
-
-            const status = statusResponse.data?.status;
-
-            if (status === "ENDED") {
-              await handleStreamEnded(generation);
-            } else if (status === "LIVE") {
-              console.log("Live session is still active.");
+            if (mediaType === "video") {
+              setHostJoined(false);
+              pendingVideoTrackRef.current = null;
             }
-          } catch (err) {
-            console.error("Error checking live status:", err);
-          }
-        });
+          },
+        );
+
+        // Astrologer leaves.
+        rtcClient.on(
+          "user-left",
+          async (user, reason) => {
+            console.log(
+              "Agora user left:",
+              user?.uid,
+              reason,
+            );
+
+            if (
+              !isCurrentGeneration(generation)
+            ) {
+              return;
+            }
+
+            setHostJoined(false);
+            pendingVideoTrackRef.current = null;
+
+            try {
+              const chatRoomId =
+                chatRoomIdRef.current;
+
+              if (!chatRoomId) return;
+
+              await new Promise((resolve) =>
+                setTimeout(resolve, 5000),
+              );
+
+              if (
+                !isCurrentGeneration(generation)
+              ) {
+                return;
+              }
+
+              const { data, errors } =
+                await getLiveStatus({
+                  variables: {
+                    chatRoomId: String(chatRoomId),
+                  },
+                });
+
+              if (
+                !isCurrentGeneration(generation)
+              ) {
+                return;
+              }
+
+              if (errors?.length) {
+                console.error(errors);
+                return;
+              }
+
+              const statusResponse =
+                data?.getLiveStatus;
+
+              if (!statusResponse?.success) {
+                return;
+              }
+
+              const status =
+                statusResponse.data?.status;
+
+              if (status === "ENDED") {
+                await handleStreamEnded(
+                  generation,
+                );
+              } else if (status === "LIVE") {
+                console.log(
+                  "Live session is still active.",
+                );
+              }
+            } catch (err) {
+              console.error(
+                "Error checking live status:",
+                err,
+              );
+            }
+          },
+        );
 
         rtcClient.on(
           "connection-state-change",
           (state, previousState, reason) => {
-            console.log("Agora RTC connection:", {
-              state,
-              previousState,
-              reason,
-            });
+            console.log(
+              "Agora RTC connection:",
+              {
+                state,
+                previousState,
+                reason,
+              },
+            );
           },
         );
 
@@ -1170,29 +1626,44 @@ export default function WatchLive() {
           return;
         }
 
+        // -------------------------------------------------
         // Agora Chat.
-        const chatClient = new AgoraChat.connection({
-          appKey: live.chatAppKey,
-        });
+        // -------------------------------------------------
+
+        const chatClient =
+          new AgoraChat.connection({
+            appKey: live.chatAppKey,
+          });
 
         localChatClient = chatClient;
         chatClientRef.current = chatClient;
 
-        chatClient.addEventHandler(`LIVE_CHAT_${generation}`, {
-          onTextMessage: handleIncomingTextMessage,
+        chatClient.addEventHandler(
+          `LIVE_CHAT_${generation}`,
+          {
+            onTextMessage:
+              handleIncomingTextMessage,
 
-          onError: (chatError) => {
-            console.error("Agora Chat error:", chatError);
-          },
+            onError: (chatError) => {
+              console.error(
+                "Agora Chat error:",
+                chatError,
+              );
+            },
 
-          onConnected: () => {
-            console.log("Agora Chat connected.");
-          },
+            onConnected: () => {
+              console.log(
+                "Agora Chat connected.",
+              );
+            },
 
-          onDisconnected: () => {
-            console.log("Agora Chat disconnected.");
+            onDisconnected: () => {
+              console.log(
+                "Agora Chat disconnected.",
+              );
+            },
           },
-        });
+        );
 
         await chatClient.open({
           user: live.chatUserId,
@@ -1221,16 +1692,29 @@ export default function WatchLive() {
           return;
         }
 
+        // -------------------------------------------------
         // Subscribe to existing host tracks.
+        // -------------------------------------------------
+
         for (const user of rtcClient.remoteUsers) {
-          if (!isCurrentGeneration(generation)) break;
+          if (!isCurrentGeneration(generation)) {
+            break;
+          }
 
           if (user.hasVideo) {
-            await subscribeToUser(user, "video", generation);
+            await subscribeToUser(
+              user,
+              "video",
+              generation,
+            );
           }
 
           if (user.hasAudio) {
-            await subscribeToUser(user, "audio", generation);
+            await subscribeToUser(
+              user,
+              "audio",
+              generation,
+            );
           }
         }
 
@@ -1239,7 +1723,10 @@ export default function WatchLive() {
           setError("");
         }
       } catch (err) {
-        console.error("Initialize live error:", err);
+        console.error(
+          "Initialize live error:",
+          err,
+        );
 
         if (isCurrentGeneration(generation)) {
           setError(getErrorMessage(err));
@@ -1280,7 +1767,9 @@ export default function WatchLive() {
 
     if (!channelName) {
       setLoading(false);
-      setError("Live stream channel name is missing.");
+      setError(
+        "Live stream channel name is missing.",
+      );
 
       return () => {
         mountedRef.current = false;
@@ -1317,16 +1806,23 @@ export default function WatchLive() {
       try {
         remoteVideoRef.current.innerHTML = "";
 
-        pendingVideoTrackRef.current.play(remoteVideoRef.current);
+        pendingVideoTrackRef.current.play(
+          remoteVideoRef.current,
+        );
 
         pendingVideoTrackRef.current = null;
 
         setHostJoined(true);
         setError("");
       } catch (err) {
-        console.error("Unable to play remote video:", err);
+        console.error(
+          "Unable to play remote video:",
+          err,
+        );
 
-        setError("Unable to play the astrologer's video.");
+        setError(
+          "Unable to play the astrologer's video.",
+        );
       }
     }
   }, [loading, liveInfo]);
@@ -1338,7 +1834,11 @@ export default function WatchLive() {
   const sendMessage = async () => {
     const trimmedMessage = message.trim();
 
-    if (!trimmedMessage || !liveInfo || streamEnded) {
+    if (
+      !trimmedMessage ||
+      !liveInfo ||
+      streamEnded
+    ) {
       return;
     }
 
@@ -1346,17 +1846,20 @@ export default function WatchLive() {
     const AgoraChat = agoraChatRef.current;
 
     if (!chatClient || !AgoraChat) {
-      setError("Agora Chat is not connected. Please reconnect.");
+      setError(
+        "Agora Chat is not connected. Please reconnect.",
+      );
       return;
     }
 
     try {
-      const chatMessage = AgoraChat.message.create({
-        chatType: "chatRoom",
-        type: "txt",
-        to: liveInfo.chatRoomId,
-        msg: trimmedMessage,
-      });
+      const chatMessage =
+        AgoraChat.message.create({
+          chatType: "chatRoom",
+          type: "txt",
+          to: liveInfo.chatRoomId,
+          msg: trimmedMessage,
+        });
 
       await chatClient.send(chatMessage);
 
@@ -1374,7 +1877,11 @@ export default function WatchLive() {
       setMessage("");
       setError("");
     } catch (err) {
-      console.error("Send message error:", err);
+      console.error(
+        "Send message error:",
+        err,
+      );
+
       setError(getErrorMessage(err));
     }
   };
@@ -1387,7 +1894,9 @@ export default function WatchLive() {
     if (streamEnded) return;
 
     if (!liveInfo?.id) {
-      setGiftNotice("Stream database ID is missing.");
+      setGiftNotice(
+        "Stream database ID is missing.",
+      );
       return;
     }
 
@@ -1398,8 +1907,14 @@ export default function WatchLive() {
 
     const quantity = Number(giftQuantity);
 
-    if (!Number.isInteger(quantity) || quantity < 1 || quantity > 100) {
-      setGiftNotice("Quantity must be between 1 and 100.");
+    if (
+      !Number.isInteger(quantity) ||
+      quantity < 1 ||
+      quantity > 100
+    ) {
+      setGiftNotice(
+        "Quantity must be between 1 and 100.",
+      );
       return;
     }
 
@@ -1417,22 +1932,34 @@ export default function WatchLive() {
         },
       });
 
-      const result = response?.data?.sendLiveGift;
+      const result =
+        response?.data?.sendLiveGift;
 
       if (!result?.success) {
-        throw new Error(result?.message || "Gift transaction failed.");
+        throw new Error(
+          result?.message ||
+            "Gift transaction failed.",
+        );
       }
 
-      const sentName = result.giftName || selectedGift?.name || "Gift";
+      const sentName =
+        result.giftName ||
+        selectedGift?.name ||
+        "Gift";
 
-      const sentQuantity = Number(result.quantity ?? quantity);
+      const sentQuantity = Number(
+        result.quantity ?? quantity,
+      );
 
-      const coins = Number(result.totalCoins ?? totalGiftCoins);
+      const coins = Number(
+        result.totalCoins ?? totalGiftCoins,
+      );
 
       const balance = Number(result.userBalance);
 
       const balanceMessage =
-        result.userBalance != null && Number.isFinite(balance)
+        result.userBalance != null &&
+        Number.isFinite(balance)
           ? ` Remaining wallet balance: ${balance} coins.`
           : "";
 
@@ -1446,6 +1973,7 @@ export default function WatchLive() {
       await refetchGifts();
     } catch (err) {
       console.error("Send gift error:", err);
+
       setGiftNotice(getErrorMessage(err));
     } finally {
       setSendingGift(false);
@@ -1457,7 +1985,11 @@ export default function WatchLive() {
   // =====================================================
 
   const handleLeaveLive = async () => {
-    if (leavingRef.current || leavingLive || streamEnded) {
+    if (
+      leavingRef.current ||
+      leavingLive ||
+      streamEnded
+    ) {
       return;
     }
 
@@ -1474,8 +2006,15 @@ export default function WatchLive() {
             },
           });
         } catch (err) {
-          console.warn("Unable to end interaction:", err);
+          console.warn(
+            "Unable to end interaction:",
+            err,
+          );
         }
+      } else {
+        // Even if the interaction query has no request,
+        // release any locally active tracks.
+        await stopInteractionPublishing();
       }
 
       await leaveLiveStream({
@@ -1484,7 +2023,10 @@ export default function WatchLive() {
         },
       });
     } catch (err) {
-      console.error("Failed to leave live:", err);
+      console.error(
+        "Failed to leave live:",
+        err,
+      );
     } finally {
       generationRef.current++;
 
@@ -1527,7 +2069,9 @@ export default function WatchLive() {
     "Astrologer";
 
   const astrologerProfilePic =
-    liveInfo?.astrologer?.profilePic || liveInfo?.profilePic || "";
+    liveInfo?.astrologer?.profilePic ||
+    liveInfo?.profilePic ||
+    "";
 
   const canRequestInteraction =
     !streamEnded &&
@@ -1542,9 +2086,7 @@ export default function WatchLive() {
 
   return (
     <div className="relative flex min-h-[70vh] w-full flex-col bg-black text-white lg:flex-row">
-      {/* ============================================
-          VIDEO SECTION
-      ============================================ */}
+      {/* VIDEO SECTION */}
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* HEADER */}
@@ -1556,14 +2098,22 @@ export default function WatchLive() {
             </span>
 
             <div>
-              <h2 className="text-lg font-semibold">Live Session</h2>
+              <h2 className="text-lg font-semibold">
+                Live Session
+              </h2>
 
-              <p className="text-xs text-gray-400">Watch astrologer live</p>
+              <p className="text-xs text-gray-400">
+                Watch astrologer live
+              </p>
             </div>
           </div>
 
           <span className="rounded-full bg-gray-800 px-3 py-1 text-xs">
-            {hostJoined ? "● Connected" : loading ? "Connecting..." : "Waiting"}
+            {hostJoined
+              ? "● Connected"
+              : loading
+                ? "Connecting..."
+                : "Waiting"}
           </span>
         </div>
 
@@ -1575,7 +2125,9 @@ export default function WatchLive() {
               <div className="text-center">
                 <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-yellow-500 border-t-transparent" />
 
-                <p className="text-lg">Connecting to live stream...</p>
+                <p className="text-lg">
+                  Connecting to live stream...
+                </p>
 
                 <p className="mt-2 text-sm text-gray-400">
                   Please wait while we connect you.
@@ -1597,7 +2149,8 @@ export default function WatchLive() {
                     setError("");
                     setLoading(true);
 
-                    const generation = ++generationRef.current;
+                    const generation =
+                      ++generationRef.current;
 
                     void initializeLive(generation);
                   }}
@@ -1649,19 +2202,24 @@ export default function WatchLive() {
                         {astrologerName}
                       </h3>
 
-                      <p className="text-xs text-gray-300">Live Consultation</p>
+                      <p className="text-xs text-gray-300">
+                        Live Consultation
+                      </p>
 
                       <div className="mt-2 flex flex-wrap items-center gap-3 text-sm">
                         <span>
                           👁️{" "}
-                          {Number(liveInfo.totalViews ?? 0).toLocaleString(
-                            "en-IN",
-                          )}{" "}
+                          {Number(
+                            liveInfo.totalViews ?? 0,
+                          ).toLocaleString("en-IN")}{" "}
                           views
                         </span>
 
                         <span>
-                          👥 {Number(totalFollowers).toLocaleString("en-IN")}{" "}
+                          👥{" "}
+                          {Number(
+                            totalFollowers,
+                          ).toLocaleString("en-IN")}{" "}
                           followers
                         </span>
                       </div>
@@ -1706,31 +2264,29 @@ export default function WatchLive() {
 
                 {/* USER CAMERA PREVIEW */}
 
-                {/* USER CAMERA PREVIEW */}
-
                 <div
                   className={`absolute right-4 top-28 z-30 h-36 w-28 overflow-hidden rounded-xl border-2 border-yellow-400 bg-black shadow-xl sm:h-44 sm:w-36 ${
-                    isInteractionPublishing && interactionType === "VIDEO"
+                    isInteractionPublishing &&
+                    interactionType === "VIDEO"
                       ? "block"
                       : "hidden"
                   }`}
                 >
-                  <div ref={guestVideoRef} className="h-full w-full" />
+                  <div
+                    ref={guestVideoRef}
+                    className="h-full w-full"
+                  />
 
                   <span className="absolute bottom-1 left-1 rounded bg-black/70 px-2 py-1 text-xs">
                     You
                   </span>
                 </div>
 
-                {/* ==================================
-                    CALL REQUEST MODAL
-                ================================== */}
+                {/* CALL REQUEST MODAL */}
 
                 {interactionPanelOpen && (
                   <div className="absolute inset-0 z-[60] flex items-center justify-center bg-black/65 p-3 backdrop-blur-sm sm:p-5">
                     <div className="w-full max-w-md overflow-hidden rounded-2xl border border-gray-700 bg-gray-950 shadow-2xl">
-                      {/* MODAL HEADER */}
-
                       <div className="flex items-center justify-between border-b border-gray-800 p-4">
                         <div>
                           <h3 className="text-lg font-bold">
@@ -1747,10 +2303,15 @@ export default function WatchLive() {
                         </div>
 
                         {!isInteractionPublishing &&
-                          interactionStatus !== "PENDING" && (
+                          interactionStatus !==
+                            "PENDING" && (
                             <button
                               type="button"
-                              onClick={() => setInteractionPanelOpen(false)}
+                              onClick={() =>
+                                setInteractionPanelOpen(
+                                  false,
+                                )
+                              }
                               className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-800 hover:bg-red-600"
                             >
                               ✕
@@ -1759,17 +2320,18 @@ export default function WatchLive() {
                       </div>
 
                       <div className="p-5">
-                        {/* CALL ICON */}
-
                         <div className="mb-5 flex justify-center">
                           <div className="flex h-20 w-20 items-center justify-center rounded-full border border-yellow-500/30 bg-yellow-500/10 text-4xl">
-                            {interactionType === "AUDIO" ? "🎙️" : "📹"}
+                            {interactionType === "AUDIO"
+                              ? "🎙️"
+                              : "📹"}
                           </div>
                         </div>
 
                         {/* PENDING */}
 
-                        {interactionStatus === "PENDING" &&
+                        {interactionStatus ===
+                          "PENDING" &&
                           !isInteractionPublishing && (
                             <div className="text-center">
                               <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-yellow-500 border-t-transparent" />
@@ -1779,12 +2341,15 @@ export default function WatchLive() {
                               </h4>
 
                               <p className="mt-2 text-sm text-gray-400">
-                                Waiting for {astrologerName} to accept your{" "}
-                                {interactionType.toLowerCase()} call.
+                                Waiting for {astrologerName} to
+                                accept your{" "}
+                                {interactionType.toLowerCase()}{" "}
+                                call.
                               </p>
 
                               <p className="mt-4 text-xs text-gray-500">
-                                Please keep watching the live session.
+                                Please keep watching the live
+                                session.
                               </p>
 
                               <button
@@ -1809,13 +2374,16 @@ export default function WatchLive() {
                             </div>
 
                             <p className="text-sm text-gray-300">
-                              Your {interactionType.toLowerCase()} call with{" "}
-                              {astrologerName} is active.
+                              Your{" "}
+                              {interactionType.toLowerCase()}{" "}
+                              call with {astrologerName} is
+                              active.
                             </p>
 
                             {interactionType === "VIDEO" ? (
                               <p className="mt-2 text-xs text-gray-400">
-                                Your camera and microphone are connected.
+                                Your camera and microphone are
+                                connected.
                               </p>
                             ) : (
                               <p className="mt-2 text-xs text-gray-400">
@@ -1838,7 +2406,8 @@ export default function WatchLive() {
 
                         {/* ACCEPTED BUT CAMERA / MICROPHONE FAILED */}
 
-                        {interactionStatus === "ACCEPTED" &&
+                        {interactionStatus ===
+                          "ACCEPTED" &&
                           !isInteractionPublishing && (
                             <div className="text-center">
                               <div className="mb-3 text-lg font-semibold text-yellow-400">
@@ -1852,8 +2421,9 @@ export default function WatchLive() {
                               )}
 
                               <p className="text-sm text-gray-400">
-                                Your interaction was accepted, but your
-                                microphone or camera could not be initialized.
+                                Your interaction was accepted,
+                                but your microphone or camera
+                                could not be initialized.
                               </p>
 
                               <button
@@ -1873,7 +2443,8 @@ export default function WatchLive() {
 
                         {!isInteractionPublishing &&
                           interactionStatus !== "PENDING" &&
-                          interactionStatus !== "ACCEPTED" && (
+                          interactionStatus !==
+                            "ACCEPTED" && (
                             <div className="text-center">
                               {interactionNotice && (
                                 <p className="mb-4 text-sm text-yellow-300">
@@ -1882,7 +2453,8 @@ export default function WatchLive() {
                               )}
 
                               <p className="mb-5 text-sm text-gray-400">
-                                Request an audio or video consultation with the
+                                Request an audio or video
+                                consultation with the
                                 astrologer.
                               </p>
 
@@ -1890,12 +2462,18 @@ export default function WatchLive() {
                                 <button
                                   type="button"
                                   onClick={() =>
-                                    handleRequestInteraction("AUDIO")
+                                    handleRequestInteraction(
+                                      "AUDIO",
+                                    )
                                   }
-                                  disabled={!canRequestInteraction}
+                                  disabled={
+                                    !canRequestInteraction
+                                  }
                                   className="rounded-xl border border-yellow-500/40 bg-yellow-500/10 p-4 text-yellow-300 transition hover:bg-yellow-500/20 disabled:opacity-50"
                                 >
-                                  <span className="block text-3xl">🎙️</span>
+                                  <span className="block text-3xl">
+                                    🎙️
+                                  </span>
 
                                   <span className="mt-2 block font-semibold">
                                     Audio Call
@@ -1905,12 +2483,18 @@ export default function WatchLive() {
                                 <button
                                   type="button"
                                   onClick={() =>
-                                    handleRequestInteraction("VIDEO")
+                                    handleRequestInteraction(
+                                      "VIDEO",
+                                    )
                                   }
-                                  disabled={!canRequestInteraction}
+                                  disabled={
+                                    !canRequestInteraction
+                                  }
                                   className="rounded-xl border border-blue-500/40 bg-blue-500/10 p-4 text-blue-300 transition hover:bg-blue-500/20 disabled:opacity-50"
                                 >
-                                  <span className="block text-3xl">📹</span>
+                                  <span className="block text-3xl">
+                                    📹
+                                  </span>
 
                                   <span className="mt-2 block font-semibold">
                                     Video Call
@@ -1930,9 +2514,7 @@ export default function WatchLive() {
                   </div>
                 )}
 
-                {/* ==================================
-                    GIFT PANEL
-                ================================== */}
+                {/* GIFT PANEL */}
 
                 {giftPanelOpen && (
                   <div
@@ -1942,7 +2524,9 @@ export default function WatchLive() {
                   >
                     <div className="mb-4 flex items-center justify-between border-b border-gray-800 pb-3">
                       <div>
-                        <h3 className="text-lg font-bold">🎁 Send a Gift</h3>
+                        <h3 className="text-lg font-bold">
+                          🎁 Send a Gift
+                        </h3>
 
                         <p className="mt-1 text-xs text-gray-400">
                           Support the astrologer.
@@ -1951,40 +2535,48 @@ export default function WatchLive() {
 
                       <button
                         type="button"
-                        onClick={() => setGiftPanelOpen(false)}
+                        onClick={() =>
+                          setGiftPanelOpen(false)
+                        }
                         className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-800"
                       >
                         ✕
                       </button>
                     </div>
 
-                    {giftsLoading && gifts.length === 0 && (
-                      <p className="py-6 text-center text-sm text-gray-300">
-                        Loading gifts...
-                      </p>
-                    )}
+                    {giftsLoading &&
+                      gifts.length === 0 && (
+                        <p className="py-6 text-center text-sm text-gray-300">
+                          Loading gifts...
+                        </p>
+                      )}
 
-                    {giftsError && gifts.length === 0 && (
-                      <div className="text-sm text-red-300">
-                        Unable to load gifts.
-                        <button
-                          type="button"
-                          onClick={() => void refetchGifts()}
-                          className="ml-2 text-yellow-400"
-                        >
-                          Try again
-                        </button>
-                      </div>
-                    )}
+                    {giftsError &&
+                      gifts.length === 0 && (
+                        <div className="text-sm text-red-300">
+                          Unable to load gifts.
+                          <button
+                            type="button"
+                            onClick={() =>
+                              void refetchGifts()
+                            }
+                            className="ml-2 text-yellow-400"
+                          >
+                            Try again
+                          </button>
+                        </div>
+                      )}
 
                     {gifts.length > 0 && (
                       <>
                         <div className="grid grid-cols-3 gap-2">
                           {gifts.map((gift) => {
                             const isSelected =
-                              String(selectedGiftId) === String(gift.id);
+                              String(selectedGiftId) ===
+                              String(gift.id);
 
-                            const image = getGiftImage(gift);
+                            const image =
+                              getGiftImage(gift);
 
                             const imageUrl = image
                               ? image.startsWith("http")
@@ -1997,7 +2589,9 @@ export default function WatchLive() {
                                 type="button"
                                 key={gift.id}
                                 onClick={() => {
-                                  setSelectedGiftId(gift.id);
+                                  setSelectedGiftId(
+                                    gift.id,
+                                  );
                                   setGiftNotice("");
                                 }}
                                 className={`relative flex min-h-[105px] flex-col items-center justify-center rounded-xl border p-2 text-center ${
@@ -2013,7 +2607,9 @@ export default function WatchLive() {
                                     className="h-10 w-10 object-contain"
                                   />
                                 ) : (
-                                  <span className="text-3xl">🎁</span>
+                                  <span className="text-3xl">
+                                    🎁
+                                  </span>
                                 )}
 
                                 <span className="mt-2 text-xs font-semibold">
@@ -2030,10 +2626,13 @@ export default function WatchLive() {
 
                         {selectedGift && (
                           <div className="mt-4 rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-3">
-                            <p className="font-semibold">{selectedGift.name}</p>
+                            <p className="font-semibold">
+                              {selectedGift.name}
+                            </p>
 
                             <p className="text-sm text-yellow-400">
-                              {getGiftPrice(selectedGift)} coins each
+                              {getGiftPrice(selectedGift)}{" "}
+                              coins each
                             </p>
 
                             <div className="mt-4 flex items-center justify-between">
@@ -2044,8 +2643,13 @@ export default function WatchLive() {
                               <div className="flex items-center gap-3">
                                 <button
                                   type="button"
-                                  onClick={decreaseGiftQuantity}
-                                  disabled={sendingGift || quantityNumber <= 1}
+                                  onClick={
+                                    decreaseGiftQuantity
+                                  }
+                                  disabled={
+                                    sendingGift ||
+                                    quantityNumber <= 1
+                                  }
                                   className="h-9 w-9 rounded-lg bg-gray-800 text-lg disabled:opacity-40"
                                 >
                                   −
@@ -2058,28 +2662,37 @@ export default function WatchLive() {
                                   value={giftQuantity}
                                   disabled={sendingGift}
                                   onChange={(event) => {
-                                    const raw = event.target.value;
+                                    const raw =
+                                      event.target.value;
 
                                     if (raw === "") {
                                       setGiftQuantity("");
                                       return;
                                     }
 
-                                    const value = Number(raw);
+                                    const value =
+                                      Number(raw);
 
                                     if (
-                                      Number.isInteger(value) &&
+                                      Number.isInteger(
+                                        value,
+                                      ) &&
                                       value >= 1 &&
                                       value <= 100
                                     ) {
-                                      setGiftQuantity(value);
+                                      setGiftQuantity(
+                                        value,
+                                      );
                                     }
                                   }}
                                   onBlur={() => {
-                                    const value = Number(giftQuantity);
+                                    const value =
+                                      Number(giftQuantity);
 
                                     if (
-                                      !Number.isInteger(value) ||
+                                      !Number.isInteger(
+                                        value,
+                                      ) ||
                                       value < 1 ||
                                       value > 100
                                     ) {
@@ -2091,9 +2704,12 @@ export default function WatchLive() {
 
                                 <button
                                   type="button"
-                                  onClick={increaseGiftQuantity}
+                                  onClick={
+                                    increaseGiftQuantity
+                                  }
                                   disabled={
-                                    sendingGift || quantityNumber >= 100
+                                    sendingGift ||
+                                    quantityNumber >= 100
                                   }
                                   className="h-9 w-9 rounded-lg bg-gray-800 text-lg disabled:opacity-40"
                                 >
@@ -2108,7 +2724,10 @@ export default function WatchLive() {
                               </span>
 
                               <span className="font-bold text-yellow-400">
-                                {totalGiftCoins.toLocaleString("en-IN")} coins
+                                {totalGiftCoins.toLocaleString(
+                                  "en-IN",
+                                )}{" "}
+                                coins
                               </span>
                             </div>
                           </div>
@@ -2126,7 +2745,9 @@ export default function WatchLive() {
                           disabled={
                             sendingGift ||
                             !selectedGiftId ||
-                            !Number.isInteger(quantityNumber) ||
+                            !Number.isInteger(
+                              quantityNumber,
+                            ) ||
                             quantityNumber < 1 ||
                             quantityNumber > 100
                           }
@@ -2134,32 +2755,33 @@ export default function WatchLive() {
                         >
                           {sendingGift
                             ? "Sending Gift..."
-                            : `🎁 Send Gift${selectedGift ? ` · ${totalGiftCoins} coins` : ""}`}
+                            : `🎁 Send Gift${
+                                selectedGift
+                                  ? ` · ${totalGiftCoins} coins`
+                                  : ""
+                              }`}
                         </button>
 
                         <p className="mt-2 text-center text-xs text-gray-500">
-                          Your wallet will be charged after successful gifting.
+                          Your wallet will be charged after
+                          successful gifting.
                         </p>
                       </>
                     )}
                   </div>
                 )}
 
-                {/* ==================================
-                    BOTTOM CONTROLS
-                ================================== */}
+                {/* BOTTOM CONTROLS */}
 
                 <div className="absolute bottom-0 left-0 right-0 z-30 bg-gradient-to-t from-black via-black/90 to-transparent px-3 pb-4 pt-12 sm:px-5">
                   <div className="flex items-center justify-between gap-2">
-                    {/* LIVE STATUS */}
-
                     <div className="hidden items-center gap-2 text-sm text-gray-300 sm:flex">
                       <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-red-500" />
 
-                      {hostJoined ? "Live now" : "Connecting..."}
+                      {hostJoined
+                        ? "Live now"
+                        : "Connecting..."}
                     </div>
-
-                    {/* AUDIO / VIDEO / GIFT */}
 
                     <div className="flex flex-1 items-center justify-center gap-2 sm:gap-4">
                       {/* AUDIO CALL */}
@@ -2180,7 +2802,9 @@ export default function WatchLive() {
                         title="Audio Call"
                         className="flex flex-col items-center justify-center gap-1 rounded-xl border border-white/20 bg-gray-900/90 px-4 py-2 text-white shadow-lg transition hover:scale-105 hover:bg-yellow-600 disabled:cursor-not-allowed disabled:opacity-40"
                       >
-                        <span className="text-2xl">🎙️</span>
+                        <span className="text-2xl">
+                          🎙️
+                        </span>
 
                         <span className="text-[11px] font-semibold sm:text-xs">
                           Audio Call
@@ -2205,7 +2829,9 @@ export default function WatchLive() {
                         title="Video Call"
                         className="flex flex-col items-center justify-center gap-1 rounded-xl border border-white/20 bg-gray-900/90 px-4 py-2 text-white shadow-lg transition hover:scale-105 hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-40"
                       >
-                        <span className="text-2xl">📹</span>
+                        <span className="text-2xl">
+                          📹
+                        </span>
 
                         <span className="text-[11px] font-semibold sm:text-xs">
                           Video Call
@@ -2217,13 +2843,17 @@ export default function WatchLive() {
                       <button
                         type="button"
                         onClick={() => {
-                          setGiftPanelOpen((open) => !open);
+                          setGiftPanelOpen(
+                            (open) => !open,
+                          );
                           setGiftNotice("");
                         }}
                         aria-label="Send Gift"
                         className="flex flex-col items-center justify-center gap-1 rounded-xl border border-yellow-400/40 bg-yellow-500 px-4 py-2 text-black shadow-lg transition hover:scale-105 hover:bg-yellow-400"
                       >
-                        <span className="text-2xl">🎁</span>
+                        <span className="text-2xl">
+                          🎁
+                        </span>
 
                         <span className="text-[11px] font-bold sm:text-xs">
                           Gift
@@ -2243,7 +2873,9 @@ export default function WatchLive() {
                       {leavingLive ? (
                         <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
                       ) : (
-                        <span className="text-xl">✕</span>
+                        <span className="text-xl">
+                          ✕
+                        </span>
                       )}
                     </button>
                   </div>
@@ -2262,17 +2894,19 @@ export default function WatchLive() {
         </div>
       </div>
 
-      {/* ================================================
-          RIGHT SIDE CHAT
-      ================================================ */}
+      {/* RIGHT SIDE CHAT */}
 
       <aside className="flex w-full min-w-0 flex-col border-t border-gray-800 bg-gray-950 lg:w-[350px] lg:shrink-0 lg:border-l lg:border-t-0">
         {/* CHAT HEADER */}
 
         <div className="border-b border-gray-800 px-4 py-3">
-          <h3 className="font-semibold">Live Chat</h3>
+          <h3 className="font-semibold">
+            Live Chat
+          </h3>
 
-          <p className="text-xs text-gray-400">Chat with the community</p>
+          <p className="text-xs text-gray-400">
+            Chat with the community
+          </p>
         </div>
 
         {/* MESSAGES */}
@@ -2285,7 +2919,9 @@ export default function WatchLive() {
             <div key={item.id} className="mb-2">
               {item.kind === "gift" ? (
                 <div className="inline-flex max-w-full items-center rounded-xl border border-yellow-400/40 bg-yellow-500/10 p-3">
-                  <span className="mr-2 text-2xl">{item.giftIcon || "🎁"}</span>
+                  <span className="mr-2 text-2xl">
+                    {item.giftIcon || "🎁"}
+                  </span>
 
                   <div className="break-words text-sm">
                     <strong className="text-yellow-300">
@@ -2296,11 +2932,16 @@ export default function WatchLive() {
 
                     <strong>{item.giftName}</strong>
 
-                    {item.quantity > 1 && <span> × {item.quantity}</span>}
+                    {item.quantity > 1 && (
+                      <span> × {item.quantity}</span>
+                    )}
 
                     {item.totalCoins != null && (
                       <div className="mt-1 text-xs text-yellow-300">
-                        {Number(item.totalCoins).toLocaleString("en-IN")} coins
+                        {Number(
+                          item.totalCoins,
+                        ).toLocaleString("en-IN")}{" "}
+                        coins
                       </div>
                     )}
                   </div>
@@ -2308,19 +2949,27 @@ export default function WatchLive() {
               ) : (
                 <div
                   className={`flex max-w-[95%] flex-col break-words rounded-xl px-3 py-2 ${
-                    item.isOwn ? "ml-auto bg-red-900/50" : "bg-gray-800"
+                    item.isOwn
+                      ? "ml-auto bg-red-900/50"
+                      : "bg-gray-800"
                   }`}
                 >
                   <span
                     className={`mb-1 font-semibold ${
-                      item.isOwn ? "text-green-400" : "text-yellow-400"
+                      item.isOwn
+                        ? "text-green-400"
+                        : "text-yellow-400"
                     }`}
                   >
                     {item.isOwn
                       ? "You"
                       : item.senderName
                           ?.split("_")[0]
-                          ?.replace(/^./, (char) => char.toUpperCase())}
+                          ?.replace(
+                            /^./,
+                            (char) =>
+                              char.toUpperCase(),
+                          )}
                   </span>
 
                   <span className="whitespace-pre-wrap text-sm text-white">
@@ -2332,7 +2981,9 @@ export default function WatchLive() {
           ))}
 
           {messages.length === 0 && (
-            <p className="text-sm text-gray-400">Messages will appear here.</p>
+            <p className="text-sm text-gray-400">
+              Messages will appear here.
+            </p>
           )}
         </div>
 
@@ -2341,13 +2992,20 @@ export default function WatchLive() {
         <div className="mt-auto flex items-center gap-2 border-t border-gray-800 bg-black/80 p-3">
           <input
             value={message}
-            onChange={(event) => setMessage(event.target.value)}
+            onChange={(event) =>
+              setMessage(event.target.value)
+            }
             placeholder="Write a message..."
             maxLength={1000}
-            disabled={!liveInfo || loading || streamEnded}
+            disabled={
+              !liveInfo || loading || streamEnded
+            }
             className="min-w-0 flex-1 rounded-full bg-gray-900 px-4 py-3 text-white outline-none placeholder:text-gray-500 focus:ring-1 focus:ring-red-500 disabled:opacity-50"
             onKeyDown={(event) => {
-              if (event.key === "Enter" && !event.shiftKey) {
+              if (
+                event.key === "Enter" &&
+                !event.shiftKey
+              ) {
                 event.preventDefault();
                 void sendMessage();
               }
@@ -2357,7 +3015,12 @@ export default function WatchLive() {
           <button
             type="button"
             onClick={() => void sendMessage()}
-            disabled={!message.trim() || !liveInfo || loading || streamEnded}
+            disabled={
+              !message.trim() ||
+              !liveInfo ||
+              loading ||
+              streamEnded
+            }
             className="rounded-full bg-red-600 px-5 py-3 text-white hover:bg-red-700 disabled:opacity-50"
           >
             Send
@@ -2365,9 +3028,7 @@ export default function WatchLive() {
         </div>
       </aside>
 
-      {/* ================================================
-          LIVE ENDED SCREEN
-      ================================================ */}
+      {/* LIVE ENDED SCREEN */}
 
       {streamEnded && (
         <div
@@ -2376,13 +3037,18 @@ export default function WatchLive() {
           className="fixed inset-0 z-[100] flex min-h-screen flex-col items-center justify-center bg-gray-950 px-6 text-center text-white"
         >
           <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full border border-red-500/30 bg-red-500/10">
-            <span className="text-5xl">📴</span>
+            <span className="text-5xl">
+              📴
+            </span>
           </div>
 
-          <h2 className="text-3xl font-bold sm:text-4xl">Live Session Ended</h2>
+          <h2 className="text-3xl font-bold sm:text-4xl">
+            Live Session Ended
+          </h2>
 
           <p className="mt-4 max-w-md text-base leading-7 text-gray-300">
-            The astrologer has ended the live session. Thank you for joining!
+            The astrologer has ended the live session.
+            Thank you for joining!
           </p>
 
           <div className="mt-8 flex items-center gap-3 rounded-full border border-gray-700 bg-gray-900 px-5 py-3">
@@ -2397,11 +3063,16 @@ export default function WatchLive() {
             type="button"
             onClick={() => {
               if (redirectTimeoutRef.current) {
-                clearTimeout(redirectTimeoutRef.current);
+                clearTimeout(
+                  redirectTimeoutRef.current,
+                );
+
                 redirectTimeoutRef.current = null;
               }
 
-              router.push("/astrologer/liveStream");
+              router.push(
+                "/astrologer/liveStream",
+              );
             }}
             className="mt-8 rounded-xl bg-red-600 px-6 py-3 font-semibold text-white hover:bg-red-700"
           >
