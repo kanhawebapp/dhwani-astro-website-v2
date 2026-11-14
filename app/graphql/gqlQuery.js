@@ -1088,3 +1088,36 @@ export const START_LIVE_INTERACTION = gql`
     }
   }
 `;
+
+export const GET_MY_LIVE_INTERACTION_HISTORY = gql`
+  query GetMyLiveInteractionHistory(
+    $searchInput: MyLiveInteractionHistorySearchInput
+  ) {
+    getMyLiveInteractionHistory(searchInput: $searchInput) {
+      data {
+        sessionId
+        liveStreamId
+        astrologerId
+        astrologerName
+        interactionType
+        status
+        ratePerMin
+        chargedCoins
+        durationSeconds
+        billableMinutes
+        requestedAt
+        acceptedAt
+        startedAt
+        endedAt
+        createdAt
+      }
+
+      totalCount
+      currentPage
+      totalPages
+      totalCoinsDeducted
+      totalAudioCalls
+      totalVideoCalls
+    }
+  }
+`;
