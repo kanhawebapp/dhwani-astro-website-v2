@@ -1057,7 +1057,34 @@ export const END_LIVE_INTERACTION = gql`
     endLiveInteraction(requestId: $requestId) {
       id
       status
+      interactionType
+      startedAt
       endedAt
+      durationSeconds
+      billableMinutes
+      chargedCoins
+    }
+  }
+`;
+
+export const GET_LIVE_INTERACTION_PRICING = gql`
+  query GetLiveInteractionPricing($astrologerId: ID!) {
+    getLiveInteractionPricing(astrologerId: $astrologerId) {
+      audioPrice
+      videoPrice
+      walletBalance
+      audioAvailable
+      videoAvailable
+    }
+  }
+`;
+
+export const START_LIVE_INTERACTION = gql`
+  mutation StartLiveInteraction($requestId: ID!) {
+    startLiveInteraction(requestId: $requestId) {
+      id
+      status
+      startedAt
     }
   }
 `;

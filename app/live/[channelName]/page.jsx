@@ -16,7 +16,9 @@ import {
   GET_LIVE_STATUS,
   CREATE_LIVE_INTERACTION_REQUEST,
   GET_MY_LIVE_INTERACTION,
+  START_LIVE_INTERACTION,
   END_LIVE_INTERACTION,
+  GET_LIVE_INTERACTION_PRICING,
 } from "@/app/graphql/gqlQuery";
 
 export default function WatchLive() {
@@ -100,6 +102,25 @@ export default function WatchLive() {
     liveInfoRef.current = liveInfo;
   }, [liveInfo]);
 
+  const {
+    data: pricingData,
+    loading: pricingLoading,
+    refetch: refetchPricing,
+  } = useQuery(GET_LIVE_INTERACTION_PRICING, {
+    variables: {
+      astrologerId: liveInfo?.astrologerId || "",
+    },
+    skip: !liveInfo?.astrologerId,
+    fetchPolicy: "network-only",
+    errorPolicy: "all",
+  });
+
+  const interactionPricing = pricingData?.getLiveInteractionPricing;
+
+  const audioPrice = Number(interactionPricing?.audioPrice ?? 0);
+  const videoPrice = Number(interactionPricing?.videoPrice ?? 0);
+  const walletBalance = Number(interactionPricing?.walletBalance ?? 0);
+
   // =====================================================
   // GRAPHQL: JOIN LIVE
   // =====================================================
@@ -124,6 +145,8 @@ export default function WatchLive() {
   );
 
   const [endInteractionRequest] = useMutation(END_LIVE_INTERACTION);
+
+  const [startLiveInteractionMutation] = useMutation(START_LIVE_INTERACTION);
 
   const {
     data: interactionData,
@@ -247,6 +270,107 @@ export default function WatchLive() {
       err?.message ||
       "Something went wrong. Please try again."
     );
+  }, []);
+
+  // =====================================================
+  // WAIT FOR RTC CONNECTION
+  // =====================================================
+
+  /**
+   * Waits until the given Agora RTC client reaches the "CONNECTED" state.
+   * Uses an event listener on "connection-state-change" plus an immediate
+   * check, with a timeout to avoid waiting forever.
+   */
+  const waitForRtcConnection = useCallback((rtcClient, timeoutMs = 15000) => {
+    return new Promise((resolve, reject) => {
+      if (!rtcClient) {
+        reject(new Error("Agora RTC client is unavailable."));
+        return;
+      }
+
+      if (rtcClient.connectionState === "CONNECTED") {
+        resolve();
+        return;
+      }
+
+      if (rtcClient.connectionState === "DISCONNECTED") {
+        reject(
+          new Error(
+            "Agora client is disconnected. Please reconnect to the live stream.",
+          ),
+        );
+        return;
+      }
+
+      let settled = false;
+      let timeoutId = null;
+
+      const cleanup = () => {
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+          timeoutId = null;
+        }
+        try {
+          rtcClient.off("connection-state-change", onStateChange);
+        } catch (err) {
+          console.warn("Unable to remove connection listener:", err);
+        }
+      };
+
+      const finishResolve = () => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        resolve();
+      };
+
+      const finishReject = (error) => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        reject(error);
+      };
+
+      const onStateChange = (state) => {
+        if (state === "CONNECTED") {
+          finishResolve();
+        } else if (state === "DISCONNECTED") {
+          finishReject(
+            new Error(
+              "Agora client disconnected before publishing. Please reconnect.",
+            ),
+          );
+        }
+      };
+
+      try {
+        rtcClient.on("connection-state-change", onStateChange);
+      } catch (err) {
+        finishReject(
+          new Error(
+            `Unable to monitor Agora connection state: ${
+              err?.message || "unknown error"
+            }`,
+          ),
+        );
+        return;
+      }
+
+      // Re-check in case the state changed between the first check and
+      // listener registration.
+      if (rtcClient.connectionState === "CONNECTED") {
+        finishResolve();
+        return;
+      }
+
+      timeoutId = setTimeout(() => {
+        finishReject(
+          new Error(
+            "Timed out waiting for Agora connection. Please check your network and try again.",
+          ),
+        );
+      }, timeoutMs);
+    });
   }, []);
 
   // =====================================================
@@ -411,7 +535,10 @@ export default function WatchLive() {
 
       if (rtcClient && !streamEnded) {
         try {
-          await rtcClient.setClientRole("audience");
+          // Only switch back if the client is actually connected.
+          if (rtcClient.connectionState === "CONNECTED") {
+            await rtcClient.setClientRole("audience");
+          }
         } catch (err) {
           console.warn("Unable to switch back to audience:", err);
         }
@@ -441,9 +568,7 @@ export default function WatchLive() {
 
       const request = session.request;
 
-      if (request?.status !== "ACCEPTED") {
-        return;
-      }
+      if (request?.status !== "ACCEPTED") return;
 
       if (!request?.id) {
         throw new Error("Interaction request ID is missing.");
@@ -456,9 +581,7 @@ export default function WatchLive() {
         return;
       }
 
-      if (failedInteractionIdRef.current === request.id) {
-        return;
-      }
+      if (failedInteractionIdRef.current === request.id) return;
 
       if (!session.rtcToken || !session.channelName || session.uid == null) {
         throw new Error("Publisher RTC configuration is missing.");
@@ -491,22 +614,18 @@ export default function WatchLive() {
       try {
         setInteractionNotice("Connecting your microphone and camera...");
 
-        // -------------------------------------------------
-        // 1. Switch audience to host.
-        // -------------------------------------------------
+        // 1. Wait for the viewer's Agora client to actually finish joining
+        //    the channel (state CONNECTED). The client may still be in
+        //    CONNECTING right after the interaction is accepted.
+        await waitForRtcConnection(rtcClient, 15000);
 
+        // 2. Switch existing viewer connection to host.
         await rtcClient.setClientRole("host");
 
-        // -------------------------------------------------
-        // 2. Renew RTC token.
-        // -------------------------------------------------
-
+        // 3. Renew token AFTER successful channel join + role switch.
         await rtcClient.renewToken(session.rtcToken);
 
-        // -------------------------------------------------
-        // 3. Create microphone.
-        // -------------------------------------------------
-
+        // 4. Create microphone.
         try {
           audioTrack = await AgoraRTC.createMicrophoneAudioTrack({
             encoderConfig: "speech_standard",
@@ -531,7 +650,7 @@ export default function WatchLive() {
 
           if (audioErrorName === "NotReadableError") {
             throw new Error(
-              "Microphone is being used by another application. Close other applications using the microphone and try again.",
+              "Microphone is being used by another application.",
             );
           }
 
@@ -544,10 +663,7 @@ export default function WatchLive() {
 
         const tracksToPublish = [audioTrack];
 
-        // -------------------------------------------------
-        // 4. Create camera only for video interaction.
-        // -------------------------------------------------
-
+        // 5. Create camera only for video interaction.
         if (request.interactionType === "VIDEO") {
           videoTrack = await createCameraTrackSafely(AgoraRTC);
 
@@ -561,22 +677,24 @@ export default function WatchLive() {
           }
         }
 
-        // -------------------------------------------------
-        // 5. Publish local tracks.
-        // -------------------------------------------------
-
+        // 6. Publish tracks.
         await rtcClient.publish(tracksToPublish);
 
         tracksPublished = true;
 
-        activeInteractionIdRef.current = request.id;
+        // 7. Start billing timer on backend only after successful publish.
+        await startLiveInteractionMutation({
+          variables: {
+            requestId: request.id,
+          },
+        });
 
+        activeInteractionIdRef.current = request.id;
         failedInteractionIdRef.current = null;
 
         if (mountedRef.current) {
           setInteractionType(request.interactionType);
           setInteractionStatus("ACCEPTED");
-
           setIsInteractionPublishing(true);
 
           setInteractionNotice(
@@ -596,18 +714,13 @@ export default function WatchLive() {
       } catch (err) {
         console.error("Unable to start interaction:", err);
 
-        // -------------------------------------------------
-        // Cleanup partially created/published tracks.
-        // -------------------------------------------------
-
         if (tracksPublished) {
           try {
-            await rtcClient.unpublish([audioTrack, videoTrack].filter(Boolean));
-          } catch (unpublishError) {
-            console.warn(
-              "Failed to unpublish partially initialized tracks:",
-              unpublishError,
+            await rtcClient.unpublish(
+              [audioTrack, videoTrack].filter(Boolean),
             );
+          } catch (unpublishError) {
+            console.warn("Unpublish failed:", unpublishError);
           }
         }
 
@@ -637,7 +750,7 @@ export default function WatchLive() {
         }
 
         try {
-          if (!streamEnded) {
+          if (!streamEnded && rtcClient.connectionState === "CONNECTED") {
             await rtcClient.setClientRole("audience");
           }
         } catch (roleError) {
@@ -645,6 +758,7 @@ export default function WatchLive() {
         }
 
         activeInteractionIdRef.current = null;
+        failedInteractionIdRef.current = request.id;
 
         if (mountedRef.current) {
           setIsInteractionPublishing(false);
@@ -655,7 +769,12 @@ export default function WatchLive() {
         publishingInteractionRef.current = false;
       }
     },
-    [createCameraTrackSafely, streamEnded],
+    [
+      createCameraTrackSafely,
+      streamEnded,
+      startLiveInteractionMutation,
+      waitForRtcConnection,
+    ],
   );
 
   // =====================================================
@@ -679,6 +798,30 @@ export default function WatchLive() {
     try {
       setInteractionLoading(true);
       setInteractionNotice("");
+
+      // Always refresh wallet and pricing before requesting.
+      const pricingResponse = await refetchPricing();
+
+      const pricing = pricingResponse?.data?.getLiveInteractionPricing;
+
+      if (!pricing) {
+        throw new Error("Unable to retrieve call pricing.");
+      }
+
+      const requiredCoins =
+        requestedType === "AUDIO"
+          ? Number(pricing.audioPrice)
+          : Number(pricing.videoPrice);
+
+      const currentBalance = Number(pricing.walletBalance);
+
+      if (currentBalance < requiredCoins) {
+        setInteractionNotice(
+          `Insufficient wallet balance. You need at least ${requiredCoins} coins for the first minute. Your balance is ${currentBalance} coins. Please recharge your wallet.`,
+        );
+        return;
+      }
+
       setInteractionType(requestedType);
       setInteractionPanelOpen(true);
 
@@ -700,15 +843,12 @@ export default function WatchLive() {
       setInteractionStatus(result.status);
 
       setInteractionNotice(
-        result.status === "PENDING"
-          ? `Your ${requestedType.toLowerCase()} call request has been sent. Waiting for astrologer's approval.`
-          : `Request status: ${result.status}`,
+        `Your ${requestedType.toLowerCase()} call request has been sent. Waiting for astrologer's approval.`,
       );
 
       await refetchInteraction();
     } catch (err) {
       console.error("Interaction request error:", err);
-
       setInteractionNotice(getErrorMessage(err));
     } finally {
       setInteractionLoading(false);
@@ -719,87 +859,76 @@ export default function WatchLive() {
   // WATCH INTERACTION STATUS
   // =====================================================
 
-useEffect(() => {
-  if (!interactionRequest || streamEnded) {
-    return;
-  }
-
-  // Declare requestId BEFORE using it
-  const status = interactionRequest.status;
-  const requestId = interactionRequest.id;
-
-  setInteractionStatus(status);
-
-  if (status !== "ACCEPTED") {
-    failedInteractionIdRef.current = null;
-  }
-
-  if (status === "ACCEPTED") {
-    // Don't restart manually ended interaction
-    if (
-      manuallyEndedInteractionIdRef.current === requestId
-    ) {
+  useEffect(() => {
+    if (!interactionRequest || streamEnded) {
       return;
     }
 
-    // Already publishing this request
-    if (activeInteractionIdRef.current === requestId) {
-      return;
+    const status = interactionRequest.status;
+    const requestId = interactionRequest.id;
+
+    setInteractionStatus(status);
+
+    if (status !== "ACCEPTED") {
+      failedInteractionIdRef.current = null;
     }
 
-    // Don't retry failed request
-    if (failedInteractionIdRef.current === requestId) {
-      return;
-    }
+    if (status === "ACCEPTED") {
+      // Don't restart manually ended interaction
+      if (manuallyEndedInteractionIdRef.current === requestId) {
+        return;
+      }
 
-    // Avoid concurrent publishing
-    if (publishingInteractionRef.current) {
-      return;
-    }
+      // Already publishing this request
+      if (activeInteractionIdRef.current === requestId) {
+        return;
+      }
 
-    void startInteractionPublishing(interactionSession).catch(
-      (err) => {
+      // Don't retry failed request
+      if (failedInteractionIdRef.current === requestId) {
+        return;
+      }
+
+      // Avoid concurrent publishing
+      if (publishingInteractionRef.current) {
+        return;
+      }
+
+      void startInteractionPublishing(interactionSession).catch((err) => {
         console.error("Interaction publishing error:", err);
 
         failedInteractionIdRef.current = requestId;
 
         if (mountedRef.current) {
-          setInteractionNotice(
-            err?.message || getErrorMessage(err),
-          );
+          setInteractionNotice(err?.message || getErrorMessage(err));
 
           setInteractionPanelOpen(true);
           setIsInteractionPublishing(false);
         }
-      },
-    );
+      });
 
-    return;
-  }
+      return;
+    }
 
-  if (
-    status === "REJECTED" ||
-    status === "CANCELLED" ||
-    status === "ENDED"
-  ) {
-    void stopInteractionPublishing();
+    if (status === "REJECTED" || status === "CANCELLED" || status === "ENDED") {
+      void stopInteractionPublishing();
 
-    const statusMessages = {
-      REJECTED: "The astrologer has rejected your call request.",
-      CANCELLED: "Your call request has been cancelled.",
-      ENDED: "Your interaction with the astrologer has ended.",
-    };
+      const statusMessages = {
+        REJECTED: "The astrologer has rejected your call request.",
+        CANCELLED: "Your call request has been cancelled.",
+        ENDED: "Your interaction with the astrologer has ended.",
+      };
 
-    setInteractionNotice(statusMessages[status] || "");
-  }
-}, [
-  interactionRequest,
-  interactionSession,
-  streamEnded,
-  startInteractionPublishing,
-  stopInteractionPublishing,
-  getErrorMessage,
-]);
+      setInteractionNotice(statusMessages[status] || "");
+    }
+  }, [
+    interactionRequest,
+    interactionSession,
+    streamEnded,
+    startInteractionPublishing,
+    stopInteractionPublishing,
+    getErrorMessage,
+  ]);
 
   // =====================================================
   // END INTERACTION
@@ -809,7 +938,7 @@ useEffect(() => {
     if (!interactionRequest?.id || interactionLoading) {
       return;
     }
-
+    console.log("handleEndInteraction");
     const requestId = interactionRequest.id;
 
     try {
@@ -820,12 +949,14 @@ useEffect(() => {
       manuallyEndedInteractionIdRef.current = requestId;
 
       await stopInteractionPublishing();
-
+      console.log("handleEndInteraction");
       const response = await endInteractionRequest({
         variables: {
           requestId,
         },
       });
+
+      console.log("response----------", response);
 
       const result = response?.data?.endLiveInteraction;
 
@@ -1764,6 +1895,14 @@ useEffect(() => {
     !isInteractionPublishing &&
     !interactionLoading;
 
+  // Audio call is connected and active.
+  const isAudioCallActive =
+    isInteractionPublishing && interactionType === "AUDIO";
+
+  // Video call is connected and active.
+  const isVideoCallActive =
+    isInteractionPublishing && interactionType === "VIDEO";
+
   useEffect(() => {
     if (interactionStatus === "ACCEPTED") {
       const timer = setTimeout(() => {
@@ -1936,12 +2075,68 @@ useEffect(() => {
                   )}
                 </div>
 
-                {/* USER CAMERA PREVIEW */}
+                {/* AUDIO CALL ACTIVE INDICATOR */}
+
+                {isAudioCallActive && (
+                  <div
+                    role="status"
+                    aria-live="polite"
+                    className="absolute right-4 top-28 z-40 w-[calc(100%-32px)] max-w-[260px] overflow-hidden rounded-xl border border-green-500/50 bg-gray-950/95 p-3 shadow-2xl backdrop-blur-md sm:right-6 sm:top-32"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="relative flex h-3 w-3">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
+
+                        <span className="relative inline-flex h-3 w-3 rounded-full bg-green-500" />
+                      </span>
+
+                      <span className="text-xs font-semibold uppercase tracking-wide text-green-400">
+                        Audio Call Connected
+                      </span>
+                    </div>
+
+                    <div className="mt-2 flex items-center gap-2">
+                      <span className="text-2xl">🎙️</span>
+
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold text-white">
+                          {astrologerName}
+                        </p>
+
+                        <p className="text-[11px] text-gray-400">
+                          Live audio consultation
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleEndInteraction}
+                      disabled={interactionLoading}
+                      title="Disconnect audio call"
+                      className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-red-600 px-3 py-2 text-sm font-bold text-white transition hover:bg-red-700 disabled:opacity-50"
+                    >
+                      {interactionLoading ? (
+                        <>
+                          <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+
+                          Ending...
+                        </>
+                      ) : (
+                        <>
+                          <span>📴</span>
+
+                          Disconnect Call
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
+
+                {/* USER CAMERA PREVIEW (VIDEO ONLY) */}
                 <div
                   className={`absolute right-4 top-28 z-30 h-36 w-28 overflow-hidden rounded-xl border-2 border-yellow-400 bg-black shadow-xl sm:h-80 sm:w-65 ${
-                    isInteractionPublishing && interactionType === "VIDEO"
-                      ? "block"
-                      : "hidden"
+                    isVideoCallActive ? "block" : "hidden"
                   }`}
                 >
                   <div ref={guestVideoRef} className="h-full w-full" />
@@ -2128,8 +2323,13 @@ useEffect(() => {
                                 >
                                   <span className="block text-3xl">🎙️</span>
 
-                                  <span className="mt-2 block font-semibold">
+                                  <span className="text-sm text-gray-300">
                                     Audio Call
+                                  </span>
+                                  <span className="font-semibold text-yellow-400">
+                                    {pricingLoading
+                                      ? "Loading..."
+                                      : `${audioPrice} coins/min`}
                                   </span>
                                 </button>
 
@@ -2143,8 +2343,13 @@ useEffect(() => {
                                 >
                                   <span className="block text-3xl">📹</span>
 
-                                  <span className="mt-2 block font-semibold">
+                                  <span className="text-sm text-gray-300">
                                     Video Call
+                                  </span>
+                                  <span className="font-semibold text-yellow-400">
+                                    {pricingLoading
+                                      ? "Loading..."
+                                      : `${videoPrice} coins/min`}
                                   </span>
                                 </button>
                               </div>
