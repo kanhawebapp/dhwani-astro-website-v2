@@ -331,6 +331,26 @@ export default function Header({ openSignInModal }) {
                     >
                       📞 Call History
                     </Link>
+                           <Link
+                      href="/dashboard/live-history"
+                      onClick={() => setIsUserOpen(false)}
+                      role="menuitem"
+                      className="
+                        flex
+                        items-center
+                        text-xs
+                        sm:text-sm
+                        sm:font-medium
+                        gap-3
+                        px-4
+                        py-1
+                        text-gray-700
+                        hover:bg-gray-100
+                        rounded-full
+                      "
+                    >
+                      🎦 Live History
+                    </Link>
 
                     <Link
                       href="/dashboard/myfollowing"
@@ -414,26 +434,7 @@ export default function Header({ openSignInModal }) {
                     >
                       ✨ Payment Logs
                     </Link>
-                    {/* <Link
-                      href="/dashboard/recharge-logs"
-                      onClick={() => setIsUserOpen(false)}
-                      role="menuitem"
-                      className="
-                        flex
-                        items-center
-                        text-xs
-                        sm:text-sm
-                        sm:font-medium
-                        gap-3
-                        px-4
-                        py-1
-                        text-gray-700
-                        hover:bg-gray-100
-                        rounded-full
-                      "
-                    >
-                      ✨ Recharge Logs
-                    </Link> */}
+                
                   </div>
 
                   {/* Logout */}
