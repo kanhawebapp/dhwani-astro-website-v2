@@ -13,12 +13,13 @@ const REQUEST_OTP = gql`
 `;
 
 const AUTHWITH_OTP = gql`
-  mutation AuthWithOtp($countryCode: String!, $mobile: String!, $otp: String!,$source: String!) {
+  mutation AuthWithOtp($countryCode: String!, $mobile: String!, $otp: String!,$source: String!, $playerId: String) {
     authWithOtp(
       countryCode: $countryCode
       mobile: $mobile
       otp: $otp
       source: $source
+      playerId:  $playerId
     ) {
       accessToken
       refreshToken
@@ -89,7 +90,7 @@ export const useOTP = () => {
     }
 
     const res = await verifyOtp({
-      variables: { countryCode, mobile, otp: otpValue, source: "WEB" },
+      variables: { countryCode, mobile, otp: otpValue, source: "WEB" ,playerId:"askfjksjf"},
     });
 
     clearInterval(timerRef.current);
