@@ -649,9 +649,7 @@ export default function WatchLive() {
           }
 
           if (audioErrorName === "NotReadableError") {
-            throw new Error(
-              "Microphone is being used by another application.",
-            );
+            throw new Error("Microphone is being used by another application.");
           }
 
           throw new Error(
@@ -716,9 +714,7 @@ export default function WatchLive() {
 
         if (tracksPublished) {
           try {
-            await rtcClient.unpublish(
-              [audioTrack, videoTrack].filter(Boolean),
-            );
+            await rtcClient.unpublish([audioTrack, videoTrack].filter(Boolean));
           } catch (unpublishError) {
             console.warn("Unpublish failed:", unpublishError);
           }
@@ -1912,888 +1908,878 @@ export default function WatchLive() {
       return () => clearTimeout(timer);
     }
   }, [interactionStatus]);
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
 
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, []);
   return (
-    <div className="relative flex min-h-[70vh] w-full flex-col bg-black text-white lg:flex-row">
-      {/* VIDEO SECTION */}
-
-      <div className="flex min-w-0 flex-1 flex-col">
-        {/* HEADER */}
-
-        <div className="sticky top-0 z-20 flex items-center justify-between border-b border-gray-800 bg-black/90 px-4 py-3 backdrop-blur">
-          <div className="flex items-center gap-3">
-            <span className="animate-pulse rounded-full bg-red-600 px-3 py-1 text-sm font-semibold">
-              🔴 LIVE
-            </span>
-
-            <div>
-              <h2 className="text-lg font-semibold">Live Session</h2>
-
-              <p className="text-xs text-gray-400">Watch astrologer live</p>
-            </div>
-          </div>
-
-          <span className="rounded-full bg-gray-800 px-3 py-1 text-xs">
-            {hostJoined ? "● Connected" : loading ? "Connecting..." : "Waiting"}
-          </span>
-        </div>
-
-        <div className="flex flex-col p-2 sm:p-4">
-          {/* LOADING */}
-
-          {loading && (
-            <div className="flex min-h-[400px] items-center justify-center">
-              <div className="text-center">
-                <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-yellow-500 border-t-transparent" />
-
-                <p className="text-lg">Connecting to live stream...</p>
-
-                <p className="mt-2 text-sm text-gray-400">
-                  Please wait while we connect you.
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* ERROR */}
-
-          {error && !loading && (
-            <div className="mb-4 rounded-xl bg-red-600 p-4">
-              <p>{error}</p>
-
-              {!liveInfo && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setError("");
-                    setLoading(true);
-
-                    const generation = ++generationRef.current;
-
-                    void initializeLive(generation);
-                  }}
-                  className="mt-3 rounded-lg bg-white px-4 py-2 font-semibold text-red-600"
-                >
-                  Try Again
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* LIVE VIDEO */}
-
-          {!loading && liveInfo && (
-            <>
-              {!hostJoined && (
-                <div className="mb-3 rounded-xl bg-yellow-500 p-3 text-center font-medium text-black">
-                  Waiting for astrologer video...
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-purple-300 sm:p-4 sm:p-6 lg:p-8">
+      <div
+        className="  relative  flex  w-full  max-w-[1200px] h-[calc(100dvh-0px)]   sm:h-[calc(100dvh-48px)]  max-h-[780px]  overflow-hidden  sm:rounded-2xl  bg-black  text-white  flex-col  lg:flex-row
+"
+      >
+        <div className="flex min-w-0 flex-1 flex-col">
+        <div className="border-b block md:hidden border-gray-800 px-4 py-3">
+            <div className="flex min-w-0 items-center gap-3">
+              {astrologerProfilePic ? (
+                <img
+                  src={astrologerProfilePic}
+                  alt={astrologerName}
+                  className="h-11 w-11 shrink-0 rounded-full border border-gray-500 object-cover"
+                />
+              ) : (
+                <div className="flex h-8 w-8 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-full bg-gray-700 text-xl">
+                  👳
                 </div>
               )}
 
-              <div className="relative isolate h-[65vh] min-h-[450px] w-full overflow-hidden rounded-xl bg-black sm:h-[75vh]">
-                {/* REMOTE VIDEO */}
+              <div className="min-w-0">
+                <h3 className="truncate text-[10px] sm:text-xs font-semibold">{astrologerName}</h3>
 
-                <div
-                  ref={remoteVideoRef}
-                  id="remote-video"
-                  className="absolute inset-0 z-0 h-full w-full bg-black"
-                />
+                <p className="text-[10px] sm:text-xs text-gray-300">Live Consultation</p>
+              </div>
+            </div>
+          </div>
 
-                {/* ASTROLOGER HEADER */}
+          <div className="flex flex-col  sm:p-4">
+            {/* LOADING */}
 
-                <div className="absolute left-0 right-0 top-0 z-20 flex flex-wrap items-start justify-between gap-3 bg-gradient-to-b from-black/90 to-transparent p-3 pr-14 sm:p-4 sm:pr-16">
-                  <div className="flex min-w-0 items-center gap-3">
-                    {astrologerProfilePic ? (
-                      <img
-                        src={astrologerProfilePic}
-                        alt={astrologerName}
-                        className="h-11 w-11 shrink-0 rounded-full border border-gray-500 object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gray-700 text-xl">
-                        👳
-                      </div>
-                    )}
+            {loading && (
+              <div className="flex min-h-[400px] items-center justify-center">
+                <div className="text-center">
+                  <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-yellow-500 border-t-transparent" />
 
-                    <div className="min-w-0">
-                      <h3 className="truncate font-semibold">
-                        {astrologerName}
-                      </h3>
+                  <p className="text-lg">Connecting to live stream...</p>
 
-                      <p className="text-xs text-gray-300">Live Consultation</p>
+                  <p className="mt-2 text-sm text-gray-400">
+                    Please wait while we connect you.
+                  </p>
+                </div>
+              </div>
+            )}
 
-                      <div className="mt-2 flex flex-wrap items-center gap-3 text-sm">
-                        <span>
-                          👁️{" "}
+            {/* ERROR */}
+
+            {error && !loading && (
+              <div className="mb-4 rounded-xl bg-red-600 p-4">
+                <p>{error}</p>
+
+                {!liveInfo && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setError("");
+                      setLoading(true);
+
+                      const generation = ++generationRef.current;
+
+                      void initializeLive(generation);
+                    }}
+                    className="mt-3 rounded-lg bg-white px-4 py-2 font-semibold text-red-600"
+                  >
+                    Try Again
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* LIVE VIDEO */}
+
+            {!loading && liveInfo && (
+              <>
+                {!hostJoined && (
+                  <div className="mb-3 rounded-xl bg-yellow-500 p-3 text-center font-medium text-black">
+                    Waiting for astrologer video...
+                  </div>
+                )}
+
+                <div className="relative isolate h-[calc(96dvh-90px)] sm:h-[calc(100dvh-90px)] min-h-[400px] w-full overflow-hidden rounded-xl bg-black sm:h-[calc(100dvh-65px)]">
+                  <div
+                    ref={remoteVideoRef}
+                    id="remote-video"
+                    className="absolute inset-0 z-0 h-full w-full bg-black"
+                  />
+
+                  <div className="absolute left-0 right-0 top-0 z-20 flex flex-wrap items-start justify-between gap-3 bg-gradient-to-b from-black/90 to-transparent p-3 pr-14 sm:p-4 sm:pr-16">
+                    <div className="flex w-full items-start justify-between gap-2">
+                      <div className="mt-2 flex flex-col items-center gap-3 text-sm">
+                        <span className="bg-white rounded-full px-3 flex py-1 text-[10px] sm:text-xs text-black">
+                          <svg width={16} height={16} viewBox="0 0 640 640">
+                            <path
+                              fill="#000"
+                              d="M320 96C239.2 96 174.5 132.8 127.4 176.6C80.6 220.1 49.3 272 34.4 307.7C31.1 315.6 31.1 324.4 34.4 332.3C49.3 368 80.6 420 127.4 463.4C174.5 507.1 239.2 544 320 544C400.8 544 465.5 507.2 512.6 463.4C559.4 419.9 590.7 368 605.6 332.3C608.9 324.4 608.9 315.6 605.6 307.7C590.7 272 559.4 220 512.6 176.6C465.5 132.9 400.8 96 320 96zM176 320C176 240.5 240.5 176 320 176C399.5 176 464 240.5 464 320C464 399.5 399.5 464 320 464C240.5 464 176 399.5 176 320zM320 256C320 291.3 291.3 320 256 320C244.5 320 233.7 317 224.3 311.6C223.3 322.5 224.2 333.7 227.2 344.8C240.9 396 293.6 426.4 344.8 412.7C396 399 426.4 346.3 412.7 295.1C400.5 249.4 357.2 220.3 311.6 224.3C316.9 233.6 320 244.4 320 256z"
+                            />
+                          </svg>
                           {Number(liveInfo.totalViews ?? 0).toLocaleString(
                             "en-IN",
                           )}{" "}
                           views
                         </span>
 
-                        <span>
+                        <span className="text-[10px] sm:text-xs">
                           👥 {Number(totalFollowers).toLocaleString("en-IN")}{" "}
                           followers
                         </span>
                       </div>
+
+                      <button
+                        type="button"
+                        onClick={handleFollowToggle}
+                        disabled={
+                          !astrologerId ||
+                          followingStatusLoading ||
+                          followActionLoading
+                        }
+                        className={`rounded-full px-4 py-1 text-xs font-semibold disabled:opacity-50 ${
+                          isFollowing
+                            ? "border border-gray-500 bg-gray-800 text-white"
+                            : "bg-yellow-500 text-black"
+                        }`}
+                      >
+                        {followActionLoading
+                          ? "Please wait..."
+                          : followingStatusLoading
+                            ? "Loading..."
+                            : isFollowing
+                              ? "✓ Following"
+                              : "+ Follow"}
+                      </button>
                     </div>
+
+                    {followNotice && (
+                      <p className="w-full text-sm text-yellow-300">
+                        {followNotice}
+                      </p>
+                    )}
                   </div>
 
-                  <div className="flex flex-col items-end gap-2">
-                    <span className="animate-pulse rounded-full bg-red-600 px-3 py-1 text-sm font-medium">
-                      🔴 LIVE
+                  {isAudioCallActive && (
+                    <div
+                      role="status"
+                      aria-live="polite"
+                      className="absolute flex flex-col right-4 top-5 z-40 w-[calc(100%-32px)] max-w-[260px] overflow-hidden rounded-xl border border-green-500/50 bg-gray-950/95 p-3 shadow-2xl backdrop-blur-md sm:right-6 sm:top-15"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="relative flex h-3 w-3">
+                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
+
+                          <span className="relative inline-flex h-3 w-3 rounded-full bg-green-500" />
+                        </span>
+
+                        <span className="text-[10px] font-semibold uppercase tracking-wide text-green-400">
+                          Audio Call Connected
+                        </span>
+                      </div>
+
+                      <div className="mt-2 flex items-center gap-2">                    
+
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-semibold text-white">
+                            {astrologerName}
+                          </p>
+                          <p className="text-[10px] text-gray-400">
+                            Live audio consultation
+                          </p>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={handleEndInteraction}
+                        disabled={interactionLoading}
+                        title="Disconnect audio call"
+                        className="mt-3  flex justify-self-center  w-[40%] items-center align-self-center place-self-center gap-2 rounded-full text-xs bg-red-600 px-3   font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
+                       >
+                        {interactionLoading ? (
+                          <>
+                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                            Ending...
+                          </>
+                        ) : (
+                          <>
+                           
+                            Disconnect
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  )}
+
+                
+                  <div
+                    className={`absolute right-4 top-28 z-30 h-36 w-28 overflow-hidden rounded-xl border-2 border-yellow-400 bg-black shadow-xl sm:h-80 sm:w-65 ${
+                      isVideoCallActive ? "block" : "hidden"
+                    }`}
+                  >
+                    <div ref={guestVideoRef} className="h-full w-full" />
+
+              
+                    <span className="absolute bottom-1 left-1 rounded bg-black/70 px-2 py-1 text-xs">
+                      You
                     </span>
 
-                    <button
-                      type="button"
-                      onClick={handleFollowToggle}
-                      disabled={
-                        !astrologerId ||
-                        followingStatusLoading ||
-                        followActionLoading
-                      }
-                      className={`rounded-full px-4 py-2 text-sm font-semibold disabled:opacity-50 ${
-                        isFollowing
-                          ? "border border-gray-500 bg-gray-800 text-white"
-                          : "bg-yellow-500 text-black"
-                      }`}
-                    >
-                      {followActionLoading
-                        ? "Please wait..."
-                        : followingStatusLoading
-                          ? "Loading..."
-                          : isFollowing
-                            ? "✓ Following"
-                            : "+ Follow"}
-                    </button>
-                  </div>
-
-                  {followNotice && (
-                    <p className="w-full text-sm text-yellow-300">
-                      {followNotice}
-                    </p>
-                  )}
-                </div>
-
-                {/* AUDIO CALL ACTIVE INDICATOR */}
-
-                {isAudioCallActive && (
-                  <div
-                    role="status"
-                    aria-live="polite"
-                    className="absolute right-4 top-28 z-40 w-[calc(100%-32px)] max-w-[260px] overflow-hidden rounded-xl border border-green-500/50 bg-gray-950/95 p-3 shadow-2xl backdrop-blur-md sm:right-6 sm:top-32"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="relative flex h-3 w-3">
-                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
-
-                        <span className="relative inline-flex h-3 w-3 rounded-full bg-green-500" />
-                      </span>
-
-                      <span className="text-xs font-semibold uppercase tracking-wide text-green-400">
-                        Audio Call Connected
-                      </span>
-                    </div>
-
-                    <div className="mt-2 flex items-center gap-2">
-                      <span className="text-2xl">🎙️</span>
-
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold text-white">
-                          {astrologerName}
-                        </p>
-
-                        <p className="text-[11px] text-gray-400">
-                          Live audio consultation
-                        </p>
-                      </div>
-                    </div>
-
+                   
                     <button
                       type="button"
                       onClick={handleEndInteraction}
                       disabled={interactionLoading}
-                      title="Disconnect audio call"
-                      className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-red-600 px-3 py-2 text-sm font-bold text-white transition hover:bg-red-700 disabled:opacity-50"
+                      className="absolute right-2 top-2 z-40 flex h-7 w-7 items-center justify-center rounded-full bg-black/70 text-white hover:bg-red-600 disabled:opacity-50"
+                      title="End video call"
                     >
-                      {interactionLoading ? (
-                        <>
-                          <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-
-                          Ending...
-                        </>
-                      ) : (
-                        <>
-                          <span>📴</span>
-
-                          Disconnect Call
-                        </>
-                      )}
+                      X
                     </button>
                   </div>
-                )}
 
-                {/* USER CAMERA PREVIEW (VIDEO ONLY) */}
-                <div
-                  className={`absolute right-4 top-28 z-30 h-36 w-28 overflow-hidden rounded-xl border-2 border-yellow-400 bg-black shadow-xl sm:h-80 sm:w-65 ${
-                    isVideoCallActive ? "block" : "hidden"
-                  }`}
-                >
-                  <div ref={guestVideoRef} className="h-full w-full" />
+                  {interactionPanelOpen && (
+                    <div className="absolute inset-0 z-[60] flex items-center justify-center bg-black/65 p-3 backdrop-blur-sm sm:p-5">
+                      <div className="w-full max-w-md overflow-hidden rounded-2xl border border-gray-700 bg-gray-950 shadow-2xl">
+                        <div className="flex items-center justify-between border-b  bg-gradient-to-r from-purple-900 via-purple-800 to-purple-900 p-4">
+                          <div>
+                            <h3 className="text-lg text-center font-semibold">
+                              {isInteractionPublishing
+                                ? "Call Connected"
+                                : interactionStatus === "PENDING"
+                                  ? "Waiting for Astrologer"
+                                  : "Live Consultation"}
+                            </h3>
 
-                  {/* You label */}
-                  <span className="absolute bottom-1 left-1 rounded bg-black/70 px-2 py-1 text-xs">
-                    You
-                  </span>
-
-                  {/* End video interaction */}
-                  <button
-                    type="button"
-                    onClick={handleEndInteraction}
-                    disabled={interactionLoading}
-                    className="absolute right-2 top-2 z-40 flex h-7 w-7 items-center justify-center rounded-full bg-black/70 text-white hover:bg-red-600 disabled:opacity-50"
-                    title="End video call"
-                  >
-                    X
-                  </button>
-                </div>
-
-                {interactionPanelOpen && (
-                  <div className="absolute inset-0 z-[60] flex items-center justify-center bg-black/65 p-3 backdrop-blur-sm sm:p-5">
-                    <div className="w-full max-w-md overflow-hidden rounded-2xl border border-gray-700 bg-gray-950 shadow-2xl">
-                      <div className="flex items-center justify-between border-b border-gray-800 p-4">
-                        <div>
-                          <h3 className="text-lg font-bold">
-                            {isInteractionPublishing
-                              ? "Call Connected"
-                              : interactionStatus === "PENDING"
-                                ? "Waiting for Astrologer"
-                                : "Live Consultation"}
-                          </h3>
-
-                          <p className="mt-1 text-xs text-gray-400">
-                            {astrologerName}
-                          </p>
-                        </div>
-
-                        {!isInteractionPublishing &&
-                          interactionStatus !== "PENDING" && (
-                            <button
-                              type="button"
-                              onClick={() => setInteractionPanelOpen(false)}
-                              className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-800 hover:bg-red-600"
-                            >
-                              ✕
-                            </button>
-                          )}
-                      </div>
-
-                      <div className="p-5">
-                        <div className="mb-5 flex justify-center">
-                          <div className="flex h-20 w-20 items-center justify-center rounded-full border border-yellow-500/30 bg-yellow-500/10 text-4xl">
-                            {interactionType === "AUDIO" ? "🎙️" : "📹"}
+                          
                           </div>
-                        </div>
 
-                        {/* PENDING */}
-
-                        {interactionStatus === "PENDING" &&
-                          !isInteractionPublishing && (
-                            <div className="text-center">
-                              <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-yellow-500 border-t-transparent" />
-
-                              <h4 className="text-lg font-semibold text-yellow-400">
-                                Request Sent
-                              </h4>
-
-                              <p className="mt-2 text-sm text-gray-400">
-                                Waiting for {astrologerName} to accept your{" "}
-                                {interactionType.toLowerCase()} call.
-                              </p>
-
-                              <p className="mt-4 text-xs text-gray-500">
-                                Please keep watching the live session.
-                              </p>
-
+                          {!isInteractionPublishing &&
+                            interactionStatus !== "PENDING" && (
                               <button
                                 type="button"
-                                onClick={handleEndInteraction}
-                                disabled={interactionLoading}
-                                className="mt-5 w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-sm font-semibold hover:bg-gray-700 disabled:opacity-50"
+                                onClick={() => setInteractionPanelOpen(false)}
+                                className="flex h-9 w-9 items-center justify-center cursor-pointer rounded-full bg-red-200 hover:bg-red-600"
                               >
-                                {interactionLoading
-                                  ? "Cancelling..."
-                                  : "Cancel Request"}
+                                <svg width={17} height={17} viewBox="0 0 640 640">
+                            <path
+                              fill="#fff"
+                              d="M183.1 137.4C170.6 124.9 150.3 124.9 137.8 137.4C125.3 149.9 125.3 170.2 137.8 182.7L275.2 320L137.9 457.4C125.4 469.9 125.4 490.2 137.9 502.7C150.4 515.2 170.7 515.2 183.2 502.7L320.5 365.3L457.9 502.6C470.4 515.1 490.7 515.1 503.2 502.6C515.7 490.1 515.7 469.8 503.2 457.3L365.8 320L503.1 182.6C515.6 170.1 515.6 149.8 503.1 137.3C490.6 124.8 470.3 124.8 457.8 137.3L320.5 274.7L183.1 137.4z"
+                            />
+                          </svg>
                               </button>
-                            </div>
-                          )}
+                            )}
+                        </div>
 
-                        {/* ACTIVE CALL */}
+                        <div className="p-5 bg-purple-100">             
 
-                        {isInteractionPublishing && (
-                          <div className="text-center">
-                            <div className="mb-3 text-xl font-bold text-green-400">
-                              ✓ Connected Successfully
-                            </div>
+                      
 
-                            <p className="text-sm text-gray-300">
-                              Your {interactionType.toLowerCase()} call with{" "}
-                              {astrologerName} is active.
-                            </p>
+                          {interactionStatus === "PENDING" &&
+                            !isInteractionPublishing && (
+                              <div className="text-center flex flex-col items-center justify-center">
+                                <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-yellow-500 border-t-transparent" />
 
-                            {interactionType === "VIDEO" ? (
-                              <p className="mt-2 text-xs text-gray-400">
-                                Your camera and microphone are connected.
-                              </p>
-                            ) : (
-                              <p className="mt-2 text-xs text-gray-400">
-                                Your microphone is connected.
-                              </p>
+                                <h4 className="text-lg font-semibold text-yellow-400">
+                                  Request Sent
+                                </h4>
+
+                                <p className="mt-2 text-sm text-gray-400">
+                                  Waiting for {astrologerName} to accept your{" "}
+                                  {interactionType.toLowerCase()} call.
+                                </p>
+
+                                <p className="mt-4 text-xs text-gray-500">
+                                  Please keep watching the live session.
+                                </p>
+
+                                <button
+                                  type="button"
+                                  onClick={handleEndInteraction}
+                                  disabled={interactionLoading}
+                                  className="mt-5 w-[40%] rounded-full flex justify-center border border-gray-700 bg-gray-800 px-4 py-3 text-sm font-semibold hover:bg-gray-700 disabled:opacity-50"
+                                >
+                                  {interactionLoading
+                                    ? "Cancelling..."
+                                    : "Cancel Request"}
+                                </button>
+                              </div>
                             )}
 
-                            <button
-                              type="button"
-                              onClick={handleEndInteraction}
-                              disabled={interactionLoading}
-                              className="mt-6 w-full rounded-xl bg-red-600 px-5 py-3 font-bold text-white hover:bg-red-700 disabled:opacity-50"
-                            >
-                              {interactionLoading
-                                ? "Ending Call..."
-                                : "📞 End Call"}
-                            </button>
-                          </div>
-                        )}
+                       
 
-                        {interactionStatus === "ACCEPTED" &&
-                          !isInteractionPublishing && (
-                            <div className="text-center">
-                              <div className="mb-3 text-lg font-semibold text-yellow-400">
-                                Interaction Accepted
+                          {isInteractionPublishing && (
+                            <div className="text-center flex flex-col items-center justify-center">
+                              <div className="mb-3 text-xl font-bold text-green-400">
+                                 Connected Successfully
                               </div>
 
-                              {interactionNotice && (
-                                <p className="mb-4 rounded-lg bg-red-500/10 p-3 text-sm text-red-300">
-                                  {interactionNotice}
+                              <p className="text-xs text-gray-700">
+                                Your {interactionType.toLowerCase()} call with{" "}
+                                {astrologerName} is active.
+                              </p>
+
+                              {interactionType === "VIDEO" ? (
+                                <p className="mt-2 text-xs text-gray-700">
+                                  Your camera and microphone are connected.
+                                </p>
+                              ) : (
+                                <p className="mt-2 text-xs text-gray-400">
+                                  Your microphone is connected.
                                 </p>
                               )}
-
-                              <p className="text-sm text-gray-400">
-                                Your interaction was accepted, but your
-                                microphone or camera could not be initialized.
-                              </p>
 
                               <button
                                 type="button"
                                 onClick={handleEndInteraction}
                                 disabled={interactionLoading}
-                                className="mt-5 w-full rounded-xl bg-red-600 px-5 py-3 font-bold text-white hover:bg-red-700 disabled:opacity-50"
+                                className="mt-5  w-[40%] rounded-full flex justify-center  bg-red-600 px-5 py-2 font-semibold text-white hover:bg-red-700 disabled:opacity-50"
                               >
                                 {interactionLoading
-                                  ? "Ending..."
-                                  : "End Interaction"}
+                                  ? "Ending Call..."
+                                  : " End Call"}
                               </button>
                             </div>
                           )}
 
-                        {/* NEW REQUEST */}
+                          {interactionStatus === "ACCEPTED" &&
+                            !isInteractionPublishing && (
+                              <div className="text-center">
+                                <div className="mb-3 text-lg font-semibold text-yellow-400">
+                                  Interaction Accepted
+                                </div>
 
-                        {!isInteractionPublishing &&
-                          interactionStatus !== "PENDING" &&
-                          interactionStatus !== "ACCEPTED" && (
-                            <div className="text-center">
-                              {interactionNotice && (
-                                <p className="mb-4 text-sm text-yellow-300">
-                                  {interactionNotice}
-                                </p>
-                              )}
-
-                              <p className="mb-5 text-sm text-gray-400">
-                                Request an audio or video consultation with the
-                                astrologer.
-                              </p>
-
-                              <div className="grid grid-cols-2 gap-3">
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    handleRequestInteraction("AUDIO")
-                                  }
-                                  disabled={!canRequestInteraction}
-                                  className="rounded-xl border border-yellow-500/40 bg-yellow-500/10 p-4 text-yellow-300 transition hover:bg-yellow-500/20 disabled:opacity-50"
-                                >
-                                  <span className="block text-3xl">🎙️</span>
-
-                                  <span className="text-sm text-gray-300">
-                                    Audio Call
-                                  </span>
-                                  <span className="font-semibold text-yellow-400">
-                                    {pricingLoading
-                                      ? "Loading..."
-                                      : `${audioPrice} coins/min`}
-                                  </span>
-                                </button>
-
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    handleRequestInteraction("VIDEO")
-                                  }
-                                  disabled={!canRequestInteraction}
-                                  className="rounded-xl border border-blue-500/40 bg-blue-500/10 p-4 text-blue-300 transition hover:bg-blue-500/20 disabled:opacity-50"
-                                >
-                                  <span className="block text-3xl">📹</span>
-
-                                  <span className="text-sm text-gray-300">
-                                    Video Call
-                                  </span>
-                                  <span className="font-semibold text-yellow-400">
-                                    {pricingLoading
-                                      ? "Loading..."
-                                      : `${videoPrice} coins/min`}
-                                  </span>
-                                </button>
-                              </div>
-
-                              {interactionLoading && (
-                                <p className="mt-4 text-sm text-yellow-400">
-                                  Sending request...
-                                </p>
-                              )}
-                            </div>
-                          )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* GIFT PANEL */}
-
-                {giftPanelOpen && (
-                  <div
-                    role="dialog"
-                    aria-label="Send a gift"
-                    className="absolute bottom-20 right-3 z-50 max-h-[65%] w-[calc(100%-24px)] max-w-[360px] overflow-y-auto rounded-2xl border border-white/10 bg-gray-950/95 p-4 shadow-2xl backdrop-blur-md"
-                  >
-                    <div className="mb-4 flex items-center justify-between border-b border-gray-800 pb-3">
-                      <div>
-                        <h3 className="text-lg font-bold">🎁 Send a Gift</h3>
-
-                        <p className="mt-1 text-xs text-gray-400">
-                          Support the astrologer.
-                        </p>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => setGiftPanelOpen(false)}
-                        className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-800"
-                      >
-                        ✕
-                      </button>
-                    </div>
-
-                    {giftsLoading && gifts.length === 0 && (
-                      <p className="py-6 text-center text-sm text-gray-300">
-                        Loading gifts...
-                      </p>
-                    )}
-
-                    {giftsError && gifts.length === 0 && (
-                      <div className="text-sm text-red-300">
-                        Unable to load gifts.
-                        <button
-                          type="button"
-                          onClick={() => void refetchGifts()}
-                          className="ml-2 text-yellow-400"
-                        >
-                          Try again
-                        </button>
-                      </div>
-                    )}
-
-                    {gifts.length > 0 && (
-                      <>
-                        <div className="grid grid-cols-3 gap-2">
-                          {gifts.map((gift) => {
-                            const isSelected =
-                              String(selectedGiftId) === String(gift.id);
-
-                            const image = getGiftImage(gift);
-
-                            const imageUrl = image
-                              ? image.startsWith("http")
-                                ? image
-                                : `${process.env.NEXT_PUBLIC_BASE_URL}${image}`
-                              : "";
-
-                            return (
-                              <button
-                                type="button"
-                                key={gift.id}
-                                onClick={() => {
-                                  setSelectedGiftId(gift.id);
-                                  setGiftNotice("");
-                                }}
-                                className={`relative flex min-h-[105px] flex-col items-center justify-center rounded-xl border p-2 text-center ${
-                                  isSelected
-                                    ? "border-yellow-400 bg-yellow-500/20 ring-2 ring-yellow-400/40"
-                                    : "border-gray-700 bg-gray-900"
-                                }`}
-                              >
-                                {imageUrl ? (
-                                  <img
-                                    src={imageUrl}
-                                    alt={gift.name}
-                                    className="h-10 w-10 object-contain"
-                                  />
-                                ) : (
-                                  <span className="text-3xl">🎁</span>
+                                {interactionNotice && (
+                                  <p className="mb-4 rounded-lg bg-red-500/10 p-3 text-sm text-red-300">
+                                    {interactionNotice}
+                                  </p>
                                 )}
 
-                                <span className="mt-2 text-xs font-semibold">
-                                  {gift.name}
-                                </span>
-
-                                <span className="mt-1 text-xs text-yellow-400">
-                                  {getGiftPrice(gift)} coins
-                                </span>
-                              </button>
-                            );
-                          })}
-                        </div>
-
-                        {selectedGift && (
-                          <div className="mt-4 rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-3">
-                            <p className="font-semibold">{selectedGift.name}</p>
-
-                            <p className="text-sm text-yellow-400">
-                              {getGiftPrice(selectedGift)} coins each
-                            </p>
-
-                            <div className="mt-4 flex items-center justify-between">
-                              <span className="text-sm text-gray-300">
-                                Quantity
-                              </span>
-
-                              <div className="flex items-center gap-3">
-                                <button
-                                  type="button"
-                                  onClick={decreaseGiftQuantity}
-                                  disabled={sendingGift || quantityNumber <= 1}
-                                  className="h-9 w-9 rounded-lg bg-gray-800 text-lg disabled:opacity-40"
-                                >
-                                  −
-                                </button>
-
-                                <input
-                                  type="number"
-                                  min="1"
-                                  max="100"
-                                  value={giftQuantity}
-                                  disabled={sendingGift}
-                                  onChange={(event) => {
-                                    const raw = event.target.value;
-
-                                    if (raw === "") {
-                                      setGiftQuantity("");
-                                      return;
-                                    }
-
-                                    const value = Number(raw);
-
-                                    if (
-                                      Number.isInteger(value) &&
-                                      value >= 1 &&
-                                      value <= 100
-                                    ) {
-                                      setGiftQuantity(value);
-                                    }
-                                  }}
-                                  onBlur={() => {
-                                    const value = Number(giftQuantity);
-
-                                    if (
-                                      !Number.isInteger(value) ||
-                                      value < 1 ||
-                                      value > 100
-                                    ) {
-                                      setGiftQuantity(1);
-                                    }
-                                  }}
-                                  className="w-14 rounded-lg border border-gray-700 bg-gray-900 p-2 text-center"
-                                />
+                                <p className="text-sm text-gray-400">
+                                  Your interaction was accepted, but your
+                                  microphone or camera could not be initialized.
+                                </p>
 
                                 <button
                                   type="button"
-                                  onClick={increaseGiftQuantity}
-                                  disabled={
-                                    sendingGift || quantityNumber >= 100
-                                  }
-                                  className="h-9 w-9 rounded-lg bg-gray-800 text-lg disabled:opacity-40"
+                                  onClick={handleEndInteraction}
+                                  disabled={interactionLoading}
+                                  className="mt-5 w-full rounded-xl bg-red-600 px-5 py-3 font-bold text-white hover:bg-red-700 disabled:opacity-50"
                                 >
-                                  +
+                                  {interactionLoading
+                                    ? "Ending..."
+                                    : "End Interaction"}
                                 </button>
                               </div>
-                            </div>
+                            )}
 
-                            <div className="mt-4 flex justify-between border-t border-yellow-500/20 pt-3">
-                              <span className="text-sm text-gray-300">
-                                Total
-                              </span>
+                          
 
-                              <span className="font-bold text-yellow-400">
-                                {totalGiftCoins.toLocaleString("en-IN")} coins
-                              </span>
-                            </div>
-                          </div>
-                        )}
+                          {!isInteractionPublishing &&
+                            interactionStatus !== "PENDING" &&
+                            interactionStatus !== "ACCEPTED" && (
+                              <div className="text-center">
+                                {interactionNotice && (
+                                  <p className="mb-4 text-sm text-yellow-300">
+                                    {interactionNotice}
+                                  </p>
+                                )}
 
-                        {giftNotice && (
-                          <div className="mt-3 rounded-lg bg-gray-900 p-3 text-sm text-yellow-300">
-                            {giftNotice}
-                          </div>
-                        )}
+                                <p className="mb-4 text-xs  text-gray-700">
+                                  Request an audio or video consultation with
+                                  the astrologer.
+                                </p>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleRequestInteraction("AUDIO")
+                                    }
+                                    disabled={!canRequestInteraction}
+                                    className="rounded-2xl border flex flex-col cursor-pointer border-yellow-200 bg-yellow-200 p-4 text-black transition hover:scale-103 disabled:opacity-50"
+                                  >
+                                    <span className="block text-3xl">🎙️</span>
+
+                                    <span className="text-sm text-gray-800">
+                                      Audio Call
+                                    </span>
+                                    <span className="font-semibold text-purple-800">
+                                      {pricingLoading
+                                        ? "Loading..."
+                                        : `${audioPrice} coins/min`}
+                                    </span>
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleRequestInteraction("VIDEO")
+                                    }
+                                    disabled={!canRequestInteraction}
+                                    className="rounded-2xl border flex flex-col cursor-pointer border-purple-400 bg-purple-300 p-4 text-purple-700 transition hover:scale-105 disabled:opacity-50"
+                                  >
+                                    <span className="block text-3xl">📹</span>
+
+                                    <span className="text-sm text-gray-800">
+                                      Video Call
+                                    </span>
+                                    <span className="font-semibold text-purple-800">
+                                      {pricingLoading
+                                        ? "Loading..."
+                                        : `${videoPrice} coins/min`}
+                                    </span>
+                                  </button>
+                                </div>
+
+                                {interactionLoading && (
+                                  <p className="mt-4 text-sm text-yellow-400">
+                                    Sending request...
+                                  </p>
+                                )}
+                              </div>
+                            )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* GIFT PANEL */}
+
+                  {giftPanelOpen && (
+                    <div
+                      role="dialog"
+                      aria-label="Send a gift"
+                      className="absolute bottom-20 right-3 z-50 max-h-[65%] w-[calc(100%-24px)] max-w-[560px] overflow-y-auto rounded-2xl border border-white/10 bg-pink-100 p-4 shadow-2xl backdrop-blur-md"
+                    >
+                      <div className="mb-1 flex items-center justify-between  border-gray-800 pb-1">
+                        <div>
+                          <h3 className="text-sm text-black font-semibold">
+                            {" "}
+                            Send Gifts
+                          </h3>
+                        </div>
 
                         <button
                           type="button"
-                          onClick={handleSendGift}
-                          disabled={
-                            sendingGift ||
-                            !selectedGiftId ||
-                            !Number.isInteger(quantityNumber) ||
-                            quantityNumber < 1 ||
-                            quantityNumber > 100
-                          }
-                          className="mt-4 w-full rounded-xl bg-gradient-to-r from-yellow-500 to-amber-400 px-4 py-3 font-bold text-black disabled:opacity-50"
+                          onClick={() => setGiftPanelOpen(false)}
+                          className="flex h-5 w-5 items-center cursor-pointer justify-center rounded-full bg-gray-800"
                         >
-                          {sendingGift
-                            ? "Sending Gift..."
-                            : `🎁 Send Gift${
-                                selectedGift ? ` · ${totalGiftCoins} coins` : ""
-                              }`}
+                          <svg width={17} height={17} viewBox="0 0 640 640">
+                            <path
+                              fill="#fff"
+                              d="M183.1 137.4C170.6 124.9 150.3 124.9 137.8 137.4C125.3 149.9 125.3 170.2 137.8 182.7L275.2 320L137.9 457.4C125.4 469.9 125.4 490.2 137.9 502.7C150.4 515.2 170.7 515.2 183.2 502.7L320.5 365.3L457.9 502.6C470.4 515.1 490.7 515.1 503.2 502.6C515.7 490.1 515.7 469.8 503.2 457.3L365.8 320L503.1 182.6C515.6 170.1 515.6 149.8 503.1 137.3C490.6 124.8 470.3 124.8 457.8 137.3L320.5 274.7L183.1 137.4z"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+
+                      {giftsLoading && gifts.length === 0 && (
+                        <p className="py-6 text-center text-sm text-gray-300">
+                          Loading gifts...
+                        </p>
+                      )}
+
+                      {giftsError && gifts.length === 0 && (
+                        <div className="text-sm text-red-300">
+                          Unable to load gifts.
+                          <button
+                            type="button"
+                            onClick={() => void refetchGifts()}
+                            className="ml-2 text-yellow-400"
+                          >
+                            Try again
+                          </button>
+                        </div>
+                      )}
+
+                      {gifts.length > 0 && (
+                        <>
+                          <div className="grid grid-cols-5 gap-2">
+                            {gifts.map((gift) => {
+                              const isSelected =
+                                String(selectedGiftId) === String(gift.id);
+
+                              const image = getGiftImage(gift);
+
+                              const imageUrl = image
+                                ? image.startsWith("http")
+                                  ? image
+                                  : `${process.env.NEXT_PUBLIC_BASE_URL}${image}`
+                                : "";
+
+                              return (
+                                <button
+                                  type="button"
+                                  key={gift.id}
+                                  onClick={() => {
+                                    setSelectedGiftId(gift.id);
+                                    setGiftNotice("");
+                                  }}
+                                  className={`relative flex min-h-[105px] flex-col items-center justify-center rounded-xl p-2 text-center ${
+                                    isSelected
+                                      ? "border-yellow-100 bg-yellow-100 ring-1 ring-yellow-400/40"
+                                      : " "
+                                  }`}
+                                >
+                                  {imageUrl ? (
+                                    <img
+                                      src={imageUrl}
+                                      alt={gift.name}
+                                      className="h-10 px-5 py-5 bg-pink-200 rounded-full  w-10 object-contain"
+                                    />
+                                  ) : (
+                                    <span className="text-3xl">🎁</span>
+                                  )}
+
+                                  <span className="mt-2 text-purple-700 text-sm font-semibold">
+                                    {gift.name}
+                                  </span>
+
+                                  <span className="mt-1 text-[10px] text-black">
+                                    ₹ {getGiftPrice(gift)}
+                                  </span>
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          {/* {selectedGift && (
+                            <div className="mt-4 rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-3">
+                              <p className="font-semibold">
+                                {selectedGift.name}
+                              </p>
+
+                              <p className="text-sm text-yellow-400">
+                                {getGiftPrice(selectedGift)} coins each
+                              </p>
+
+                              <div className="mt-4 flex items-center justify-between">
+                                <span className="text-sm text-gray-300">
+                                  Quantity
+                                </span>
+
+                                <div className="flex items-center gap-3">
+                                  <button
+                                    type="button"
+                                    onClick={decreaseGiftQuantity}
+                                    disabled={
+                                      sendingGift || quantityNumber <= 1
+                                    }
+                                    className="h-9 w-9 rounded-lg bg-gray-800 text-lg disabled:opacity-40"
+                                  >
+                                    −
+                                  </button>
+
+                                  <input
+                                    type="number"
+                                    min="1"
+                                    max="100"
+                                    value={giftQuantity}
+                                    disabled={sendingGift}
+                                    onChange={(event) => {
+                                      const raw = event.target.value;
+
+                                      if (raw === "") {
+                                        setGiftQuantity("");
+                                        return;
+                                      }
+
+                                      const value = Number(raw);
+
+                                      if (
+                                        Number.isInteger(value) &&
+                                        value >= 1 &&
+                                        value <= 100
+                                      ) {
+                                        setGiftQuantity(value);
+                                      }
+                                    }}
+                                    onBlur={() => {
+                                      const value = Number(giftQuantity);
+
+                                      if (
+                                        !Number.isInteger(value) ||
+                                        value < 1 ||
+                                        value > 100
+                                      ) {
+                                        setGiftQuantity(1);
+                                      }
+                                    }}
+                                    className="w-14 rounded-lg border border-gray-700 bg-gray-900 p-2 text-center"
+                                  />
+
+                                  <button
+                                    type="button"
+                                    onClick={increaseGiftQuantity}
+                                    disabled={
+                                      sendingGift || quantityNumber >= 100
+                                    }
+                                    className="h-9 w-9 rounded-lg bg-gray-800 text-lg disabled:opacity-40"
+                                  >
+                                    +
+                                  </button>
+                                </div>
+                              </div>
+
+                              <div className="mt-4 flex justify-between border-t border-yellow-500/20 pt-3">
+                                <span className="text-sm text-gray-300">
+                                  Total
+                                </span>
+
+                                <span className="font-bold text-yellow-400">
+                                  {totalGiftCoins.toLocaleString("en-IN")} coins
+                                </span>
+                              </div>
+                            </div>
+                          )} */}
+
+                          {giftNotice && (
+                            <div className="mt-3 rounded-lg bg-gray-900 p-3 text-sm text-yellow-300">
+                              {giftNotice}
+                            </div>
+                          )}
+                          {selectedGift && (
+                            <button
+                              type="button"
+                              onClick={handleSendGift}
+                              disabled={
+                                sendingGift ||
+                                !selectedGiftId ||
+                                !Number.isInteger(quantityNumber) ||
+                                quantityNumber < 1 ||
+                                quantityNumber > 100
+                              }
+                              className="mt-4 flex w-[40%] rounded-full text-sm items-center justify-items-center align-items-center text-center bg-gradient-to-r  justify-self-center from-yellow-500 to-amber-400 px-4 py-2 text-black disabled:opacity-50"
+                            >
+                              {sendingGift
+                                ? "Sending Gift..."
+                                : ` Send Gift${
+                                    selectedGift
+                                      ? ` · ₹  ${totalGiftCoins} `
+                                      : ""
+                                  }`}
+                            </button>
+                          )}
+
+                          <p className="mt-2 text-center text-xs text-gray-500">
+                            Your wallet will be charged after successful
+                            gifting.
+                          </p>
+                        </>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="absolute bottom-0 left-0 right-0 z-30 bg-gradient-to-t from-black via-black/90 to-transparent px-3 pb-4 pt-12 sm:px-5">
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-2">
+                      <div className="hidden items-center gap-2 text-sm text-gray-300 sm:flex">
+                        <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-red-500" />
+
+                        {hostJoined ? "Live" : "Connecting..."}
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row place-self-end items-center  gap-2 sm:gap-7">
+                    
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setInteractionPanelOpen(true);
+                            setInteractionNotice("");
+                          }}
+                          disabled={
+                            streamEnded ||
+                            interactionStatus === "PENDING" ||
+                            interactionStatus === "ACCEPTED" ||
+                            isInteractionPublishing
+                          }
+                          title="Call Now"
+                          className="relative flex flex-col cursor-pointer items-center justify-center rounded-full border border-white/20 bg-[linear-gradient(142deg,#148500_-27%,#429d00_9%,#b5d900_68%,#ff0_94%)] px-5 sm:px-8 py-2 text-white shadow-lg transition hover:scale-105 disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          <span className="absolute -left-4 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white bg-green-700 shadow-md">
+                            <svg width={20} height={20} viewBox="0 0 640 640">
+                              <path
+                                fill="#fff"
+                                d="M376 32C504.1 32 608 135.9 608 264C608 277.3 597.3 288 584 288C570.7 288 560 277.3 560 264C560 162.4 477.6 80 376 80C362.7 80 352 69.3 352 56C352 42.7 362.7 32 376 32zM384 224C401.7 224 416 238.3 416 256C416 273.7 401.7 288 384 288C366.3 288 352 273.7 352 256C352 238.3 366.3 224 384 224zM352 152C352 138.7 362.7 128 376 128C451.1 128 512 188.9 512 264C512 277.3 501.3 288 488 288C474.7 288 464 277.3 464 264C464 215.4 424.6 176 376 176C362.7 176 352 165.3 352 152zM176.1 65.4C195.8 60 216.4 70.1 224.2 88.9L264.7 186.2C271.6 202.7 266.8 221.8 252.9 233.2L208.8 269.3C241.3 340.9 297.8 399.3 368.1 434.2L406.7 387C418 373.1 437.1 368.4 453.7 375.2L551 415.8C569.8 423.6 579.9 444.2 574.5 463.9L573 469.4C555.4 534.1 492.9 589.3 416.6 573.2C241.6 536.1 103.9 398.4 66.8 223.4C50.7 147.1 105.9 84.6 170.5 66.9L176 65.4z"
+                              />
+                            </svg>
+                          </span>
+
+                          <span className="text-xs sm:text-sm font-semibold">
+                            Call Now
+                          </span>
                         </button>
 
-                        <p className="mt-2 text-center text-xs text-gray-500">
-                          Your wallet will be charged after successful gifting.
-                        </p>
-                      </>
-                    )}
+                     
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setGiftPanelOpen((open) => !open);
+                            setGiftNotice("");
+                          }}
+                          aria-label="Send Gift"
+                          className="relative flex flex-col cursor-pointer items-end sm:items-center justify-center rounded-full border border-yellow-400/40 bg-yellow-500 px-5 sm:px-8 py-2 text-black shadow-lg transition hover:scale-105 hover:bg-yellow-400"
+                        >
+                         
+                          <span className="absolute -left-4 sm:-right-4 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border-2 border-yellow-200 bg-yellow-600 text-2xl shadow-md">
+                            🎁
+                          </span>
+
+                          <span className="text-xs sm:text-sm font-bold">Gift</span>
+                        </button>
+                      </div>
+
+                    
+
+                      <button
+                        type="button"
+                        onClick={handleLeaveLive}
+                        disabled={leavingLive}
+                        title="Leave Live"
+                        className="flex px-3 py-1 cursor-pointer shadow-xl shrink-0 place-self-end items-center sm:justify-center  justify-center rounded-full border border-red-500/40 bg-red-600 text-white  hover:bg-red-700 disabled:opacity-50"
+                      >
+                        {leavingLive ? (
+                          <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                        ) : (
+                          <span className="text-sm">END</span>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* GIFT NOTICE */}
+
+                {giftNotice && !giftPanelOpen && (
+                  <div className="mt-3 rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3 text-sm text-yellow-300">
+                    {giftNotice}
                   </div>
                 )}
-
-                {/* BOTTOM CONTROLS */}
-
-                <div className="absolute bottom-0 left-0 right-0 z-30 bg-gradient-to-t from-black via-black/90 to-transparent px-3 pb-4 pt-12 sm:px-5">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="hidden items-center gap-2 text-sm text-gray-300 sm:flex">
-                      <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-red-500" />
-
-                      {hostJoined ? "Live now" : "Connecting..."}
-                    </div>
-
-                    <div className="flex flex-1 items-center justify-center gap-2 sm:gap-4">
-                      {/* AUDIO CALL */}
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setInteractionType("AUDIO");
-                          setInteractionPanelOpen(true);
-                          setInteractionNotice("");
-                        }}
-                        disabled={
-                          streamEnded ||
-                          interactionStatus === "PENDING" ||
-                          interactionStatus === "ACCEPTED" ||
-                          isInteractionPublishing
-                        }
-                        title="Audio Call"
-                        className="flex flex-col items-center justify-center gap-1 rounded-xl border border-white/20 bg-gray-900/90 px-4 py-2 text-white shadow-lg transition hover:scale-105 hover:bg-yellow-600 disabled:cursor-not-allowed disabled:opacity-40"
-                      >
-                        <span className="text-2xl">🎙️</span>
-
-                        <span className="text-[11px] font-semibold sm:text-xs">
-                          Audio Call
-                        </span>
-                      </button>
-
-                      {/* VIDEO CALL */}
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setInteractionType("VIDEO");
-                          setInteractionPanelOpen(true);
-                          setInteractionNotice("");
-                        }}
-                        disabled={
-                          streamEnded ||
-                          interactionStatus === "PENDING" ||
-                          interactionStatus === "ACCEPTED" ||
-                          isInteractionPublishing
-                        }
-                        title="Video Call"
-                        className="flex flex-col items-center justify-center gap-1 rounded-xl border border-white/20 bg-gray-900/90 px-4 py-2 text-white shadow-lg transition hover:scale-105 hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-40"
-                      >
-                        <span className="text-2xl">📹</span>
-
-                        <span className="text-[11px] font-semibold sm:text-xs">
-                          Video Call
-                        </span>
-                      </button>
-
-                      {/* GIFT */}
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setGiftPanelOpen((open) => !open);
-                          setGiftNotice("");
-                        }}
-                        aria-label="Send Gift"
-                        className="flex flex-col items-center justify-center gap-1 rounded-xl border border-yellow-400/40 bg-yellow-500 px-4 py-2 text-black shadow-lg transition hover:scale-105 hover:bg-yellow-400"
-                      >
-                        <span className="text-2xl">🎁</span>
-
-                        <span className="text-[11px] font-bold sm:text-xs">
-                          Gift
-                        </span>
-                      </button>
-                    </div>
-
-                    {/* LEAVE LIVE */}
-
-                    <button
-                      type="button"
-                      onClick={handleLeaveLive}
-                      disabled={leavingLive}
-                      title="Leave Live"
-                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-red-500/40 bg-red-600 text-white shadow-lg hover:bg-red-700 disabled:opacity-50"
-                    >
-                      {leavingLive ? (
-                        <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-                      ) : (
-                        <span className="text-xl">✕</span>
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* GIFT NOTICE */}
-
-              {giftNotice && !giftPanelOpen && (
-                <div className="mt-3 rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3 text-sm text-yellow-300">
-                  {giftNotice}
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* RIGHT SIDE CHAT */}
-
-      <aside className="flex w-full min-w-0 flex-col border-t border-gray-800 bg-gray-950 lg:w-[350px] lg:shrink-0 lg:border-l lg:border-t-0">
-        {/* CHAT HEADER */}
-
-        <div className="border-b border-gray-800 px-4 py-3">
-          <h3 className="font-semibold">Live Chat</h3>
-
-          <p className="text-xs text-gray-400">Chat with the community</p>
+              </>
+            )}
+          </div>
         </div>
 
-        {/* MESSAGES */}
-
-        <div
-          ref={chatRef}
-          className="h-[300px] space-y-3 overflow-y-auto px-3 py-3 lg:h-[calc(75vh-120px)]"
-        >
-          {messages.map((item) => (
-            <div key={item.id} className="mb-2">
-              {item.kind === "gift" ? (
-                <div className="inline-flex max-w-full items-center rounded-xl border border-yellow-400/40 bg-yellow-500/10 p-3">
-                  <span className="mr-2 text-2xl">{item.giftIcon || "🎁"}</span>
-
-                  <div className="break-words text-sm">
-                    <strong className="text-yellow-300">
-                      {item.senderName}
-                    </strong>
-
-                    {" sent "}
-
-                    <strong>{item.giftName}</strong>
-
-                    {item.quantity > 1 && <span> × {item.quantity}</span>}
-
-                    {item.totalCoins != null && (
-                      <div className="mt-1 text-xs text-yellow-300">
-                        {Number(item.totalCoins).toLocaleString("en-IN")} coins
-                      </div>
-                    )}
-                  </div>
-                </div>
+        <aside className="flex w-full min-w-0 flex-col  border-gray-800 bg-gray-400 lg:w-[350px] lg:shrink-0 ">
+          <div className="border-b hidden md:block border-gray-800 px-4 py-3">
+            <div className="flex min-w-0 items-center gap-3">
+              {astrologerProfilePic ? (
+                <img
+                  src={astrologerProfilePic}
+                  alt={astrologerName}
+                  className="h-11 w-11 shrink-0 rounded-full border border-gray-500 object-cover"
+                />
               ) : (
-                <div
-                  className={`flex max-w-[95%] flex-col break-words rounded-xl px-3 py-2 ${
-                    item.isOwn ? "ml-auto bg-red-900/50" : "bg-gray-800"
-                  }`}
-                >
-                  <span
-                    className={`mb-1 font-semibold ${
-                      item.isOwn ? "text-green-400" : "text-yellow-400"
-                    }`}
-                  >
-                    {item.isOwn
-                      ? "You"
-                      : item.senderName
-                          ?.split("_")[0]
-                          ?.replace(/^./, (char) => char.toUpperCase())}
-                  </span>
-
-                  <span className="whitespace-pre-wrap text-sm text-white">
-                    {item.message}
-                  </span>
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gray-700 text-xl">
+                  👳
                 </div>
               )}
+
+              <div className="min-w-0">
+                <h3 className="truncate font-semibold">{astrologerName}</h3>
+
+                <p className="text-xs text-gray-300">Live Consultation</p>
+              </div>
             </div>
-          ))}
+          </div>
 
-          {messages.length === 0 && (
-            <p className="text-sm text-gray-400">Messages will appear here.</p>
-          )}
-        </div>
+          <div
+            ref={chatRef}
+            className="h-75 fixed top-50 md:top-0 sm:static w-[80%] md:w-full bg-[#00000000] space-y-3 md:bg-white overflow-y-auto px-3 py-3 lg:h-[calc(75vh-0px)]"
+           >
+            {messages.map((item) => (
+              <div key={item.id} className="mb-2">
+                {item.kind === "gift" ? (
+                  <div className="inline-flex max-w-full items-center rounded-xl border border-yellow-400/40 bg-yellow-500/10 p-3">
+                    <span className="mr-2 text-2xl">
+                      {item.giftIcon || "🎁"}
+                    </span>
 
-        {/* CHAT INPUT */}
+                    <div className="break-words text-sm">
+                      <strong className="text-yellow-300">
+                        {item.senderName}
+                      </strong>
 
-        <div className="mt-auto flex items-center gap-2 border-t border-gray-800 bg-black/80 p-3">
-          <input
-            value={message}
-            onChange={(event) => setMessage(event.target.value)}
-            placeholder="Write a message..."
-            maxLength={1000}
-            disabled={!liveInfo || loading || streamEnded}
-            className="min-w-0 flex-1 rounded-full bg-gray-900 px-4 py-3 text-white outline-none placeholder:text-gray-500 focus:ring-1 focus:ring-red-500 disabled:opacity-50"
-            onKeyDown={(event) => {
-              if (event.key === "Enter" && !event.shiftKey) {
-                event.preventDefault();
-                void sendMessage();
-              }
-            }}
-          />
+                      {" sent "}
 
-          <button
-            type="button"
-            onClick={() => void sendMessage()}
-            disabled={!message.trim() || !liveInfo || loading || streamEnded}
-            className="rounded-full bg-red-600 px-5 py-3 text-white hover:bg-red-700 disabled:opacity-50"
-          >
-            Send
-          </button>
-        </div>
-      </aside>
+                      <strong>{item.giftName}</strong>
 
-      {/* LIVE ENDED SCREEN */}
+                      {item.quantity > 1 && <span> × {item.quantity}</span>}
+
+                      {item.totalCoins != null && (
+                        <div className="mt-1 text-xs text-yellow-300">
+                          {Number(item.totalCoins).toLocaleString("en-IN")}{" "}
+                          coins
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                 <div
+  className={`flex w-fit max-w-[85%]  rounded-full flex-row sm:flex-col break-words rounded-2xl px-3 gap-3 py-1.5 sm:px-3 sm:py-2 ${
+    item.isOwn
+      ? "ml-auto bg-yellow-200"
+      : "bg-purple-200"
+  } max-sm:!ml-0 max-sm:!bg-black/60`}
+>
+  <span
+    className={`mb-0.5 text-[10px] font-semibold sm:mb-1 sm:text-xs ${
+      item.isOwn
+        ? "text-yellow-300 sm:text-black"
+        : "text-purple-300 sm:text-purple-800"
+    }`}
+  >
+    {item.isOwn
+      ? "You"
+      : item.senderName
+          ?.split("_")[0]
+          ?.replace(/^./, (char) => char.toUpperCase())}
+  </span>
+
+  <span className="whitespace-pre-wrap break-words text-[10px] text-white  sm:text-xs sm:text-black">
+    {item.message}
+  </span>
+</div>
+                )}
+              </div>
+            ))}
+
+            {messages.length === 0 && (
+              <p className="text-xs hidden sm:block text-gray-400">
+                Messages will appear here.
+              </p>
+            )}
+          </div>
+
+          <div className="mt-auto flex items-center gap-2 border-t border-gray-200 bg-gray-300 p-3">
+            <input
+              value={message}
+              onChange={(event) => setMessage(event.target.value)}
+              placeholder="Write a message..."
+              maxLength={1000}
+              disabled={!liveInfo || loading || streamEnded}
+              className="min-w-0 flex-1 rounded-full bg-gray-900 px-4 py-3 text-gray-800  text-[13px] outline-none bg-white/90 placeholder:text-gray-500 placeholder:text-xs   disabled:opacity-50"
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && !event.shiftKey) {
+                  event.preventDefault();
+                  void sendMessage();
+                }
+              }}
+            />
+
+            <button
+              type="button"
+              onClick={() => void sendMessage()}
+              disabled={!message.trim() || !liveInfo || loading || streamEnded}
+              className="rounded-full bg-yellow-400 px-3 py-3 text-white hover:bg-red-700 disabled:opacity-50"
+            >
+              <svg width={20} height={20} viewBox="0 0 640 640">
+                <path
+                  fill="rgb(30, 48, 80)"
+                  d="M568.4 37.7C578.2 34.2 589 36.7 596.4 44C603.8 51.3 606.2 62.2 602.7 72L424.7 568.9C419.7 582.8 406.6 592 391.9 592C377.7 592 364.9 583.4 359.6 570.3L295.4 412.3C290.9 401.3 292.9 388.7 300.6 379.7L395.1 267.3C400.2 261.2 399.8 252.3 394.2 246.7C388.6 241.1 379.6 240.7 373.6 245.8L261.2 340.1C252.1 347.7 239.6 349.7 228.6 345.3L70.1 280.8C57 275.5 48.4 262.7 48.4 248.5C48.4 233.8 57.6 220.7 71.5 215.7L568.4 37.7z"
+                />
+              </svg>
+            </button>
+          </div>
+        </aside>
+      </div>
 
       {streamEnded && (
         <div

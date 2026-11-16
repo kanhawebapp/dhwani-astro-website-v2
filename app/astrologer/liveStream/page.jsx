@@ -1,10 +1,10 @@
 "use client";
-
 import { useQuery } from "@apollo/client/react";
 import Image from "next/image";
-import Link from "next/link";
 
 import { GET_UPCOMING_LIVES } from "@/app/graphql/gqlQuery";
+import { useRouter } from "next/navigation";
+import CustomButton from "@/components/Custom/CustomButton";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "";
 
@@ -21,8 +21,8 @@ function parseLiveDate(value) {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
-// Reusable card component
 function LiveCard({ live }) {
+  const router = useRouter();
   const astrologer = live.astrologer;
   const isLive = live.status === "LIVE";
   const liveDate = parseLiveDate(live.scheduledAt);
@@ -64,7 +64,9 @@ function LiveCard({ live }) {
                   className="h-18 w-18 rounded-full border-2 border-yellow-400 object-cover shadow-md"
                 />
                 <div className="flex flex-col items-start gap-1">
-                  <p className={`text-md font-semibold  ${isLive ? "text-black-600" : "text-gray-300"}`}>
+                  <p
+                    className={`text-md font-semibold  ${isLive ? "text-black-600" : "text-gray-300"}`}
+                  >
                     {astrologer?.displayName ||
                       astrologer?.name ||
                       "Astrologer"}
@@ -72,7 +74,9 @@ function LiveCard({ live }) {
 
                   <div className="flex  gap-1">
                     <span className="text-sm">⭐</span>
-                    <span className={`font-medium text-sm  ${isLive ? "text-black-600" : "text-gray-300"}`}>
+                    <span
+                      className={`font-medium text-sm  ${isLive ? "text-black-600" : "text-gray-300"}`}
+                    >
                       {astrologer?.rating.toFixed(2) ?? 0}
                     </span>
                   </div>
@@ -130,16 +134,19 @@ function LiveCard({ live }) {
 
         <div className="mt-5  flex gap-2">
           {isLive && live.channelName && (
-            <Link
-              href={`/live/${encodeURIComponent(live.channelName)}`}
-              className="relative  flex flex-1 items-center justify-center overflow-hidden rounded-full bg-red-600 py-2 text-center text-sm font-semibold text-white shadow-md transition hover:bg-red-700"
+            <CustomButton
+              type="button"
+              onClick={() =>
+                router.push(`/live/${encodeURIComponent(live.channelName)}`)
+              }
+              className="relative flex flex-1 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-red-600 py-2 text-center text-sm font-semibold text-white shadow-md transition hover:bg-red-700"
             >
               <span className="pointer-events-none absolute inset-0 overflow-hidden">
                 <span className="absolute -inset-y-full left-[-100%] h-[300%] w-1/2 -skew-x-[25deg] animate-shimmer bg-gradient-to-r from-transparent via-white/50 to-transparent" />
               </span>
 
               <span className="relative z-10">Watch Live</span>
-            </Link>
+            </CustomButton>
           )}
         </div>
       </div>
@@ -160,7 +167,6 @@ export default function UpcomingLives() {
   const result = data?.getUpcomingLives;
   const lives = result?.data || [];
 
-  // Loading state
   if (loading) {
     return (
       <div className="py-10 text-center text-gray-600">
@@ -178,7 +184,7 @@ export default function UpcomingLives() {
     );
   }
 
-  // Separate sessions by status
+
   const liveSessions = lives.filter((live) => live.status === "LIVE");
 
   const scheduledSessions = lives.filter((live) => live.status === "SCHEDULED");
@@ -188,22 +194,13 @@ export default function UpcomingLives() {
   return (
     <section className="w-full text-black bg-[#f7efff] py-6">
       <div className="mx-auto max-w-7xl px-4">
-        {/* Header */}
+    
         <div className="mb-8 flex flex-col items-center justify-center">
           <h2 className="text-center text-2xl font-bold text-black">
             Live Sessions
           </h2>
 
-          <div className="mt-2 text-center text-sm text-black md:px-20">
-       
-
-            {/* <p>
-              Experience a free live session with India's leading Astrologers,
-              Tarot readers, Vaastu experts, Numerologists, and life coaches.
-              Ask your questions about love, relationships, career, marriage,
-              finance, and more through a live call today!
-            </p> */}
-          </div>
+     
         </div>
 
         {!hasSessions ? (
@@ -217,11 +214,7 @@ export default function UpcomingLives() {
                 <div className="mb-5 flex flex-wrap items-center gap-3">
                   <h4 className="text-sm ">
                     <b>Ongoing Live Sessions </b>
-                  </h4>
-
-                  {/* <span className="rounded-full bg-red-100 px-3 py-1 text-sm font-semibold text-red-600">
-                    {liveSessions.length} Live
-                  </span> */}
+                  </h4>                
                 </div>
 
                 <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
