@@ -1786,9 +1786,7 @@ export default function WatchLive() {
           ? ` Remaining wallet balance: ${balance} coins.`
           : "";
 
-      setGiftNotice(
-        `Successfully sent ${sentName} × ${sentQuantity} for ${coins} coins.${balanceMessage}`,
-      );
+      setGiftNotice(`Successfully sent.${balanceMessage}`);
 
       setSelectedGiftId("");
       setGiftQuantity(1);
@@ -1917,6 +1915,13 @@ export default function WatchLive() {
       document.body.style.overflow = previousOverflow;
     };
   }, []);
+  const limitMessageWords = (message, limit = 300) => {
+  const words = message.trim().split(/\s+/);
+
+  if (words.length <= limit) return message;
+
+  return words.slice(0, limit).join(" ") + "...";
+};
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-purple-300 sm:p-4 sm:p-6 lg:p-8">
       <div
@@ -1924,7 +1929,7 @@ export default function WatchLive() {
 "
       >
         <div className="flex min-w-0 flex-1 flex-col">
-        <div className="border-b block md:hidden border-gray-800 px-4 py-3">
+          <div className="border-b block md:hidden border-gray-800 px-4 py-3">
             <div className="flex min-w-0 items-center gap-3">
               {astrologerProfilePic ? (
                 <img
@@ -1939,9 +1944,13 @@ export default function WatchLive() {
               )}
 
               <div className="min-w-0">
-                <h3 className="truncate text-[10px] sm:text-xs font-semibold">{astrologerName}</h3>
+                <h3 className="truncate text-[10px] sm:text-xs font-semibold">
+                  {astrologerName}
+                </h3>
 
-                <p className="text-[10px] sm:text-xs text-gray-300">Live Consultation</p>
+                <p className="text-[10px] sm:text-xs text-gray-300">
+                  Live Consultation
+                </p>
               </div>
             </div>
           </div>
@@ -1993,12 +2002,12 @@ export default function WatchLive() {
             {!loading && liveInfo && (
               <>
                 {!hostJoined && (
-                  <div className="mb-3 rounded-xl bg-yellow-500 p-3 text-center font-medium text-black">
+                  <div className="mb-1  text-sm text-center font-medium text-black">
                     Waiting for astrologer video...
                   </div>
                 )}
 
-                <div className="relative isolate h-[calc(96dvh-90px)] sm:h-[calc(100dvh-90px)] min-h-[400px] w-full overflow-hidden rounded-xl bg-black sm:h-[calc(100dvh-65px)]">
+                <div className="relative   isolate h-[calc(96dvh-90px)] sm:h-[calc(100dvh-90px)] min-h-[400px] w-full overflow-hidden rounded-xl bg-black sm:h-[calc(100dvh-65px)]">
                   <div
                     ref={remoteVideoRef}
                     id="remote-video"
@@ -2076,8 +2085,7 @@ export default function WatchLive() {
                         </span>
                       </div>
 
-                      <div className="mt-2 flex items-center gap-2">                    
-
+                      <div className="mt-2 flex items-center gap-2">
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-semibold text-white">
                             {astrologerName}
@@ -2094,23 +2102,19 @@ export default function WatchLive() {
                         disabled={interactionLoading}
                         title="Disconnect audio call"
                         className="mt-3  flex justify-self-center  w-[40%] items-center align-self-center place-self-center gap-2 rounded-full text-xs bg-red-600 px-3   font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
-                       >
+                      >
                         {interactionLoading ? (
                           <>
                             <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
                             Ending...
                           </>
                         ) : (
-                          <>
-                           
-                            Disconnect
-                          </>
+                          <>Disconnect</>
                         )}
                       </button>
                     </div>
                   )}
 
-                
                   <div
                     className={`absolute right-4 top-28 z-30 h-36 w-28 overflow-hidden rounded-xl border-2 border-yellow-400 bg-black shadow-xl sm:h-80 sm:w-65 ${
                       isVideoCallActive ? "block" : "hidden"
@@ -2118,12 +2122,10 @@ export default function WatchLive() {
                   >
                     <div ref={guestVideoRef} className="h-full w-full" />
 
-              
                     <span className="absolute bottom-1 left-1 rounded bg-black/70 px-2 py-1 text-xs">
                       You
                     </span>
 
-                   
                     <button
                       type="button"
                       onClick={handleEndInteraction}
@@ -2136,7 +2138,7 @@ export default function WatchLive() {
                   </div>
 
                   {interactionPanelOpen && (
-                    <div className="absolute inset-0 z-[60] flex items-center justify-center bg-black/65 p-3 backdrop-blur-sm sm:p-5">
+                    <div className="absolute inset-0 z-[100] pointer-events-auto flex items-center justify-center bg-black/65 p-3 backdrop-blur-sm sm:p-5">
                       <div className="w-full max-w-md overflow-hidden rounded-2xl border border-gray-700 bg-gray-950 shadow-2xl">
                         <div className="flex items-center justify-between border-b  bg-gradient-to-r from-purple-900 via-purple-800 to-purple-900 p-4">
                           <div>
@@ -2147,8 +2149,6 @@ export default function WatchLive() {
                                   ? "Waiting for Astrologer"
                                   : "Live Consultation"}
                             </h3>
-
-                          
                           </div>
 
                           {!isInteractionPublishing &&
@@ -2158,20 +2158,21 @@ export default function WatchLive() {
                                 onClick={() => setInteractionPanelOpen(false)}
                                 className="flex h-9 w-9 items-center justify-center cursor-pointer rounded-full bg-red-200 hover:bg-red-600"
                               >
-                                <svg width={17} height={17} viewBox="0 0 640 640">
-                            <path
-                              fill="#fff"
-                              d="M183.1 137.4C170.6 124.9 150.3 124.9 137.8 137.4C125.3 149.9 125.3 170.2 137.8 182.7L275.2 320L137.9 457.4C125.4 469.9 125.4 490.2 137.9 502.7C150.4 515.2 170.7 515.2 183.2 502.7L320.5 365.3L457.9 502.6C470.4 515.1 490.7 515.1 503.2 502.6C515.7 490.1 515.7 469.8 503.2 457.3L365.8 320L503.1 182.6C515.6 170.1 515.6 149.8 503.1 137.3C490.6 124.8 470.3 124.8 457.8 137.3L320.5 274.7L183.1 137.4z"
-                            />
-                          </svg>
+                                <svg
+                                  width={17}
+                                  height={17}
+                                  viewBox="0 0 640 640"
+                                >
+                                  <path
+                                    fill="#fff"
+                                    d="M183.1 137.4C170.6 124.9 150.3 124.9 137.8 137.4C125.3 149.9 125.3 170.2 137.8 182.7L275.2 320L137.9 457.4C125.4 469.9 125.4 490.2 137.9 502.7C150.4 515.2 170.7 515.2 183.2 502.7L320.5 365.3L457.9 502.6C470.4 515.1 490.7 515.1 503.2 502.6C515.7 490.1 515.7 469.8 503.2 457.3L365.8 320L503.1 182.6C515.6 170.1 515.6 149.8 503.1 137.3C490.6 124.8 470.3 124.8 457.8 137.3L320.5 274.7L183.1 137.4z"
+                                  />
+                                </svg>
                               </button>
                             )}
                         </div>
 
-                        <div className="p-5 bg-purple-100">             
-
-                      
-
+                        <div className="p-5 bg-purple-100">
                           {interactionStatus === "PENDING" &&
                             !isInteractionPublishing && (
                               <div className="text-center flex flex-col items-center justify-center">
@@ -2194,7 +2195,7 @@ export default function WatchLive() {
                                   type="button"
                                   onClick={handleEndInteraction}
                                   disabled={interactionLoading}
-                                  className="mt-5 w-[40%] rounded-full flex justify-center border border-gray-700 bg-gray-800 px-4 py-3 text-sm font-semibold hover:bg-gray-700 disabled:opacity-50"
+                                  className="mt-3 sm:mt-4 w-fit sm:w-[40%] rounded-full flex justify-center border border-gray-700 bg-gray-800 px-4 py-1 sm:py-3 text-[10px] sm:text-sm font-semibold hover:bg-gray-700 disabled:opacity-50"
                                 >
                                   {interactionLoading
                                     ? "Cancelling..."
@@ -2203,12 +2204,10 @@ export default function WatchLive() {
                               </div>
                             )}
 
-                       
-
                           {isInteractionPublishing && (
                             <div className="text-center flex flex-col items-center justify-center">
                               <div className="mb-3 text-xl font-bold text-green-400">
-                                 Connected Successfully
+                                Connected Successfully
                               </div>
 
                               <p className="text-xs text-gray-700">
@@ -2270,8 +2269,6 @@ export default function WatchLive() {
                               </div>
                             )}
 
-                          
-
                           {!isInteractionPublishing &&
                             interactionStatus !== "PENDING" &&
                             interactionStatus !== "ACCEPTED" && (
@@ -2288,43 +2285,53 @@ export default function WatchLive() {
                                 </p>
 
                                 <div className="grid grid-cols-2 gap-3">
+                                  {/* AUDIO CALL */}
                                   <button
                                     type="button"
-                                    onClick={() =>
-                                      handleRequestInteraction("AUDIO")
-                                    }
+                                    onClick={() => {
+                                      console.log("Audio Call button clicked");
+                                      console.log(
+                                        "canRequestInteraction:",
+                                        canRequestInteraction,
+                                      );
+                                      handleRequestInteraction("AUDIO");
+                                    }}
                                     disabled={!canRequestInteraction}
-                                    className="rounded-2xl border flex flex-col cursor-pointer border-yellow-200 bg-yellow-200 p-4 text-black transition hover:scale-103 disabled:opacity-50"
+                                    className="flex cursor-pointer flex-col rounded-2xl border border-yellow-200 bg-yellow-200 p-4 text-black transition hover:scale-103 disabled:cursor-not-allowed disabled:opacity-50"
                                   >
                                     <span className="block text-3xl">🎙️</span>
-
                                     <span className="text-sm text-gray-800">
                                       Audio Call
                                     </span>
                                     <span className="font-semibold text-purple-800">
                                       {pricingLoading
                                         ? "Loading..."
-                                        : `${audioPrice} coins/min`}
+                                        : `₹ ${audioPrice} /min`}
                                     </span>
                                   </button>
 
+                                  {/* VIDEO CALL */}
                                   <button
                                     type="button"
-                                    onClick={() =>
-                                      handleRequestInteraction("VIDEO")
-                                    }
+                                    onClick={() => {
+                                      console.log("Video Call button clicked");
+                                      console.log(
+                                        "canRequestInteraction:",
+                                        canRequestInteraction,
+                                      );
+                                      handleRequestInteraction("VIDEO");
+                                    }}
                                     disabled={!canRequestInteraction}
-                                    className="rounded-2xl border flex flex-col cursor-pointer border-purple-400 bg-purple-300 p-4 text-purple-700 transition hover:scale-105 disabled:opacity-50"
+                                    className="flex cursor-pointer flex-col rounded-2xl border border-purple-400 bg-purple-300 p-4 text-purple-700 transition hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50"
                                   >
                                     <span className="block text-3xl">📹</span>
-
                                     <span className="text-sm text-gray-800">
                                       Video Call
                                     </span>
                                     <span className="font-semibold text-purple-800">
                                       {pricingLoading
                                         ? "Loading..."
-                                        : `${videoPrice} coins/min`}
+                                        : `₹ ${videoPrice} /min`}
                                     </span>
                                   </button>
                                 </div>
@@ -2341,13 +2348,11 @@ export default function WatchLive() {
                     </div>
                   )}
 
-                  {/* GIFT PANEL */}
-
                   {giftPanelOpen && (
                     <div
                       role="dialog"
                       aria-label="Send a gift"
-                      className="absolute bottom-20 right-3 z-50 max-h-[65%] w-[calc(100%-24px)] max-w-[560px] overflow-y-auto rounded-2xl border border-white/10 bg-pink-100 p-4 shadow-2xl backdrop-blur-md"
+                      className="absolute bottom-20 right-3 z-[100] pointer-events-auto max-h-[65%] w-[calc(100%-24px)] max-w-[560px] overflow-y-auto rounded-2xl border border-white/10 bg-linear-to-r from-pink-100 via-amber-100 to-purple-100 p-4 shadow-2xl backdrop-blur-md"
                     >
                       <div className="mb-1 flex items-center justify-between  border-gray-800 pb-1">
                         <div>
@@ -2392,7 +2397,7 @@ export default function WatchLive() {
 
                       {gifts.length > 0 && (
                         <>
-                          <div className="grid grid-cols-5 gap-2">
+                          <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
                             {gifts.map((gift) => {
                               const isSelected =
                                 String(selectedGiftId) === String(gift.id);
@@ -2415,7 +2420,7 @@ export default function WatchLive() {
                                   }}
                                   className={`relative flex min-h-[105px] flex-col items-center justify-center rounded-xl p-2 text-center ${
                                     isSelected
-                                      ? "border-yellow-100 bg-yellow-100 ring-1 ring-yellow-400/40"
+                                      ? "border-yellow-100 bg-yellow-100 ring-1 ring-yellow-100/40"
                                       : " "
                                   }`}
                                 >
@@ -2429,7 +2434,7 @@ export default function WatchLive() {
                                     <span className="text-3xl">🎁</span>
                                   )}
 
-                                  <span className="mt-2 text-purple-700 text-sm font-semibold">
+                                  <span className="mt-1 text-purple-700 text-xs sm:text-sm font-semibold">
                                     {gift.name}
                                   </span>
 
@@ -2441,98 +2446,8 @@ export default function WatchLive() {
                             })}
                           </div>
 
-                          {/* {selectedGift && (
-                            <div className="mt-4 rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-3">
-                              <p className="font-semibold">
-                                {selectedGift.name}
-                              </p>
-
-                              <p className="text-sm text-yellow-400">
-                                {getGiftPrice(selectedGift)} coins each
-                              </p>
-
-                              <div className="mt-4 flex items-center justify-between">
-                                <span className="text-sm text-gray-300">
-                                  Quantity
-                                </span>
-
-                                <div className="flex items-center gap-3">
-                                  <button
-                                    type="button"
-                                    onClick={decreaseGiftQuantity}
-                                    disabled={
-                                      sendingGift || quantityNumber <= 1
-                                    }
-                                    className="h-9 w-9 rounded-lg bg-gray-800 text-lg disabled:opacity-40"
-                                  >
-                                    −
-                                  </button>
-
-                                  <input
-                                    type="number"
-                                    min="1"
-                                    max="100"
-                                    value={giftQuantity}
-                                    disabled={sendingGift}
-                                    onChange={(event) => {
-                                      const raw = event.target.value;
-
-                                      if (raw === "") {
-                                        setGiftQuantity("");
-                                        return;
-                                      }
-
-                                      const value = Number(raw);
-
-                                      if (
-                                        Number.isInteger(value) &&
-                                        value >= 1 &&
-                                        value <= 100
-                                      ) {
-                                        setGiftQuantity(value);
-                                      }
-                                    }}
-                                    onBlur={() => {
-                                      const value = Number(giftQuantity);
-
-                                      if (
-                                        !Number.isInteger(value) ||
-                                        value < 1 ||
-                                        value > 100
-                                      ) {
-                                        setGiftQuantity(1);
-                                      }
-                                    }}
-                                    className="w-14 rounded-lg border border-gray-700 bg-gray-900 p-2 text-center"
-                                  />
-
-                                  <button
-                                    type="button"
-                                    onClick={increaseGiftQuantity}
-                                    disabled={
-                                      sendingGift || quantityNumber >= 100
-                                    }
-                                    className="h-9 w-9 rounded-lg bg-gray-800 text-lg disabled:opacity-40"
-                                  >
-                                    +
-                                  </button>
-                                </div>
-                              </div>
-
-                              <div className="mt-4 flex justify-between border-t border-yellow-500/20 pt-3">
-                                <span className="text-sm text-gray-300">
-                                  Total
-                                </span>
-
-                                <span className="font-bold text-yellow-400">
-                                  {totalGiftCoins.toLocaleString("en-IN")} coins
-                                </span>
-                              </div>
-                            </div>
-                          )} */}
-
                           {giftNotice && (
-                            <div className="mt-3 rounded-lg bg-gray-900 p-3 text-sm text-yellow-300">
+                            <div className="mt-3 rounded-full text-center bg-gray-700 p-3 text-sm text-yellow-300">
                               {giftNotice}
                             </div>
                           )}
@@ -2547,7 +2462,7 @@ export default function WatchLive() {
                                 quantityNumber < 1 ||
                                 quantityNumber > 100
                               }
-                              className="mt-4 flex w-[40%] rounded-full text-sm items-center justify-items-center align-items-center text-center bg-gradient-to-r  justify-self-center from-yellow-500 to-amber-400 px-4 py-2 text-black disabled:opacity-50"
+                              className="mt-4 flex w-fit sm:w-[30%] rounded-full text-xs sm:text-sm items-center justify-content-center place-self-center justify-items-center align-items-center text-center bg-linear-to-r from-yellow-500 to-amber-400 px-4 py-2 text-black disabled:opacity-50"
                             >
                               {sendingGift
                                 ? "Sending Gift..."
@@ -2576,8 +2491,7 @@ export default function WatchLive() {
                         {hostJoined ? "Live" : "Connecting..."}
                       </div>
 
-                      <div className="flex flex-col sm:flex-row place-self-end items-center  gap-2 sm:gap-7">
-                    
+                      <div className="flex flex-col sm:flex-row items-end place-self-end items-center  gap-2 sm:gap-7">
                         <button
                           type="button"
                           onClick={() => {
@@ -2607,7 +2521,6 @@ export default function WatchLive() {
                           </span>
                         </button>
 
-                     
                         <button
                           type="button"
                           onClick={() => {
@@ -2617,35 +2530,32 @@ export default function WatchLive() {
                           aria-label="Send Gift"
                           className="relative flex flex-col cursor-pointer items-end sm:items-center justify-center rounded-full border border-yellow-400/40 bg-yellow-500 px-5 sm:px-8 py-2 text-black shadow-lg transition hover:scale-105 hover:bg-yellow-400"
                         >
-                         
                           <span className="absolute -left-4 sm:-right-4 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border-2 border-yellow-200 bg-yellow-600 text-2xl shadow-md">
                             🎁
                           </span>
 
-                          <span className="text-xs sm:text-sm font-bold">Gift</span>
+                          <span className="text-xs sm:text-sm font-bold">
+                            Gift
+                          </span>
                         </button>
                       </div>
-
-                    
 
                       <button
                         type="button"
                         onClick={handleLeaveLive}
                         disabled={leavingLive}
                         title="Leave Live"
-                        className="flex px-3 py-1 cursor-pointer shadow-xl shrink-0 place-self-end items-center sm:justify-center  justify-center rounded-full border border-red-500/40 bg-red-600 text-white  hover:bg-red-700 disabled:opacity-50"
+                        className="fixed sm:static top-3 right-5 sm:flex px-3 py-1 cursor-pointer shadow-xl shrink-0 place-self-end items-center sm:justify-center  justify-center rounded-full border border-red-500/40 bg-red-600 text-white  hover:bg-red-700 disabled:opacity-50"
                       >
                         {leavingLive ? (
                           <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
                         ) : (
-                          <span className="text-sm">END</span>
+                          <span className="text-xs sm:text-sm">END</span>
                         )}
                       </button>
                     </div>
                   </div>
                 </div>
-
-                {/* GIFT NOTICE */}
 
                 {giftNotice && !giftPanelOpen && (
                   <div className="mt-3 rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3 text-sm text-yellow-300">
@@ -2682,65 +2592,84 @@ export default function WatchLive() {
 
           <div
             ref={chatRef}
-            className="h-75 fixed top-50 md:top-0 sm:static w-[80%] md:w-full bg-[#00000000] space-y-3 md:bg-white overflow-y-auto px-3 py-3 lg:h-[calc(75vh-0px)]"
-           >
-            {messages.map((item) => (
-              <div key={item.id} className="mb-2">
-                {item.kind === "gift" ? (
-                  <div className="inline-flex max-w-full items-center rounded-xl border border-yellow-400/40 bg-yellow-500/10 p-3">
-                    <span className="mr-2 text-2xl">
-                      {item.giftIcon || "🎁"}
-                    </span>
+            className={`h-75 fixed bottom-15 md:bottom-0
+  ${
+    interactionPanelOpen || giftPanelOpen
+      ? "pointer-events-none z-0 md:pointer-events-auto md:z-50"
+      : "pointer-events-auto z-10"
+  }
+  overflow-y-auto
+  [&::-webkit-scrollbar]:hidden
+  [-ms-overflow-style:none]
+  [scrollbar-width:none]
+  sm:static w-[80%] md:w-full
+  bg-[#00000000] space-y-3 md:bg-white
+  px-3 py-3 lg:h-[calc(75vh-0px)]`}
+          >
+            <div
+              className={`${
+                interactionPanelOpen || giftPanelOpen
+                  ? "hidden md:block"
+                  : "block"
+              }`}
+            >
+        
+              {messages.map((item) => (
+                <div key={item.id} className="mb-1">
+                  {item.kind === "gift" ? (
+                    <div className="inline-flex max-w-full items-center rounded-xl border border-yellow-400/40 bg-yellow-500/10 p-3">
+                      <span className="mr-2 text-2xl">
+                        {item.giftIcon || "🎁"}
+                      </span>
 
-                    <div className="break-words text-sm">
-                      <strong className="text-yellow-300">
-                        {item.senderName}
-                      </strong>
+                      <div className="break-words text-sm">
+                        <strong className="text-yellow-300">
+                          {item.senderName}
+                        </strong>
 
-                      {" sent "}
+                        {" sent "}
 
-                      <strong>{item.giftName}</strong>
+                        <strong>{item.giftName}</strong>
 
-                      {item.quantity > 1 && <span> × {item.quantity}</span>}
+                        {item.quantity > 1 && <span> × {item.quantity}</span>}
 
-                      {item.totalCoins != null && (
-                        <div className="mt-1 text-xs text-yellow-300">
-                          {Number(item.totalCoins).toLocaleString("en-IN")}{" "}
-                          coins
-                        </div>
-                      )}
+                        {item.totalCoins != null && (
+                          <div className="mt-1 text-xs text-yellow-300">
+                            {Number(item.totalCoins).toLocaleString("en-IN")}{" "}
+                            coins
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                 <div
-  className={`flex w-fit max-w-[85%]  rounded-full flex-row sm:flex-col break-words rounded-2xl px-3 gap-3 py-1.5 sm:px-3 sm:py-2 ${
-    item.isOwn
-      ? "ml-auto bg-yellow-200"
-      : "bg-purple-200"
-  } max-sm:!ml-0 max-sm:!bg-black/60`}
->
-  <span
-    className={`mb-0.5 text-[10px] font-semibold sm:mb-1 sm:text-xs ${
-      item.isOwn
-        ? "text-yellow-300 sm:text-black"
-        : "text-purple-300 sm:text-purple-800"
-    }`}
-  >
-    {item.isOwn
-      ? "You"
-      : item.senderName
-          ?.split("_")[0]
-          ?.replace(/^./, (char) => char.toUpperCase())}
-  </span>
+                  ) : (
+                    <div
+                      className={`flex w-fit max-w-[85%] min-w-0 flex-row gap-1 rounded-xl px-3 py-1.5 break-all sm:flex-col sm:gap-0 sm:rounded-xl sm:px-2 sm:py-2 ${
+                        item.isOwn ? "ml-auto bg-yellow-200" : "bg-purple-200"
+                      } max-sm:!ml-0 max-sm:!bg-black/60`}
+                    >
+                      <span
+                        className={`mb-0.5 shrink-0 text-[10px] font-semibold sm:mb-1 sm:text-xs ${
+                          item.isOwn
+                            ? "text-yellow-300 sm:text-black"
+                            : "text-purple-300 sm:text-purple-800"
+                        }`}
+                      >
+                        {item.isOwn
+                          ? "You"
+                          : item.senderName
+                              ?.split("_")[0]
+                              ?.replace(/^./, (char) => char.toUpperCase())}
+                      </span>
 
-  <span className="whitespace-pre-wrap break-words text-[10px] text-white  sm:text-xs sm:text-black">
-    {item.message}
-  </span>
-</div>
-                )}
-              </div>
-            ))}
+                     <span className="min-w-0 whitespace-pre-wrap [overflow-wrap:anywhere] text-[10px] text-white sm:text-xs sm:text-black">
 
+                             {limitMessageWords(item.message, 300)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
             {messages.length === 0 && (
               <p className="text-xs hidden sm:block text-gray-400">
                 Messages will appear here.
