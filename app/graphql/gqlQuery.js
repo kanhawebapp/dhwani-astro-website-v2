@@ -1006,6 +1006,7 @@ export const GET_LIVE_STATUS = gql`
     }
   }
 `;
+
 export const CREATE_LIVE_INTERACTION_REQUEST = gql`
   mutation CreateLiveInteractionRequest(
     $liveStreamId: ID!
