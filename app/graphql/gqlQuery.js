@@ -295,7 +295,7 @@ export const GET_ASTROLOGERS_GUEST = gql`
         pricing {
           type
           price
-          offerPrice
+          originalPrice
           commissionPercent
           isActive
         }

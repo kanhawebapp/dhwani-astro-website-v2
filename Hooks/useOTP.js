@@ -90,7 +90,7 @@ export const useOTP = () => {
     }
 
     const res = await verifyOtp({
-      variables: { countryCode, mobile, otp: otpValue, source: "WEB" ,playerId:"askfjksjf"},
+      variables: { countryCode, mobile, otp: otpValue, source: "WEB" ,playerId:""},
     });
 
     clearInterval(timerRef.current);

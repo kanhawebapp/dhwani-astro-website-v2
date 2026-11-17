@@ -376,7 +376,7 @@ const SignInModal = ({ onClose }) => {
 
               {step === "WELCOME" && (
                 <>
-                  <h2 className="text-xl font-bold text-purple-700">
+                  <h2 className="text-2xl font-bold text-yellow-400">
                     Welcome Back ✨
                   </h2>
                   <p className="text-lg mt-2">{existingUserName}</p>
