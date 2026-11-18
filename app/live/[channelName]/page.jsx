@@ -22,6 +22,45 @@ import {
 } from "@/app/graphql/gqlQuery";
 
 // ---------------------------------------------------------------------------
+// Silence Agora Chat SDK internal logging (including DNS timeouts).
+// ---------------------------------------------------------------------------
+if (typeof window !== "undefined" && !window.__AGORA_LOG_FILTER_INSTALLED__) {
+  window.__AGORA_LOG_FILTER_INSTALLED__ = true;
+
+  const originalConsoleError = console.error;
+  const originalConsoleWarn = console.warn;
+
+  const isAgoraChatNoise = (args) => {
+    try {
+      const first = args?.[0];
+      if (typeof first !== "string") return false;
+      const msg = first.toLowerCase();
+      return (
+        msg.includes("im sdk") &&
+        (msg.includes("get dns failed") ||
+          msg.includes("login failed") ||
+          msg.includes("dns") ||
+          msg.includes("websocket connect failed") ||
+          msg.includes("request timeout") ||
+          msg.includes("retryrequestdns failed"))
+      );
+    } catch {
+      return false;
+    }
+  };
+
+  console.error = (...args) => {
+    if (isAgoraChatNoise(args)) return;
+    originalConsoleError.apply(console, args);
+  };
+
+  console.warn = (...args) => {
+    if (isAgoraChatNoise(args)) return;
+    originalConsoleWarn.apply(console, args);
+  };
+}
+
+// ---------------------------------------------------------------------------
 // sessionStorage key helpers for persisting timer state across refresh.
 // ---------------------------------------------------------------------------
 const STORAGE_KEY = "live_interaction_timer";
@@ -73,8 +112,6 @@ function formatDuration(totalSeconds) {
 
 /**
  * Compute total allowed seconds from pricing API data.
- * - walletBalance: current wallet coins
- * - pricePerMinute: audioPrice or videoPrice depending on call type
  */
 function computeTotalSecondsFromPricing(walletBalance, pricePerMinute) {
   const balance = Number(walletBalance) || 0;
@@ -127,17 +164,10 @@ export default function WatchLive() {
 
   const [interactionPanelOpen, setInteractionPanelOpen] = useState(false);
 
-  // =====================================================
-  // MULTI-VIEWER STATE (other viewers besides self and astrologer)
-  // =====================================================
-  // Map of uid -> { uid, label } for other viewers currently publishing.
-  // Used only to render tiny thumbnails; astrologer stays main.
+  // Multi-viewer
   const [otherViewerUids, setOtherViewerUids] = useState([]);
 
-  // =====================================================
-  // REVERSE TIMER STATE
-  // =====================================================
-
+  // Reverse timer
   const [interactionStartedAtMs, setInteractionStartedAtMs] = useState(null);
   const [interactionTotalSeconds, setInteractionTotalSeconds] = useState(0);
   const [remainingSeconds, setRemainingSeconds] = useState(0);
@@ -188,14 +218,9 @@ export default function WatchLive() {
   const interactionTypeRef = useRef("AUDIO");
   const walletBalanceRef = useRef(0);
 
-  // ---------------------------------------------------
-  // MULTI-VIEWER REFS
-  // ---------------------------------------------------
-  // Astrologer UID — the ONLY user whose video we play in the main area.
+  // Multi-viewer refs
   const astrologerUidRef = useRef(null);
-  // Map uid -> { div, videoTrack, audioTrack } for other viewers.
   const otherViewerStreamsRef = useRef(new Map());
-  // Local viewer UID (set after join).
   const localUidRef = useRef(null);
 
   useEffect(() => {
@@ -203,7 +228,7 @@ export default function WatchLive() {
   }, [liveInfo]);
 
   // =====================================================
-  // PRICING QUERY (source of truth for wallet + prices)
+  // PRICING QUERY
   // =====================================================
 
   const {
@@ -329,7 +354,7 @@ export default function WatchLive() {
     : 0;
 
   // =====================================================
-  // GRAPHQL: LIVE STATUS
+  // GRAPHQL: LIVE STATUS / SEND GIFT / LEAVE
   // =====================================================
 
   const [getLiveStatus] = useLazyQuery(GET_LIVE_STATUS, {
@@ -613,12 +638,6 @@ export default function WatchLive() {
   // ASTROLOGER UID RESOLUTION HELPERS
   // =====================================================
 
-  /**
-   * Try to resolve the astrologer's Agora UID from the joinLive payload.
-   * Different backends expose this in different places; we check the most
-   * common ones. If not found, we fall back to "first publisher wins"
-   * (see subscribeToUser).
-   */
   const resolveAstrologerUidFromLive = useCallback((live) => {
     if (!live) return null;
 
@@ -640,29 +659,6 @@ export default function WatchLive() {
     }
 
     return null;
-  }, []);
-
-  /**
-   * Decide whether a remote user is the astrologer.
-   *
-   * Priority:
-   *  1. Compare to astrologerUidRef.current (set from joinLive payload).
-   *  2. If unknown, treat the first non-self publisher as the astrologer.
-   *     This works because viewers do NOT publish until their own
-   *     interaction is accepted; so the first publisher at stream join
-   *     is always the astrologer.
-   */
-  const isAstrologerUser = useCallback((uid) => {
-    if (uid == null) return false;
-
-    const astroUid = astrologerUidRef.current;
-
-    if (astroUid != null) {
-      return String(astroUid) === String(uid);
-    }
-
-    // Fallback: assign on first non-self publish (see subscribeToUser).
-    return false;
   }, []);
 
   // =====================================================
@@ -732,7 +728,7 @@ export default function WatchLive() {
   }, [streamEnded]);
 
   // =====================================================
-  // TIMER HELPERS (REVERSE)
+  // TIMER HELPERS
   // =====================================================
 
   const resolveInteractionStartedAtMs = useCallback((session, requestId) => {
@@ -873,43 +869,14 @@ export default function WatchLive() {
 
       const request = session.request;
 
-      if (request?.status !== "ACCEPTED") return;
-
-      if (!request?.id) {
-        throw new Error("Interaction request ID is missing.");
+      if (!request?.id || !request?.interactionType) {
+        throw new Error("Interaction request is missing required fields.");
       }
 
-      if (
-        activeInteractionIdRef.current === request.id ||
-        publishingInteractionRef.current
-      ) {
+      // Guard against re-entry
+      if (publishingInteractionRef.current) {
         return;
       }
-
-      if (failedInteractionIdRef.current === request.id) return;
-
-      if (!session.rtcToken || !session.channelName || session.uid == null) {
-        throw new Error("Publisher RTC configuration is missing.");
-      }
-
-      const currentLive = liveInfoRef.current;
-
-      if (!currentLive) {
-        throw new Error("Live stream information is unavailable.");
-      }
-
-      if (Number(session.uid) !== Number(currentLive.uid)) {
-        throw new Error(
-          "Interaction UID does not match your live viewer UID. Please reconnect.",
-        );
-      }
-
-      if (session.channelName !== currentLive.channelName) {
-        throw new Error(
-          "Interaction channel does not match the current live stream.",
-        );
-      }
-
       publishingInteractionRef.current = true;
 
       let audioTrack = null;
@@ -921,236 +888,201 @@ export default function WatchLive() {
 
         await waitForRtcConnection(rtcClient, 15000);
 
+        // Ensure switching to host role does not get interrupted
         await rtcClient.setClientRole("host");
-
         await rtcClient.renewToken(session.rtcToken);
 
+        // Create audio track
         try {
           audioTrack = await AgoraRTC.createMicrophoneAudioTrack({
             encoderConfig: "speech_standard",
           });
+          await audioTrack.setEnabled(true);
         } catch (audioError) {
-          console.error("Microphone initialization failed:", audioError);
-
-          const audioErrorName = audioError?.name || "";
+          console.error("Microphone init failed:", audioError);
+          const name = audioError?.name || audioError?.data?.name || "";
+          const msg = String(audioError?.message || "").toLowerCase();
 
           if (
-            audioErrorName === "NotAllowedError" ||
-            audioErrorName === "PermissionDeniedError"
+            name === "NotAllowedError" ||
+            name === "PermissionDeniedError" ||
+            msg.includes("permission")
           ) {
             throw new Error(
               "Microphone permission denied. Please allow microphone access in your browser settings.",
             );
           }
-
-          if (audioErrorName === "NotFoundError") {
+          if (name === "NotFoundError" || name === "DevicesNotFoundError") {
             throw new Error("No microphone was found on this device.");
           }
-
-          if (audioErrorName === "NotReadableError") {
-            throw new Error("Microphone is being used by another application.");
-          }
-
           throw new Error(
-            audioError?.message || "Unable to initialize microphone.",
+            audioError?.message ||
+              "Unable to access your microphone. Please check your device settings.",
           );
         }
-
         localAudioTrackRef.current = audioTrack;
-
         const tracksToPublish = [audioTrack];
 
+        // Create video track
         if (request.interactionType === "VIDEO") {
           videoTrack = await createCameraTrackSafely(AgoraRTC);
-
+          await videoTrack.setEnabled(true);
           localVideoTrackRef.current = videoTrack;
-
           tracksToPublish.push(videoTrack);
+        }
 
-          if (guestVideoRef.current) {
+        // Publish with a small retry for OPERATION_ABORTED
+        const publishWithRetry = async (tracks, attempts = 2) => {
+          let lastErr;
+          for (let i = 0; i < attempts; i++) {
+            try {
+              await rtcClient.publish(tracks);
+              return;
+            } catch (e) {
+              lastErr = e;
+              const msg = String(e?.message || "").toLowerCase();
+              if (
+                msg.includes("cancel token") ||
+                e?.code === "OPERATION_ABORTED"
+              ) {
+                await new Promise((r) => setTimeout(r, 1000 * (i + 1)));
+                continue;
+              }
+              throw e;
+            }
+          }
+          throw lastErr;
+        };
+
+        await publishWithRetry(tracksToPublish);
+        tracksPublished = true;
+
+        // Mark publishing + set interaction type BEFORE the mutation
+        if (mountedRef.current) {
+          setInteractionType(request.interactionType);
+          setIsInteractionPublishing(true);
+          setInteractionStatus("ACCEPTED");
+          setInteractionNotice("");
+        }
+
+        // Immediately play local video so the user sees themselves
+        if (
+          request.interactionType === "VIDEO" &&
+          guestVideoRef.current &&
+          videoTrack
+        ) {
+          try {
             guestVideoRef.current.innerHTML = "";
             videoTrack.play(guestVideoRef.current);
+          } catch (playErr) {
+            console.warn("Unable to play local video immediately:", playErr);
           }
         }
 
-        await rtcClient.publish(tracksToPublish);
-
-        tracksPublished = true;
-
         await startLiveInteractionMutation({
-          variables: {
-            requestId: request.id,
-          },
+          variables: { requestId: request.id },
         });
 
         activeInteractionIdRef.current = request.id;
         failedInteractionIdRef.current = null;
 
-        // ---- TIMER INIT ----
-        let freshPricing = interactionPricing;
-
-        try {
-          const pricingResponse = await refetchPricing();
-          const fresh = pricingResponse?.data?.getLiveInteractionPricing;
-          if (fresh) freshPricing = fresh;
-        } catch (pricingErr) {
-          console.warn(
-            "Unable to refresh pricing at interaction start:",
-            pricingErr,
-          );
-        }
-
-        const pricingAudioPrice = Number(freshPricing?.audioPrice ?? audioPrice);
-        const pricingVideoPrice = Number(freshPricing?.videoPrice ?? videoPrice);
-        const pricingWalletBalance = Number(
-          freshPricing?.walletBalance ?? walletBalanceRef.current,
-        );
-
-        const callRate =
+        // Initialize the reverse timer
+        const rate =
           request.interactionType === "VIDEO"
-            ? pricingVideoPrice
-            : pricingAudioPrice;
+            ? Number(videoPrice)
+            : Number(audioPrice);
 
-        interactionRateRef.current = callRate;
-        walletBalanceRef.current = pricingWalletBalance;
-
-        if (mountedRef.current) {
-          setWalletBalance(pricingWalletBalance);
-        }
-
+        const startedAt = Date.now();
         const totalSeconds = computeTotalSecondsFromPricing(
-          pricingWalletBalance,
-          callRate,
+          walletBalanceRef.current,
+          rate,
         );
 
-        const resolvedStartedAt = resolveInteractionStartedAtMs(
-          session,
-          request.id,
-        );
-
-        const startedAtMs =
-          resolvedStartedAt != null ? resolvedStartedAt : Date.now();
-
-        const elapsedSoFar = Math.max(
-          0,
-          Math.floor((Date.now() - startedAtMs) / 1000),
-        );
-        const remaining = Math.max(0, totalSeconds - elapsedSoFar);
-
-        interactionStartedAtRef.current = startedAtMs;
+        interactionStartedAtRef.current = startedAt;
         interactionTotalSecondsRef.current = totalSeconds;
-        remainingSecondsRef.current = remaining;
+        remainingSecondsRef.current = totalSeconds;
+        interactionRateRef.current = rate;
 
         saveTimerStateToStorage({
           requestId: request.id,
-          startedAtMs,
+          startedAtMs: startedAt,
           totalSeconds,
           interactionType: request.interactionType,
-          callRate,
-          walletBalance: pricingWalletBalance,
+          callRate: rate,
+          walletBalance: walletBalanceRef.current,
           savedAt: Date.now(),
         });
 
         if (mountedRef.current) {
-          setInteractionType(request.interactionType);
-          setInteractionStatus("ACCEPTED");
-          setIsInteractionPublishing(true);
-
-          setInteractionStartedAtMs(startedAtMs);
+          setInteractionStartedAtMs(startedAt);
           setInteractionTotalSeconds(totalSeconds);
-          setRemainingSeconds(remaining);
-
-          setInteractionNotice(
-            request.interactionType === "VIDEO"
-              ? "You are connected through video."
-              : "You are connected through audio.",
-          );
+          setRemainingSeconds(totalSeconds);
         }
-
-        console.log("Interaction publishing successful:", {
-          requestId: request.id,
-          interactionType: request.interactionType,
-          channelName: session.channelName,
-          uid: session.uid,
-          tracksPublished,
-          startedAtMs,
-          totalSeconds,
-          remaining,
-          callRate,
-          pricingWalletBalance,
-          resumedFromStorage:
-            resolvedStartedAt != null &&
-            resolvedStartedAt < Date.now() - 5000,
-        });
       } catch (err) {
         console.error("Unable to start interaction:", err);
 
-        if (tracksPublished) {
-          try {
-            await rtcClient.unpublish([audioTrack, videoTrack].filter(Boolean));
-          } catch (unpublishError) {
-            console.warn("Unpublish failed:", unpublishError);
+        // If it is an OPERATION_ABORTED error, it may be caused by a brief network fluctuation
+        if (
+          err?.code === "OPERATION_ABORTED" ||
+          err?.message?.includes("cancel token")
+        ) {
+          console.warn(
+            "Publish was aborted, likely due to network or concurrent operation.",
+          );
+          if (audioTrack) {
+            try {
+              audioTrack.stop();
+              audioTrack.close();
+            } catch {}
           }
-        }
-
-        if (audioTrack) {
-          try {
-            audioTrack.stop();
-            audioTrack.close();
-          } catch (cleanupError) {
-            console.warn("Audio cleanup failed:", cleanupError);
+          if (videoTrack) {
+            try {
+              videoTrack.stop();
+              videoTrack.close();
+            } catch {}
           }
-        }
+          localAudioTrackRef.current = null;
+          localVideoTrackRef.current = null;
 
-        if (videoTrack) {
-          try {
-            videoTrack.stop();
-            videoTrack.close();
-          } catch (cleanupError) {
-            console.warn("Video cleanup failed:", cleanupError);
+          if (mountedRef.current) {
+            setInteractionNotice(
+              "Connection was interrupted. Please try requesting the interaction again.",
+            );
+            setIsInteractionPublishing(false);
           }
+          throw new Error("Connection interrupted, please retry");
         }
 
-        localAudioTrackRef.current = null;
-        localVideoTrackRef.current = null;
-
-        if (guestVideoRef.current) {
-          guestVideoRef.current.innerHTML = "";
-        }
-
-        try {
-          if (!streamEnded && rtcClient.connectionState === "CONNECTED") {
-            await rtcClient.setClientRole("audience");
+        // Generic cleanup on failure
+        if (!tracksPublished) {
+          if (audioTrack) {
+            try {
+              audioTrack.stop();
+              audioTrack.close();
+            } catch {}
           }
-        } catch (roleError) {
-          console.warn("Unable to restore audience role:", roleError);
-        }
-
-        activeInteractionIdRef.current = null;
-        failedInteractionIdRef.current = request.id;
-
-        resetInteractionTimer();
-
-        if (mountedRef.current) {
-          setIsInteractionPublishing(false);
+          if (videoTrack) {
+            try {
+              videoTrack.stop();
+              videoTrack.close();
+            } catch {}
+          }
+          localAudioTrackRef.current = null;
+          localVideoTrackRef.current = null;
         }
 
         throw err;
       } finally {
+        // Only release the lock after publishing completes (or fails)
         publishingInteractionRef.current = false;
       }
     },
     [
+      waitForRtcConnection,
+      createCameraTrackSafely,
+      startLiveInteractionMutation,
       audioPrice,
       videoPrice,
-      createCameraTrackSafely,
-      interactionPricing,
-      refetchPricing,
-      resetInteractionTimer,
-      resolveInteractionStartedAtMs,
-      streamEnded,
-      startLiveInteractionMutation,
-      waitForRtcConnection,
     ],
   );
 
@@ -1273,6 +1205,9 @@ export default function WatchLive() {
         console.error("Interaction publishing error:", err);
 
         failedInteractionIdRef.current = requestId;
+
+        // Release the lock so a retry is possible
+        publishingInteractionRef.current = false;
 
         if (mountedRef.current) {
           setInteractionNotice(err?.message || getErrorMessage(err));
@@ -1705,7 +1640,6 @@ export default function WatchLive() {
     activeInteractionIdRef.current = null;
     failedInteractionIdRef.current = null;
 
-    // Clear other-viewer thumbnails
     for (const entry of otherViewerStreamsRef.current.values()) {
       try {
         entry.videoTrack?.stop();
@@ -1798,11 +1732,6 @@ export default function WatchLive() {
   // =====================================================
   // SUBSCRIBE TO USER — MULTI-VIEWER SAFE
   // =====================================================
-  // The core fix: only the astrologer's video goes into remoteVideoRef.
-  // Other viewers publishing video are either ignored or rendered in a
-  // small thumbnail (if you want viewer-to-viewer visibility). The
-  // astrologer UID is resolved once via astrologerUidRef and then used
-  // as the single source of truth for "who goes in the main view".
 
   const subscribeToUser = useCallback(
     async (user, mediaType, generation) => {
@@ -1813,23 +1742,18 @@ export default function WatchLive() {
       }
 
       try {
+        console.log(`[Agora RTC] Subscribing to user ${user.uid} for ${mediaType}`);
         await client.subscribe(user, mediaType);
 
         if (!isCurrentGeneration(generation)) {
+          console.log(`[Agora RTC] Generation changed, ignoring subscription for ${user.uid}`);
           return;
         }
 
-        // Decide who this user is.
         const uid = user?.uid;
         const localUid = localUidRef.current;
         const isSelf = localUid != null && String(uid) === String(localUid);
 
-        // ---- Resolve astrologer UID on first publisher ----
-        // If backend provided the astrologer UID, astrologerUidRef is
-        // already set. Otherwise, the FIRST non-self publisher is the
-        // astrologer (viewers don't publish until they get accepted,
-        // so any publisher that appears before our own accept IS the
-        // astrologer).
         if (
           astrologerUidRef.current == null &&
           uid != null &&
@@ -1838,7 +1762,7 @@ export default function WatchLive() {
           !isInteractionPublishing
         ) {
           astrologerUidRef.current = uid;
-          console.log("Astrologer UID resolved:", uid);
+          console.log("[Agora RTC] Astrologer UID resolved:", uid);
         }
 
         const isAstrologer =
@@ -1847,27 +1771,31 @@ export default function WatchLive() {
 
         // ---- Video ----
         if (mediaType === "video") {
-          if (!user.videoTrack) return;
+          if (!user.videoTrack) {
+            console.warn(`[Agora RTC] User ${uid} published video but videoTrack is missing.`);
+            return;
+          }
 
           if (isAstrologer) {
-            // Main stage — astrologer's video.
+            console.log(`[Agora RTC] Received astrologer video track.`);
             pendingVideoTrackRef.current = user.videoTrack;
 
             if (remoteVideoRef.current) {
+              console.log(`[Agora RTC] Playing astrologer video immediately.`);
               remoteVideoRef.current.innerHTML = "";
-              user.videoTrack.play(remoteVideoRef.current);
-
-              setHostJoined(true);
-              setError("");
-
-              pendingVideoTrackRef.current = null;
+              try {
+                user.videoTrack.play(remoteVideoRef.current);
+                setHostJoined(true);
+                setError("");
+                pendingVideoTrackRef.current = null;
+              } catch (e) {
+                console.warn("[Agora RTC] Immediate play failed, will retry via useEffect", e);
+              }
+            } else {
+              console.log(`[Agora RTC] remoteVideoRef not ready yet. Storing in pendingVideoTrackRef.`);
             }
           } else if (!isSelf) {
-            // Another viewer — render a small thumbnail so other viewers
-            // don't overwrite the main stage. Add an entry so the UI
-            // can render it if desired.
             if (otherViewerStreamsRef.current.has(uid)) {
-              // Already tracked; only replace videoTrack.
               const existing = otherViewerStreamsRef.current.get(uid);
               existing.videoTrack = user.videoTrack;
             } else {
@@ -1880,8 +1808,6 @@ export default function WatchLive() {
                 audioTrack: user.audioTrack || null,
               });
 
-              // Play into the detached div now; the UI can attach it
-              // via a ref when it mounts.
               try {
                 user.videoTrack.play(div);
               } catch (playErr) {
@@ -1899,13 +1825,6 @@ export default function WatchLive() {
 
         // ---- Audio ----
         if (mediaType === "audio" && user.audioTrack) {
-          // Everyone's audio is played — but in a live scenario only the
-          // astrologer is normally publishing audio unless a viewer is
-          // in an accepted call. Viewers' audio in a call will play for
-          // the OTHER viewer, which is expected for a public call.
-          //
-          // If you want audio isolation per-viewer, wrap this in the
-          // same isAstrologer check.
           user.audioTrack.play();
 
           if (isAstrologer) {
@@ -1923,6 +1842,58 @@ export default function WatchLive() {
       }
     },
     [isCurrentGeneration, isInteractionPublishing],
+  );
+
+  // =====================================================
+  // OPEN CHAT WITH RETRY (non-fatal for the stream)
+  // =====================================================
+
+  const openChatWithRetry = useCallback(
+    async (chatClient, user, accessToken, generation, attempts = 3) => {
+      let lastError = null;
+
+      for (let i = 0; i < attempts; i++) {
+        if (!isCurrentGeneration(generation)) {
+          throw new Error("Stale generation during chat open.");
+        }
+
+        try {
+          await chatClient.open({ user, accessToken });
+          return true;
+        } catch (err) {
+          lastError = err;
+
+          const msg = String(
+            err?.message || err?.type || err?.data?.error || "",
+          ).toLowerCase();
+
+          if (
+            msg.includes("401") ||
+            msg.includes("unauthorized") ||
+            msg.includes("invalid token") ||
+            msg.includes("token expired")
+          ) {
+            throw err;
+          }
+
+          const delayMs = 1000 * Math.pow(2, i);
+
+          console.warn(
+            `Agora Chat open failed (attempt ${i + 1}/${attempts}). Retrying in ${delayMs}ms...`,
+            err,
+          );
+
+          await new Promise((r) => setTimeout(r, delayMs));
+
+          if (!isCurrentGeneration(generation)) {
+            throw lastError;
+          }
+        }
+      }
+
+      throw lastError || new Error("Chat login failed after retries.");
+    },
+    [isCurrentGeneration],
   );
 
   // =====================================================
@@ -1965,7 +1936,6 @@ export default function WatchLive() {
         astrologerUidRef.current = null;
         localUidRef.current = null;
 
-        // Clear other-viewer thumbnails from previous session
         for (const entry of otherViewerStreamsRef.current.values()) {
           try {
             entry.videoTrack?.stop();
@@ -1990,6 +1960,18 @@ export default function WatchLive() {
         agoraRTCRef.current = AgoraRTC;
         agoraChatRef.current = AgoraChat;
 
+        // Silence Agora Chat SDK logging.
+        try {
+          AgoraChat.setLogLevel?.(0);
+          AgoraChat.logger?.setLevel?.(0);
+          AgoraChat.config = {
+            ...(AgoraChat.config || {}),
+            logLevel: 0,
+          };
+        } catch (logErr) {
+          // Cosmetic only.
+        }
+
         const response = await joinLiveRef.current({
           variables: {
             channelName,
@@ -2007,8 +1989,6 @@ export default function WatchLive() {
         setLiveInfo(live);
         liveInfoRef.current = live;
 
-        // Try to resolve the astrologer UID from the joinLive payload.
-        // If present, it beats any heuristic.
         const astroUid = resolveAstrologerUidFromLive(live);
         if (astroUid != null) {
           astrologerUidRef.current = astroUid;
@@ -2055,7 +2035,6 @@ export default function WatchLive() {
                 remoteVideoRef.current.innerHTML = "";
               }
             } else {
-              // Another viewer stopped their camera.
               const entry = otherViewerStreamsRef.current.get(uid);
               if (entry) {
                 try {
@@ -2085,7 +2064,6 @@ export default function WatchLive() {
             astroUid != null && String(astroUid) === String(uid);
 
           if (isAstrologer) {
-            // Astrologer left — check if the whole stream ended.
             setHostJoined(false);
             pendingVideoTrackRef.current = null;
             if (remoteVideoRef.current) {
@@ -2135,7 +2113,6 @@ export default function WatchLive() {
               console.error("Error checking live status:", err);
             }
           } else {
-            // Other viewer left — clean their thumbnail.
             const entry = otherViewerStreamsRef.current.get(uid);
             if (entry) {
               try {
@@ -2189,72 +2166,146 @@ export default function WatchLive() {
           return;
         }
 
-        const chatClient = new AgoraChat.connection({
-          appKey: live.chatAppKey,
-        });
+        // ✅ FIX: Decouple Chat initialization from the main RTC flow.
+        // This prevents the "get DNS failed" timeout from blocking video rendering.
+        setTimeout(async () => {
+          if (!isCurrentGeneration(generation)) return;
 
-        localChatClient = chatClient;
-        chatClientRef.current = chatClient;
+          try {
+            const chatClient = new AgoraChat.connection({
+              appKey: live.chatAppKey,
+            });
 
-        chatClient.addEventHandler(`LIVE_CHAT_${generation}`, {
-          onTextMessage: handleIncomingTextMessage,
+            localChatClient = chatClient;
+            chatClientRef.current = chatClient;
 
-          onError: (chatError) => {
-            console.error("Agora Chat error:", chatError);
-          },
+            chatClient.addEventHandler(`LIVE_CHAT_${generation}`, {
+              onTextMessage: handleIncomingTextMessage,
 
-          onConnected: () => {
-            console.log("Agora Chat connected.");
-          },
+              onError: (chatError) => {
+                console.warn(
+                  "Agora Chat runtime error (non-fatal):",
+                  chatError,
+                );
+              },
 
-          onDisconnected: () => {
-            console.log("Agora Chat disconnected.");
-          },
-        });
+              onConnected: () => {
+                console.log("Agora Chat connected.");
+              },
 
-        await chatClient.open({
-          user: live.chatUserId,
-          accessToken: live.chatToken,
-        });
+              onDisconnected: () => {
+                console.warn("Agora Chat disconnected — will retry in bg.");
 
-        if (!isCurrentGeneration(generation)) {
-          await disposeLocalClients(
-            localChatClient,
-            localRtcClient,
-            localChatRoomId,
-          );
-          return;
-        }
+                void (async () => {
+                  try {
+                    if (
+                      chatClient &&
+                      chatClientRef.current === chatClient &&
+                      isCurrentGeneration(generation)
+                    ) {
+                      await openChatWithRetry(
+                        chatClient,
+                        live.chatUserId,
+                        live.chatToken,
+                        generation,
+                        2,
+                      );
 
-        await chatClient.joinChatRoom({
-          roomId: live.chatRoomId,
-        });
+                      if (isCurrentGeneration(generation)) {
+                        await chatClient.joinChatRoom({
+                          roomId: live.chatRoomId,
+                        });
+                        console.log("Agora Chat reconnected.");
+                      }
+                    }
+                  } catch (reconnectErr) {
+                    console.warn(
+                      "Agora Chat reconnect failed (non-fatal):",
+                      reconnectErr,
+                    );
+                  }
+                })();
+              },
+            });
 
-        if (!isCurrentGeneration(generation)) {
-          await disposeLocalClients(
-            localChatClient,
-            localRtcClient,
-            localChatRoomId,
-          );
-          return;
-        }
+            await openChatWithRetry(
+              chatClient,
+              live.chatUserId,
+              live.chatToken,
+              generation,
+              3,
+            );
+
+            if (!isCurrentGeneration(generation)) {
+              await disposeLocalClients(
+                localChatClient,
+                localRtcClient,
+                localChatRoomId,
+              );
+              return;
+            }
+
+            await chatClient.joinChatRoom({
+              roomId: live.chatRoomId,
+            });
+
+            if (!isCurrentGeneration(generation)) {
+              await disposeLocalClients(
+                localChatClient,
+                localRtcClient,
+                localChatRoomId,
+              );
+              return;
+            }
+          } catch (chatErr) {
+            // ── NON-FATAL ──
+            console.warn(
+              "Agora Chat unavailable — continuing without chat:",
+              chatErr,
+            );
+
+            if (localChatClient) {
+              try {
+                localChatClient.removeEventHandler(`LIVE_CHAT_${generation}`);
+              } catch {}
+              try {
+                await localChatClient.close();
+              } catch {}
+            }
+
+            chatClientRef.current = null;
+            localChatClient = null;
+
+            if (mountedRef.current) {
+              setInteractionNotice(
+                "Chat is temporarily unavailable. You can still watch and call.",
+              );
+
+              setTimeout(() => {
+                if (mountedRef.current) {
+                  setInteractionNotice((prev) =>
+                    prev &&
+                    prev.startsWith("Chat is temporarily unavailable")
+                      ? ""
+                      : prev,
+                  );
+                }
+              }, 8000);
+            }
+          }
+        }, 0);
 
         // Subscribe to existing remote users at join time.
-        // Same rule applies: only astrologer goes into main view.
         for (const user of rtcClient.remoteUsers) {
           if (!isCurrentGeneration(generation)) {
             break;
           }
 
-          // Prefer to resolve astrologer here if not yet known, BEFORE
-          // subscribing — so the first video hit correctly routes to
-          // main stage.
           if (
             astrologerUidRef.current == null &&
             user.uid != null &&
             String(user.uid) !== String(localUidRef.current)
           ) {
-            // First non-self existing user is very likely the astrologer.
             if (user.hasVideo || user.hasAudio) {
               astrologerUidRef.current = user.uid;
               console.log(
@@ -2281,7 +2332,24 @@ export default function WatchLive() {
         console.error("Initialize live error:", err);
 
         if (isCurrentGeneration(generation)) {
-          setError(getErrorMessage(err));
+          const rawMsg = String(err?.message || "").toLowerCase();
+          let friendly = getErrorMessage(err);
+
+          if (rawMsg.includes("get dns failed") || rawMsg.includes("dns")) {
+            friendly =
+              "Network error: unable to reach the live server. Please check your connection and try again.";
+          } else if (rawMsg.includes("login failed")) {
+            friendly =
+              "Login failed. This is usually temporary — please refresh the page.";
+          } else if (
+            rawMsg.includes("invalid token") ||
+            rawMsg.includes("token expired")
+          ) {
+            friendly =
+              "Session expired. Please refresh the page to reconnect.";
+          }
+
+          setError(friendly);
           setLoading(false);
 
           await cleanup();
@@ -2304,6 +2372,7 @@ export default function WatchLive() {
       handleStreamEnded,
       isCurrentGeneration,
       isValidLiveResponse,
+      openChatWithRetry,
       resolveAstrologerUidFromLive,
       subscribeToUser,
     ],
@@ -2414,7 +2483,7 @@ export default function WatchLive() {
   ]);
 
   // =====================================================
-  // PLAY PENDING VIDEO
+  // PLAY PENDING VIDEO (Fixes the AbortError race condition)
   // =====================================================
 
   useEffect(() => {
@@ -2424,20 +2493,25 @@ export default function WatchLive() {
       pendingVideoTrackRef.current &&
       remoteVideoRef.current
     ) {
-      try {
-        remoteVideoRef.current.innerHTML = "";
+      console.log("[Agora RTC] useEffect triggered for pendingVideoTrack");
+      // Small delay to ensure the DOM is fully painted before playing
+      const timer = setTimeout(() => {
+        if (!remoteVideoRef.current || !pendingVideoTrackRef.current) return;
+        
+        try {
+          console.log("[Agora RTC] Playing pending video track from useEffect");
+          remoteVideoRef.current.innerHTML = "";
+          pendingVideoTrackRef.current.play(remoteVideoRef.current);
+          pendingVideoTrackRef.current = null;
+          setHostJoined(true);
+          setError("");
+        } catch (err) {
+          console.error("Unable to play remote video:", err);
+          setError("Unable to play the astrologer's video.");
+        }
+      }, 200);
 
-        pendingVideoTrackRef.current.play(remoteVideoRef.current);
-
-        pendingVideoTrackRef.current = null;
-
-        setHostJoined(true);
-        setError("");
-      } catch (err) {
-        console.error("Unable to play remote video:", err);
-
-        setError("Unable to play the astrologer's video.");
-      }
+      return () => clearTimeout(timer);
     }
   }, [loading, liveInfo]);
 
@@ -2485,7 +2559,6 @@ export default function WatchLive() {
       setError("");
     } catch (err) {
       console.error("Send message error:", err);
-
       setError(getErrorMessage(err));
     }
   };
@@ -2596,7 +2669,6 @@ export default function WatchLive() {
       await refetchGifts();
     } catch (err) {
       console.error("Send gift error:", err);
-
       setGiftNotice(getErrorMessage(err));
     } finally {
       setSendingGift(false);
@@ -2734,16 +2806,40 @@ export default function WatchLive() {
   };
 
   // =====================================================
-  // OTHER VIEWER THUMBNAIL MOUNT HOOK
+  // PLAY LOCAL VIDEO (with retries and logs)
   // =====================================================
-  // Optional: if you want to show a small strip of other viewer cameras
-  // (e.g. bottom-left corner), you can mount them via refs. For now we
-  // hide them to guarantee the astrologer stays the only big video.
-  //
-  // <div ref={(el) => {
-  //   const entry = otherViewerStreamsRef.current.get(uid);
-  //   if (el && entry) { el.innerHTML=""; el.appendChild(entry.div); }
-  // }} />
+  useEffect(() => {
+    if (!isVideoCallActive) return;
+
+    let isMounted = true;
+
+    const tryPlay = (attempt = 1) => {
+      if (!isMounted) return;
+      if (!guestVideoRef.current || !localVideoTrackRef.current) {
+        console.log(`[Agora Local Video] Refs not ready, attempt ${attempt}`);
+        if (attempt < 5) setTimeout(() => tryPlay(attempt + 1), 300);
+        return;
+      }
+
+      try {
+        guestVideoRef.current.innerHTML = "";
+        localVideoTrackRef.current.play(guestVideoRef.current);
+        console.log("[Agora Local Video] Local video playing successfully.");
+      } catch (err) {
+        console.error("[Agora Local Video] Failed to play local video track:", err);
+        if (attempt < 5) {
+          setTimeout(() => tryPlay(attempt + 1), 300);
+        }
+      }
+    };
+
+    const timer = setTimeout(() => tryPlay(), 200);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
+  }, [isVideoCallActive]);
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-purple-300 sm:p-4 sm:p-6 lg:p-8">
@@ -2830,29 +2926,6 @@ export default function WatchLive() {
                     id="remote-video"
                     className="absolute inset-0 z-0 h-full w-full bg-black"
                   />
-
-                  {/* Optional thumbnail strip of other viewers — hidden by
-                      default to keep the astrologer as the only focus.
-                      Uncomment to show other viewer cameras in a corner.
-                      {otherViewerUids.length > 0 && (
-                        <div className="absolute right-2 top-2 z-10 flex gap-1">
-                          {otherViewerUids.slice(0, 3).map((uid) => (
-                            <div
-                              key={String(uid)}
-                              ref={(el) => {
-                                const entry =
-                                  otherViewerStreamsRef.current.get(uid);
-                                if (el && entry && entry.div.parentNode !== el) {
-                                  el.innerHTML = "";
-                                  el.appendChild(entry.div);
-                                }
-                              }}
-                              className="h-16 w-20 overflow-hidden rounded-md border border-yellow-400 bg-black"
-                            />
-                          ))}
-                        </div>
-                      )}
-                  */}
 
                   <div className="absolute left-0 right-0 top-0 z-20 flex flex-wrap items-start justify-between gap-3 bg-gradient-to-b from-black/90 to-transparent p-3 pr-14 sm:p-4 sm:pr-16">
                     <div className="flex w-full items-start justify-between gap-2">
@@ -2971,9 +3044,12 @@ export default function WatchLive() {
                     </div>
                   )}
 
+                  {/* FIX APPLIED HERE: Use opacity instead of hidden/block */}
                   <div
                     className={`absolute right-4 top-28 z-30 h-36 w-28 overflow-hidden rounded-xl border-2 border-yellow-400 bg-black shadow-xl sm:h-80 sm:w-65 ${
-                      isVideoCallActive ? "block" : "hidden"
+                      isVideoCallActive
+                        ? "opacity-100 pointer-events-auto"
+                        : "opacity-50 pointer-events-none"
                     }`}
                   >
                     <div ref={guestVideoRef} className="h-full w-full" />
