@@ -131,22 +131,30 @@ const KundliMilanPage = () => {
       f_birthplace: girlData.birthPlace,
     };
 
-    try {
-      const result = await triggerMatch(payload).unwrap();
-      setLocalMatchData(result);
+   try {
+  const [
+    result,
+    obsResult,
+    astroResult,
+    manglikResult,
+    reportResult,
+  ] = await Promise.all([
+    triggerMatch(payload).unwrap(),
+    triggerMatchObs(payload).unwrap(),
+    triggerMatchAstro(payload).unwrap(),
+    triggerManglik(payload).unwrap(),
+    triggerMatchReport(payload).unwrap(),
+  ]);
 
-      const obsResult = await triggerMatchObs(payload).unwrap();
-      setMatchObsData(obsResult);
+  setLocalMatchData(result);
+  setMatchObsData(obsResult);
+  setAstroData(astroResult);
+  setManglikData(manglikResult);
+  setMatchReport(reportResult);
 
-      const astroResult = await triggerMatchAstro(payload).unwrap();
-      setAstroData(astroResult);
-      const manglikResult = await triggerManglik(payload).unwrap();
-      setManglikData(manglikResult);
-      const reportResult = await triggerMatchReport(payload).unwrap();
-      setMatchReport(reportResult);
+  setShowForm(false);
 
-      setShowForm(false);
-    } catch (err) {
+} catch (err) {
       setFormError(
         "API error: " + (err?.data || err?.message || "Unknown error"),
       );

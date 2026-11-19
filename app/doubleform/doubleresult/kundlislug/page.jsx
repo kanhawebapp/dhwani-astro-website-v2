@@ -52,26 +52,32 @@ const KundliMilan = () => {
       f_birthplace: matchData.girlData.birthplace,
     };
 
-    const fetchData = async () => {
-      try {
-        const result = await triggerMatch(payload).unwrap();
-        setLocalMatchData(result);
+const fetchData = async () => {
+  try {
+    const [
+      result,
+      obsResult,
+      astroResult,
+      manglikResult,
+      reportResult,
+    ] = await Promise.all([
+      triggerMatch(payload).unwrap(),
+      triggerMatchObs(payload).unwrap(),
+      triggerMatchAstro(payload).unwrap(),
+      triggerManglik(payload).unwrap(),
+      triggerMatchReport(payload).unwrap(),
+    ]);
 
-        const obsResult = await triggerMatchObs(payload).unwrap();
-        setMatchObsData(obsResult);
+    setLocalMatchData(result);
+    setMatchObsData(obsResult);
+    setAstroData(astroResult);
+    setManglikData(manglikResult);
+    setMatchReport(reportResult);
 
-        const astroResult = await triggerMatchAstro(payload).unwrap();
-        setAstroData(astroResult);
-
-        const manglikResult = await triggerManglik(payload).unwrap();
-        setManglikData(manglikResult);
-
-        const reportResult = await triggerMatchReport(payload).unwrap();
-        setMatchReport(reportResult);
-      } catch (err) {
-        // console.error('API error:', err);
-      }
-    };
+  } catch (err) {
+    console.error("API error:", err);
+  }
+};
 
     fetchData();
   }, [

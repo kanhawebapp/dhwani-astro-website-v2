@@ -13,30 +13,25 @@ export default function HoroscopePage({
   tomorrow,
   yesterday,
 }) {
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const el = document.getElementById("zodhoro");
+useEffect(() => {
+  const timer = setTimeout(() => {
+    const el = document.getElementById("zodhoro");
 
-      if (el) {
-        const offset = 80; // header height
+    if (el) {
+      el.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  }, 50);
 
-        const top =
-          el.getBoundingClientRect().top + window.pageYOffset - offset;
-
-        window.scrollTo({
-          top,
-          behavior: "smooth",
-        });
-      }
-    }, 50);
-
-    return () => clearTimeout(timer);
-  }, [zodiac]);
+  return () => clearTimeout(timer);
+}, [zodiac]);
   return (
     <div className="flex flex-col max-w-7xl gap-8 justify-center">
       <HoroscopeClient horoscopezod={horoscopezod} selectedZodiac={zodiac} />
 
-      <div id="zodhoro">
+     <div id="zodhoro" className="scroll-mt-20">
         <Zodhoro
           zodiac={zodiac}
           today={today}
