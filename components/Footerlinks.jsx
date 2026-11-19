@@ -35,7 +35,7 @@ export default function Footerlinks() {
     { id: 4, ulname: `${t.footer.li4}`, link: "/freeservices/kundali" },
     { id: 5, ulname: `${t.footer.li5}`, link: "/freeservices/numerology" },
     { id: 6, ulname: `${t.footer.li6}`, link: "/blogs" },
-    { id: 7, ulname: `${t.footer.li7}`, link: "/" },
+    { id: 7, ulname: `${t.footer.li7}`, link: "/astrologer/liveStream" },
     { id: 8, ulname: `${t.footer.li8}`, link: "/freeservices/panchang" },
   ];
   const problink = [
@@ -578,7 +578,7 @@ export default function Footerlinks() {
                 </Link>
 
                 <Link
-                  href="https://www.instagram.com/healer.dhwaaani/"
+                  href="https://www.instagram.com/dhwaniastro"
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Instagram"

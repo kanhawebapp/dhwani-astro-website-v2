@@ -156,11 +156,11 @@ export default function BlogDetail() {
 
   return (
     <main className="w-full px-3 py-5 sm:px-5">
-      <article className="w-full max-w-6xl border border-gray-200 shadow-xl py-4 sm:px-8 rounded-2xl mx-auto sm:py-5 bg-white">
+      <article className="w-full max-w-6xl border border-gray-200 shadow-xl py-3.5 sm:px-6 rounded-2xl mx-auto sm:py-3.5 bg-white">
         {/* Breadcrumb */}
         <nav
           aria-label="Breadcrumb"
-          className="mb-2 text-[10px] sm:text-xs text-gray-500"
+          className="mb-2 text-[10px] sm:text-[10px] text-gray-500"
         >
           <ol className="flex flex-wrap  items-center gap-2">
             <li>
@@ -188,9 +188,7 @@ export default function BlogDetail() {
           </ol>
         </nav>
 
-    
-        <header className="flex flex-col gap-2">
-         
+        <header className="flex flex-col gap-1">
           <h1 className="text-xl sm:text-2xl md:text-3xl text-center font-bold text-black leading-tight">
             {blog.title}
           </h1>
@@ -207,7 +205,6 @@ export default function BlogDetail() {
             <span>Posted by Dhwani Astro</span>
           </div>
 
-     
           {blog.categories?.length > 0 && (
             <div className="flex flex-wrap items-center justify-center gap-2">
               {blog.categories.map((category) => (
@@ -223,13 +220,12 @@ export default function BlogDetail() {
           )}
         </header>
 
-     
-        <div className="grid rounded-2xl overflow-hidden mt-6 sm:grid-cols-6 gap-3">
+        <div className="grid rounded-2xl overflow-hidden mt-6 md:mt-4 sm:grid-cols-6 gap-3 sm:gap-2">
           {featuredImage && (
             <div className="overflow-hidden sm:col-span-4 rounded-xl">
               <Image
                 src={featuredImage}
-                className="w-full h-52 sm:h-80 object-cover rounded-2xl"
+                className="w-full h-52 sm:h-80 object-fill rounded-2xl"
                 width={1200}
                 height={630}
                 alt={`${blog.title} - Dhwani Astro`}
@@ -267,15 +263,13 @@ export default function BlogDetail() {
           </aside>
         </div>
 
-        {/* Article Content */}
         <div
-          className="prose max-w-none text-xs sm:text-sm prose-headings:text-black text-black prose-p:text-black mt-8"
+          className="blog-content mt-8 max-w-none"
           dangerouslySetInnerHTML={{
             __html: blogContent,
           }}
         />
 
-        {/* Recent Blogs */}
         {recentBlogs.length > 0 && (
           <section
             aria-labelledby="recent-blogs"

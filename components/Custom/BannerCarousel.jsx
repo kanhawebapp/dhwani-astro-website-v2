@@ -68,22 +68,30 @@ export default function BannerCarousel({ slides = [] }) {
             : null;
 
           const bannerContent = (
-            <picture>
-              {mobileProps && (
-                <source
-                  media="(max-width: 767px)"
-                  srcSet={mobileProps.props.srcSet}
-                  sizes="100vw"
-                />
-              )}
+       <picture className="absolute inset-0 block h-full w-full">
+  {mobileProps && (
+    <source
+      media="(max-width: 767px)"
+      srcSet={mobileProps.props.srcSet}
+      sizes="100vw"
+    />
+  )}
 
-              <img
-                {...desktopProps.props}
-                alt={slide.heading || "Featured banner"}
-                className="absolute inset-0 block w-full h-full object-cover"
-                decoding="async"
-              />
-            </picture>
+  <img
+    {...desktopProps.props}
+    alt={slide.heading || "Featured banner"}
+    className="
+      absolute inset-0
+      block h-full w-full
+      object-cover
+      object-center
+      min-[1400px]:object-center
+      min-[1200px]:object-center
+      max-[1199px]:object-center
+    "
+    decoding="async"
+  />
+</picture>
           );
 
           return (
