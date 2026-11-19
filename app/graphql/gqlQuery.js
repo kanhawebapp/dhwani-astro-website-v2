@@ -296,6 +296,7 @@ export const GET_ASTROLOGERS_GUEST = gql`
           type
           price
           originalPrice
+          offerPrice
           commissionPercent
           isActive
         }
