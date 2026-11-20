@@ -156,11 +156,7 @@ export default function AbhijitPage({
     getAbhijitData,
   ]);
 
-  /*
-   * =========================================================
-   * Date Navigation
-   * =========================================================
-   */
+ 
 
   const changeDate = (offset) => {
     setDate((prev) => {
@@ -176,11 +172,7 @@ export default function AbhijitPage({
     setDate(today);
   };
 
-  /*
-   * =========================================================
-   * Selected Date Formatting
-   * =========================================================
-   */
+
 
   const formatSelectedDate = (selectedDate) => {
     if (selectedDate === today) {
@@ -192,11 +184,7 @@ export default function AbhijitPage({
     )} Abhijit Muhurta`;
   };
 
-  /*
-   * =========================================================
-   * Calculate Duration
-   * =========================================================
-   */
+
 
   const calcDuration = (start, end) => {
     try {
@@ -220,11 +208,7 @@ export default function AbhijitPage({
     }
   };
 
-  /*
-   * =========================================================
-   * Muhurta Status
-   * =========================================================
-   */
+
 
   const getStatus = () => {
     if (!abhijitData?.start || !abhijitData?.end) {
@@ -268,9 +252,7 @@ export default function AbhijitPage({
 
       <div className="kundli-page w-full md:max-w-7xl flex flex-col sm:p-5 px-2 gap-5 rounded-2xl shadow-lg items-center my-2 text-black">
 
-        {/* =====================================================
-            MAIN SEO HEADING
-        ====================================================== */}
+      
 
         <div className="flex flex-col gap-3 sm:gap-5 bg-linear-to-r from-pink-100 to-yellow-100 shadow-lg rounded-2xl p-5 w-full text-center">
           <h1 className="text-lg md:text-xl font-semibold text-black">
@@ -294,15 +276,13 @@ export default function AbhijitPage({
           </p>
         </div>
 
-        {/* =====================================================
-            DATE & LOCATION SEARCH
-        ====================================================== */}
+  
 
         <div
           className="h-40 rounded-2xl flex flex-col sm:flex-row items-center justify-between relative w-full py-10 px-6 bg-cover bg-center"
           style={{
             backgroundImage:
-              "url('/ds-img/cho.jpg')",
+              "url('/ds-img/cho.webp')",
           }}
         >
           <div className="flex sm:flex-col w-full justify-between text-sm font-semibold text-white">

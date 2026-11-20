@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { SEO_ENDPOINTS } from "../../api/seoEndpoints";
 
 import usePanchHook from "../../../Hooks/usePanchHook";
@@ -29,87 +29,105 @@ export default function ChaughadiyaPage({
     getParams,
   } = usePanchHook();
 
-  const [chaughadiyaData, setChaughadiyaData] = useState(
-    initialChaughadiya || null,
-  );
+const [chaughadiyaData, setChaughadiyaData] = useState(
+  initialChaughadiya || null
+);
 
-  const [loading, setLoading] = useState(false);
+const [loading, setLoading] = useState(!initialChaughadiya);
+const [error, setError] = useState(false);
 
-  /**
-   * Fetch Chaughadiya data
-   */
-  const getChaughadiyaData = useCallback(async (params) => {
-    setLoading(true);
+// Prevent stale API responses from overwriting newer data.
+const requestIdRef = useRef(0);
 
-    try {
-      const res = await astrologySeo(SEO_ENDPOINTS.CHAUGHADIYA, params);
+// Skip the first fetch if server already provided initial data.
+const isFirstFetchRef = useRef(true);
 
-      setChaughadiyaData(res?.data || res);
-    } catch (error) {
-      console.error("Error fetching Chaughadiya:", error);
-    } finally {
+const getChaughadiyaData = useCallback(async (params) => {
+  const requestId = ++requestIdRef.current;
+
+  setLoading(true);
+  setError(false);
+
+  try {
+    const res = await astrologySeo(
+      SEO_ENDPOINTS.CHAUGHADIYA,
+      params
+    );
+
+    // Ignore an older request if a newer request has started.
+    if (requestId !== requestIdRef.current) return;
+
+    const result = res?.data || res;
+
+    setChaughadiyaData(result);
+  } catch (error) {
+    if (requestId !== requestIdRef.current) return;
+
+    console.error("Error fetching Chaughadiya:", error);
+    setError(true);
+  } finally {
+    if (requestId === requestIdRef.current) {
       setLoading(false);
     }
-  }, []);
+  }
+}, []);
 
-  /**
-   * Get user's current location.
-   * Initial server-rendered data is preserved until a new location/date
-   * needs to be requested.
-   */
-  useEffect(() => {
-    if (!navigator.geolocation) {
-      if (!initialChaughadiya) {
-        getChaughadiyaData(getParams(today));
-      }
+
+// Get user's location only once.
+useEffect(() => {
+  if (!navigator.geolocation || userTyped) return;
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const newCoords = {
+        lat: position.coords.latitude,
+        lon: position.coords.longitude,
+      };
+
+      setCoords(newCoords);
+    },
+    (error) => {
+      console.warn("Unable to get user location:", error);
+    },
+    {
+      enableHighAccuracy: false,
+      timeout: 10000,
+      maximumAge: 300000,
+    }
+  );
+}, [setCoords, userTyped]);
+
+
+// Single API trigger for date/location changes.
+useEffect(() => {
+  if (!date) return;
+
+  // Initial server data is already available.
+  if (isFirstFetchRef.current) {
+    isFirstFetchRef.current = false;
+
+    if (initialChaughadiya) {
       return;
     }
+  }
 
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const newCoords = {
-          lat: position.coords.latitude,
-          lon: position.coords.longitude,
-        };
+  getChaughadiyaData(getParams(date));
+}, [
+  date,
+  coords,
+  getParams,
+  getChaughadiyaData,
+  initialChaughadiya,
+]);
 
-        setCoords(newCoords);
 
-        if (!userTyped && !initialChaughadiya) {
-          getChaughadiyaData(getParams(today));
-        }
-      },
-      () => {
-        if (!initialChaughadiya) {
-          getChaughadiyaData(getParams(today));
-        }
-      },
-      {
-        enableHighAccuracy: false,
-        timeout: 10000,
-        maximumAge: 300000,
-      },
-    );
-  }, [
-    getChaughadiyaData,
-    getParams,
-    initialChaughadiya,
-    setCoords,
-    today,
-    userTyped,
-  ]);
-
-  /**
-   * Fetch data whenever selected date/location changes.
-   */
   useEffect(() => {
     if (!date) return;
 
     getChaughadiyaData(getParams(date));
   }, [date, coords, getParams, getChaughadiyaData]);
 
-  /**
-   * Change selected date.
-   */
+
   const changeDate = (offset) => {
     setDate((previousDate) => {
       const selectedDate = new Date(previousDate);
@@ -120,16 +138,10 @@ export default function ChaughadiyaPage({
     });
   };
 
-  /**
-   * Reset selected date to today.
-   */
   const setToday = () => {
     setDate(today);
   };
 
-  /**
-   * Find currently running Chaughadiya.
-   */
   const getCurrentChaughadiya = useCallback(() => {
     if (!chaughadiyaData?.chaughadiya) {
       return "Loading...";
@@ -178,27 +190,15 @@ export default function ChaughadiyaPage({
     return "No muhurta found";
   }, [chaughadiyaData]);
 
-  /**
-   * Format selected date for display.
-   */
   const formattedDate = date
     ? new Date(`${date}T00:00:00`).toLocaleDateString("en-GB")
     : "";
 
-  /**
-   * Submit location/date search.
-   */
-  const handleSearch = (event) => {
-    event.preventDefault();
+const handleSearch = (event) => {
+  event.preventDefault();
+  setShowSuggestions(false);
+};
 
-    getChaughadiyaData(getParams(date));
-
-    setShowSuggestions(false);
-  };
-
-  /**
-   * Chaughadiya color helper.
-   */
   const getMuhurtaBackground = (muhurta) => {
     if (["Kaal", "Udveg", "Rog"].includes(muhurta)) {
       return "bg-red-400";
@@ -214,6 +214,52 @@ export default function ChaughadiyaPage({
 
     return "bg-green-300";
   };
+  function ChaughadiyaSkeleton() {
+  return (
+    <section
+      className="flex flex-col items-center gap-5 md:w-[90%] w-full shadow-lg p-4 rounded-2xl"
+      aria-label="Loading Chaughadiya timings"
+      aria-busy="true"
+    >
+     
+      <div className="h-7 w-64 max-w-full bg-gray-200 rounded-lg animate-pulse" />
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 w-full">
+        {["day", "night"].map((type) => (
+          <div key={type} className="w-full">
+           
+            <div className="flex justify-center my-3">
+              <div className="h-6 w-40 bg-gray-200 rounded-lg animate-pulse" />
+            </div>
+
+        
+            <div className="flex flex-col gap-2">
+              {Array.from({ length: 8 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="grid grid-cols-2 gap-3 rounded-xl p-3 bg-gray-100 animate-pulse"
+                >
+                  <div className="h-5 bg-gray-200 rounded-md" />
+                  <div className="h-5 bg-gray-200 rounded-md" />
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Legend skeleton */}
+      <div className="flex flex-wrap justify-center gap-6 w-full mt-3">
+        {Array.from({ length: 5 }).map((_, index) => (
+          <div key={index} className="flex flex-col items-center gap-2">
+            <div className="h-5 w-5 rounded-full bg-gray-200 animate-pulse" />
+            <div className="h-3 w-12 rounded bg-gray-200 animate-pulse" />
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
 
   return (
     <main
@@ -221,7 +267,7 @@ export default function ChaughadiyaPage({
       aria-label="Chaughadiya Panchang"
     >
       <div className="flex flex-col gap-5 items-center md:w-[95%] w-full sm:pb-8">
-        {/* SEO INTRODUCTION */}
+    
         <header className="flex w-full flex-col gap-4 bg-linear-to-r from-pink-100 to-yellow-100 shadow-lg rounded-2xl p-3 sm:p-5">
           <h1 className="text-lg md:text-2xl text-black font-bold text-center">
             Chaughadiya Today - Choghadiya Timings
@@ -235,7 +281,7 @@ export default function ChaughadiyaPage({
           </p>
         </header>
 
-        {/* LOCATION AND DATE SEARCH */}
+     
         <section
           aria-labelledby="chaughadiya-search-heading"
           className="w-full"
@@ -247,11 +293,11 @@ export default function ChaughadiyaPage({
           <div
             className="h-40 rounded-2xl flex flex-col sm:flex-row items-center justify-between relative w-full mx-auto py-2 sm:py-10 px-3 md:px-6 bg-cover bg-center"
             style={{
-              backgroundImage: "url('/ds-img/cho.jpg')",
+              backgroundImage: "url('/ds-img/cho.webp')",
             }}
           >
             <div className="flex sm:flex-col w-full justify-between relative items-start text-sm gap-3 font-semibold text-white">
-              {/* LOCATION */}
+         
               <span
                 className="flex items-center gap-2 text-xs sm:text-base"
                 aria-label={`Selected location: ${locationName || "Current location"}`}
@@ -293,7 +339,7 @@ export default function ChaughadiyaPage({
               className="flex sm:flex-col gap-4 z-10 bg-[#0000007b] p-3 rounded-xl items-center"
               aria-label="Chaughadiya search form"
             >
-              {/* DATE */}
+             
               <label className="sr-only" htmlFor="chaughadiya-date">
                 Select date
               </label>
@@ -307,7 +353,7 @@ export default function ChaughadiyaPage({
                 className="border-gray-200 p-1 bg-white px-3 text-xs sm:text-sm flex-1 rounded-full"
               />
 
-              {/* CITY */}
+         
               <div className="relative flex-1">
                 <label className="sr-only" htmlFor="chaughadiya-city">
                   Enter city name
@@ -350,7 +396,7 @@ export default function ChaughadiyaPage({
                 )}
               </div>
 
-              {/* SEARCH */}
+             
               <button
                 aria-label="Search Chaughadiya timings"
                 type="submit"
@@ -372,7 +418,7 @@ export default function ChaughadiyaPage({
           </div>
         </section>
 
-        {/* CURRENT MUHURTA + DATE NAVIGATION */}
+     
         <section
           aria-labelledby="current-chaughadiya-heading"
           className="flex flex-col gap-3 md:flex-row items-center bg-linear-to-r from-pink-100 to-yellow-100 justify-between py-6 shadow-lg px-1 sm:px-6 mt-2 sm:mt-4 w-full rounded-2xl"
@@ -441,29 +487,49 @@ export default function ChaughadiyaPage({
           </nav>
         </section>
 
-        {/* CHOUGADIYA RESULTS */}
-        {loading ? (
-          <div
-            className="w-full py-10 text-center"
-            role="status"
-            aria-live="polite"
-          >
-            <p className="animate-pulse">
-              Loading Chaughadiya timings...
-            </p>
-          </div>
-        ) : (
-          chaughadiyaData && (
-            <section
-              aria-labelledby="chaughadiya-timings-heading"
-              className="flex flex-col items-center justify-center gap-5 md:w-[90%] w-full shadow-lg p-4 rounded-2xl"
-            >
-              <h2
-                id="chaughadiya-timings-heading"
-                className="text-xl font-bold text-center"
-              >
-                Chaughadiya Timings for {formattedDate}
-              </h2>
+  {!chaughadiyaData?.chaughadiya ? (
+  error ? (
+    <div className="w-full py-10 text-center">
+      <p className="text-red-500">
+        Unable to load Chaughadiya timings.
+      </p>
+
+      <button
+        type="button"
+        onClick={() => getChaughadiyaData(getParams(date))}
+        className="mt-3 rounded-full bg-purple-500 px-5 py-2 text-white"
+      >
+        Try Again
+      </button>
+    </div>
+  ) : (
+    <ChaughadiyaSkeleton />
+  )
+) : (
+  <section
+    aria-labelledby="chaughadiya-timings-heading"
+    aria-busy={loading}
+    className="relative flex flex-col items-center justify-center gap-5 md:w-[90%] w-full shadow-lg p-4 rounded-2xl"
+  >
+    {/* Updating indicator: table remains visible */}
+    {loading && (
+      <div
+        className="absolute right-4 top-4 flex items-center gap-2 text-xs text-purple-600"
+        role="status"
+      >
+        <span className="h-2 w-2 rounded-full bg-purple-500 animate-pulse" />
+        Updating...
+      </div>
+    )}
+
+    {/* YOUR EXISTING TABLE CONTENT STARTS HERE */}
+
+    <h2
+      id="chaughadiya-timings-heading"
+      className="text-xl font-bold text-center"
+    >
+      Chaughadiya Timings for {formattedDate}
+    </h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5 w-full">
                 {["day", "night"].map((type) => {
@@ -536,7 +602,7 @@ export default function ChaughadiyaPage({
                 })}
               </div>
 
-              {/* LEGEND */}
+    
               <div className="text-xs flex flex-col gap-3 md:text-sm text-red-400 text-center w-full">
                 <div className="flex w-full flex-wrap items-start justify-center gap-5 sm:gap-8">
                   {[
@@ -586,10 +652,10 @@ export default function ChaughadiyaPage({
                 </p>
               </div>
             </section>
-          )
+          
         )}
 
-        {/* SEO CONTENT */}
+     
         <section
           aria-labelledby="about-chaughadiya-heading"
           className="w-full md:w-[90%] bg-white rounded-2xl shadow-lg p-5 sm:p-7"
@@ -626,7 +692,7 @@ export default function ChaughadiyaPage({
         </section>
       </div>
 
-      {/* ABHIJIT MUHURTA */}
+
       <section className="w-full" aria-label="Abhijit Muhurta">
         <AbhijitPage
           inputParams={getParams(date)}

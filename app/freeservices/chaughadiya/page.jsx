@@ -13,11 +13,7 @@ const PAGE_URL = `${SITE_URL}/freeservices/chaughadiya`;
 
 export const dynamic = "force-dynamic";
 
-/*
- * =========================================================
- * API PARAMETERS
- * =========================================================
- */
+
 
 function getTodayParams() {
   const now = new Date();
@@ -39,11 +35,7 @@ function getTodayParams() {
   };
 }
 
-/*
- * =========================================================
- * SEO Metadata
- * =========================================================
- */
+
 
 export async function generateMetadata() {
   const fallbackTitle =
@@ -179,11 +171,7 @@ export async function generateMetadata() {
   }
 }
 
-/*
- * =========================================================
- * WebPage Structured Data
- * =========================================================
- */
+
 
 const chaughadiyaStructuredData = {
   "@context": "https://schema.org",
@@ -213,11 +201,7 @@ const chaughadiyaStructuredData = {
   },
 };
 
-/*
- * =========================================================
- * Breadcrumb Structured Data
- * =========================================================
- */
+
 
 const breadcrumbSchema = createBreadcrumbSchema([
   {
@@ -234,14 +218,7 @@ const breadcrumbSchema = createBreadcrumbSchema([
   },
 ]);
 
-/*
- * =========================================================
- * FAQ Structured Data
- *
- * Keep this only if these FAQs are actually visible
- * on the Chaughadiya page.
- * =========================================================
- */
+
 
 const faqStructuredData = {
   "@context": "https://schema.org",
@@ -302,11 +279,6 @@ const faqStructuredData = {
   ],
 };
 
-/*
- * =========================================================
- * Page
- * =========================================================
- */
 
 export default async function Page() {
   let initialChaughadiya = null;
@@ -334,13 +306,13 @@ export default async function Page() {
 
   return (
     <>
-      {/* WebPage Schema */}
+  
       <JsonLd data={chaughadiyaStructuredData} />
 
-      {/* Breadcrumb Schema */}
+     
       <JsonLd data={breadcrumbSchema} />
 
-      {/* FAQ Schema */}
+     
       <JsonLd data={faqStructuredData} />
 
       <ChaughadiyaPage
