@@ -3399,7 +3399,7 @@ function computeCallReserveCoins(remainingSeconds, pricePerMinute) {
                                     <img
                                       src={imageUrl}
                                       alt={gift.name}
-                                      className="h-10 px-5 py-5 bg-pink-200 rounded-full  w-10 object-contain"
+                                      className=" h-13 w-13 md:h-16 md:w-16 px-2 py-2 rounded-full  object-contain"
                                     />
                                   ) : (
                                     <span className="text-3xl">🎁</span>
