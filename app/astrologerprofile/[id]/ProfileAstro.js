@@ -101,17 +101,19 @@ export default function ProfileAstro({ astrologerId }) {
     };
   };
 
-  const {
-    data: astrologerResponse,
-    loading: astrologerloading,
-    error,
-  } = useQuery(GET_ASTROLOGER_BY_ID, {
-    variables: {
-      id,
-    },
-    skip: !id,
-    fetchPolicy: "cache-first",
-  });
+ const {
+  data: astrologerResponse,
+  loading: astrologerloading,
+  error,
+  refetch,
+} = useQuery(GET_ASTROLOGER_BY_ID, {
+  variables: {
+    id,
+  },
+  skip: !id,
+  fetchPolicy: "network-only",
+  notifyOnNetworkStatusChange: true,
+});
   const { data: similarData } = useQuery(GET_SIMILAR_ASTROLOGERS, {
     variables: {
       astrologerId: id,

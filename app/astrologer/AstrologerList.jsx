@@ -17,7 +17,7 @@ export default function AstrologerList({
   const isFetchingMore = useRef(false);
   const loadedPages = useRef(new Set([1]));
 
-  const [sortType, setSortType] = useState("ratingHigh");
+  const [sortType, setSortType] = useState("");
   const [page, setPage] = useState(1);
 
   const [allAstrologers, setAllAstrologers] = useState(
