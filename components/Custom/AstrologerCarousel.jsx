@@ -115,25 +115,55 @@ export default function AstrologerCarousel({
     goToRequest();
   };
 
-  const getAstroStatus = (astro, mode) => {
-    const isServiceActive =
-      mode === "chat" ? astro?.isChatActive : astro?.isCallActive;
-    const isSocketBusy = busyAstros.includes(Number(astro?.id));
 
-    if (!astro?.isOnline || !isServiceActive) {
-      return {
-        color: "bg-red-600",
-        disabled: true,
-        title: "Online but Unavailable for Call/Chat",
-      };
-    }
+const getAstroStatus = (astro, mode) => {
+  const isServiceActive =
+    mode === "chat"
+      ? astro?.isChatActive
+      : astro?.isCallActive;
 
-    if (astro?.isBusy || isSocketBusy) {
-      return { color: "bg-yellow-500", disabled: false };
-    }
+  const isSocketBusy = busyAstros.includes(
+    Number(astro?.id)
+  );
 
-    return { color: "bg-green-600", disabled: false };
+  
+  if (!astro?.isOnline) {
+    return {
+        status: "Offline",
+      color: "bg-red-600",
+      disabled: true,
+      title: "Astrologer Offline",
+    };
+  }
+
+ 
+  if (!isServiceActive) {
+    return {
+        status: "Unavailable",
+      color: "bg-gray-400",
+      disabled: true,
+      title: "Service Unavailable",
+    };
+  }
+
+
+  if (astro?.isBusy || isSocketBusy) {
+    return {
+        status: "Busy",
+      color: "bg-yellow-500",
+      disabled: false,
+      title: "Astrologer Busy",
+    };
+  }
+
+  // 4. Available
+  return {
+      status: "Online",
+    color: "bg-green-600",
+    disabled: false,
+    title: "Available",
   };
+};
 
   const selectedQuery = isLoggedIn
     ? GET_ASTROLOGERS_USER
@@ -395,6 +425,20 @@ const showAstrologerSkeleton =
                           }
                         />
                       </div>
+                             {(() => {
+                        const status = getAstroStatus(astro);
+
+                        return (
+                          <div className="flex absolute top-1 right-2 items-center gap-1">
+                            <span
+                              className={`sm:w-2 sm:h-2 h-2 w-2  rounded-full ${status.color}`}
+                            />
+                            <span className="text-[9px] sm:text-[9px] text-black ">
+                              {status.status}
+                            </span>
+                          </div>
+                        );
+                      })()}
 
                       <div className="flex flex-col items-center justify-center gap-1 p-1 rounded-lg astrologer-price-skill md:p-2 bg-linear-to-r from-violet-200 to-purple-200">
                         <div className="flex flex-col items-center gap-1 astro-name-exp">
